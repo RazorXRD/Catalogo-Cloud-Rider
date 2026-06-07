@@ -1628,13 +1628,6 @@ var imgObserver = new IntersectionObserver(function(entries){
     }
   });
 }, {rootMargin: '200px'});
-
-load();           // Cargar localStorage
-buildYears();     // Construir años desde DB
-updateStats();    // Actualizar contadores
-updateCartUI();   // Mostrar carrito
-renderGrid();     // Pintar la cuadrícula
-enqueue();        // Iniciar carga de imágenes desde APIs
 var DB;
 try {
   DB = JSON.parse(atob(document.getElementById('D').textContent));
@@ -2069,6 +2062,12 @@ function loadCSVsFromGitHub(){
       .catch(function(){done++;});
   });
 }
+load();           // Cargar localStorage
+buildYears();     // Construir años desde DB
+updateStats();    // Actualizar contadores
+updateCartUI();   // Mostrar carrito
+renderGrid();     // Pintar la cuadrícula
+enqueue();        // Iniciar carga de imágenes desde APIs
 })();
 </script>
 
