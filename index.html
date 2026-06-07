@@ -947,25 +947,24 @@ function buildYears(){
 
 /* ── FETCH QUEUE ── */
 function enqueue(){
-  fQ=[];
-  /* Build full missing list */
-  var missing=[];
-  for(var i=0;i<DB.length;i++){if(!cache[ck(DB[i].t,DB[i].y)])missing.push(i);}
-  fDone=DB.length-missing.length;
-
-  /* Prioritise current visible page items */
-  var all=filtered();
-  var maxPg=Math.max(1,Math.ceil(all.length/PER));
-  var curPage=all.slice((page-1)*PER, page*PER);
-  var curSet={};
-  curPage.forEach(function(m){curSet[m.i]=1;});
-
-  var priority=missing.filter(function(i){return curSet[i];});
-  var rest=missing.filter(function(i){return !curSet[i];});
-  fQ=priority.concat(rest);
-
+  function enqueue(){
+  fQ = [];
+  var missing = [];
+  for(var i=0;i<DB.length;i++){
+    var eff = getEffectiveCache(i);
+    if(!eff.p && !eff.ov) missing.push(i);
+  }
+  fDone = DB.length - missing.length;
+  // Priorizar los de la página actual
+  var all = filtered();
+  var curPage = all.slice((page-1)*PER, page*PER);
+  var curSet = {};
+  curPage.forEach(function(m){ curSet[m.i] = 1; });
+  var priority = missing.filter(function(i){ return curSet[i]; });
+  var rest = missing.filter(function(i){ return !curSet[i]; });
+  fQ = priority.concat(rest);
   progUpdate();
-  if(fQ.length)nextBatch();
+  if(fQ.length) nextBatch();
 }
 function nextBatch(){
   if(fBusy||!fQ.length)return;
@@ -998,9 +997,13 @@ function cleanTitle(t) {
 }
 
 function fetchOne(i) {
-  var m = DB[i], k = ck(m.t, m.y);
-  if (cache[k]) return Promise.resolve();
-
+  var ov = overrides[i];
+if(ov && (ov.p || ov.ov)) {
+  // Ya tienes información propia, no busques en APIs
+  cache[ck(m.t,m.y)] = cache[ck(m.t,m.y)] || {};
+  Object.assign(cache[ck(m.t,m.y)], ov);
+  return Promise.resolve();
+}
   var cat  = m.c;
   var isAnime   = (cat === 'animes' || cat === 'animados');
   var isTV      = (cat === 'series' || cat === 'doramas' || cat === 'novelas');
@@ -1656,20 +1659,13 @@ var overrides = {};
 function loadOverrides(){
   try{
     var o = localStorage.getItem(OVER_KEY);
-    if(o){
-      var stored = JSON.parse(o);
-      Object.keys(stored).forEach(function(k){ overrides[k] = stored[k]; });
-    }
-  }catch(e){ 
-    try{ localStorage.removeItem(OVER_KEY); }catch(e2){} 
-  }
+    if(o) overrides = JSON.parse(o);
+  }catch(e){}
 }
-
-function saveOverrides(){ 
-  try{ localStorage.setItem(OVER_KEY, JSON.stringify(overrides)); }catch(e){} 
+function saveOverrides(){
+  try{ localStorage.setItem(OVER_KEY, JSON.stringify(overrides)); }catch(e){}
 }
-
-loadOverrides();  // Inicializar overrides
+loadOverrides();
 // =========================================================
 
 /* Genre map */
@@ -1684,11 +1680,11 @@ var CL={peliculas:'Película',series:'Serie',animes:'Anime',animados:'Animado',
   doramas:'Dorama',novelas:'Novela',juegos:'Juego PC'};
 
 function getEffectiveCache(i){
-  if(!DB||!DB[i]) return {p:null,b:null,id:null,tp:null,g:[],r:null,ov:null,eps:null,seas:null,src:null,url:null};
-  var m=DB[i], k=ck(m.t,m.y);
-  var base=cache[k]||{p:null,b:null,id:null,tp:null,g:[],r:null,ov:null,eps:null,seas:null,src:null,url:null};
-  var ov=(overrides[i]&&typeof overrides[i]==='object')?overrides[i]:{};
-  return Object.assign({},base,ov);
+  if(!DB || !DB[i]) return {p:null,b:null,id:null,tp:null,g:[],r:null,ov:null,eps:null,seas:null,src:null,url:null};
+  var m = DB[i], k = ck(m.t, m.y);
+  var base = cache[k] || {p:null,b:null,id:null,tp:null,g:[],r:null,ov:null,eps:null,seas:null,src:null,url:null};
+  var ov = (overrides[i] && typeof overrides[i]==='object') ? overrides[i] : {};
+  return Object.assign({}, base, ov);
 }
 
 function openAdmin(){
