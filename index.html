@@ -1630,33 +1630,60 @@ var imgObserver = new IntersectionObserver(function(entries){
 },{rootMargin:'200px'});
 
 load();buildYears();updateStats();updateCartUI();renderGrid();enqueue();
+var DB;
+try {
+  DB = JSON.parse(atob(document.getElementById('D').textContent));
+} catch(e) {
+  console.error('Error al cargar la base de datos:', e);
+  document.body.innerHTML = '<div style="color:red;padding:20px">Error crítico: no se pudo cargar el catálogo.</div>';
+  throw e;
+}
+var TK='eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI1YTAwZDQ0NDg1NDlmMTg1OTg2MTM0YjBkYzg1ODA4ZSIsIm5iZiI6MTc3OTg0Njg1NS41MzMsInN1YiI6IjZhMTY0ZWM3ZmE3ZDQ0MDUxNjJmNjY5NCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.7CMd_XYSqbF7ralsRUtZxrMi6UwuXrfM1_Kn1XsKZtY';
+var WA='5355213690';
+var IMG='https://image.tmdb.org/t/p/w185';
+var IMGL='https://image.tmdb.org/t/p/w500';
+var IMGB='https://image.tmdb.org/t/p/w1280';
+var API='https://api.themoviedb.org/3';
+var PER=50;
 
+var page=1,catF='todas',genreF=null,yearF=null,q='',sort='az',statusF='todas';
+var uState={},cache={},cart=[];
+var fQ=[],fBusy=false,fDone=0;
+var detIdx=-1;
 
-/* ══════════════════════════════════════
-   ADMIN PANEL
-══════════════════════════════════════ */
-var ADMIN_PASS = 'razorxrd280502';
-var adminOpen  = false;
-var adminPage  = 1;
-var adminPer   = 50;
-var adminQ     = '';
-var adminCat   = '';
-var adminStatusF = '';
-var editIdx    = -1;
-
-/* Override key: manually edited items stored here */
+// ========== DECLARACIÓN DE OVERRIDES (CORREGIDA) ==========
 var OVER_KEY = 'cr_overrides';
 var overrides = {};
+
 function loadOverrides(){
   try{
-    var o=localStorage.getItem(OVER_KEY);
+    var o = localStorage.getItem(OVER_KEY);
     if(o){
-      var stored=JSON.parse(o);
-      Object.keys(stored).forEach(function(k){ overrides[k]=stored[k]; });
+      var stored = JSON.parse(o);
+      Object.keys(stored).forEach(function(k){ overrides[k] = stored[k]; });
     }
-  }catch(e){ try{localStorage.removeItem(OVER_KEY);}catch(e2){} }
+  }catch(e){ 
+    try{ localStorage.removeItem(OVER_KEY); }catch(e2){} 
+  }
 }
-function saveOverrides(){ try{ localStorage.setItem(OVER_KEY,JSON.stringify(overrides)); }catch(e){} }
+
+function saveOverrides(){ 
+  try{ localStorage.setItem(OVER_KEY, JSON.stringify(overrides)); }catch(e){} 
+}
+
+loadOverrides();  // Inicializar overrides
+// =========================================================
+
+/* Genre map */
+var GN={28:'Acción',12:'Aventura',16:'Animación',35:'Comedia',80:'Crimen',
+  99:'Documental',18:'Drama',10751:'Familia',14:'Fantasía',27:'Terror',
+  9648:'Misterio',10749:'Romance',878:'Ciencia ficción',53:'Thriller',
+  10752:'Bélica',37:'Western',36:'Historia',10402:'Música',
+  10759:'Acción/Aventura',10765:'Sci-Fi y Fantasía'};
+
+/* Category labels */
+var CL={peliculas:'Película',series:'Serie',animes:'Anime',animados:'Animado',
+  doramas:'Dorama',novelas:'Novela',juegos:'Juego PC'};
 
 function getEffectiveCache(i){
   if(!DB||!DB[i]) return {p:null,b:null,id:null,tp:null,g:[],r:null,ov:null,eps:null,seas:null,src:null,url:null};
