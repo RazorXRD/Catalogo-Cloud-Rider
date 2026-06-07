@@ -15,8 +15,8 @@
   --green:#1db954;--amber:#f59e0b;
   --fh:'Bebas Neue',sans-serif;--fb:'Barlow',sans-serif;
 }
-html{scroll-behavior:smooth;-webkit-overflow-scrolling:touch}
-body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100vh;overflow-x:hidden;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100vh;overflow-x:hidden}
 
 /* ── NAV ── */
 #nav{
@@ -31,7 +31,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
   background:linear-gradient(135deg,var(--cyan),var(--pink));
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
 }
-#nav-menu{display:flex;align-items:center;gap:1px;overflow-x:auto;scrollbar-width:none;flex:1}
+#nav-menu{display:flex;align-items:center;gap:1px;overflow:visible;scrollbar-width:none;flex:1}
 #nav-menu::-webkit-scrollbar{display:none}
 .nm{font-family:var(--fb);font-size:11px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;
   color:#666;padding:6px 11px;border-radius:5px;border:none;background:transparent;
@@ -40,6 +40,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
 .nm.on{color:var(--cyan)}
 .nm-drop{position:relative}
 .nm-drop:hover .dmenu{display:block}
+.dmenu.open{display:block !important}
 .dmenu{display:none;position:absolute;top:calc(100% + 2px);left:0;min-width:160px;
   background:#0a0a14;border:1px solid rgba(0,212,255,.15);border-radius:8px;
   padding:5px 0;z-index:400;box-shadow:0 10px 30px rgba(0,0,0,.8);}
@@ -62,21 +63,11 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
 }
 #cart-btn:hover{opacity:.85}
 #cart-count{
-  position:absolute;top:-7px;right:-7px;background:var(--pink);color:#fff;
-  border-radius:50%;width:20px;height:20px;font-size:11px;font-weight:700;
+  position:absolute;top:-6px;right:-6px;background:var(--pink);color:#fff;
+  border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:700;
   display:none;align-items:center;justify-content:center;
-  border:2px solid var(--bg);
 }
 #cart-count.show{display:flex}
-
-/* ── FILTER BAR ── */
-#fbar{background:var(--s1);border-bottom:1px solid var(--border);
-  padding:8px 18px;display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
-.fb{font-family:var(--fb);font-size:11px;font-weight:600;letter-spacing:.4px;
-  background:transparent;border:1px solid var(--border);color:#555;
-  border-radius:14px;padding:4px 11px;cursor:pointer;transition:all .15s;white-space:nowrap;}
-.fb:hover{border-color:#555;color:#ccc}
-.fb.on{background:var(--cyan);border-color:var(--cyan);color:#000;font-weight:700}
 
 /* ── STATUS BAR ── */
 #sbar{padding:7px 18px;display:flex;justify-content:space-between;align-items:center;
@@ -95,11 +86,8 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
   background:var(--s1);border:1px solid var(--border);
   transition:transform .2s ease,box-shadow .2s,border-color .2s;
   contain:layout style;will-change:transform;}
-.card:hover{border-color:var(--cyan);z-index:2;}
-@media(hover:hover){
-  .card:hover{transform:translateY(-5px) scale(1.02);box-shadow:0 12px 36px rgba(0,212,255,.15),0 0 0 1px var(--cyan);}
-}
-.card:active{transform:scale(.97);opacity:.85}
+.card:hover{transform:translateY(-5px) scale(1.02);
+  box-shadow:0 12px 36px rgba(0,212,255,.15),0 0 0 1px var(--cyan);border-color:var(--cyan);z-index:2;}
 .poster{aspect-ratio:2/3;overflow:hidden;position:relative;background:var(--s2);}
 .poster img{width:100%;height:100%;object-fit:cover;display:block;
   opacity:0;transition:opacity .3s ease;will-change:opacity;image-rendering:auto;}
@@ -120,7 +108,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
   background:linear-gradient(0deg,rgba(0,0,0,.95) 0%,rgba(0,0,0,.2) 55%,transparent 100%);
   opacity:0;transition:opacity .18s;display:flex;flex-direction:column;
   justify-content:flex-end;padding:10px 8px 8px;pointer-events:none;}
-@media(hover:hover){.card:hover .card-ov{opacity:1}}
+.card:hover .card-ov{opacity:1}
 .ov-t{font-size:11.5px;font-weight:600;color:#fff;line-height:1.3;margin-bottom:2px}
 .ov-m{font-size:10px;color:#aaa}
 .card-info{padding:7px 8px 8px}
@@ -380,20 +368,6 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
 
   /* NAV MENU: hide on mobile (use mobile-menu instead) */
   #nav-menu{display:none}
-
-  /* FILTER BAR */
-  #genre-bar{padding:8px 10px;gap:6px}
-  .genre-pill{padding:6px 10px;min-width:54px}
-  .genre-pill-icon{font-size:17px}
-  .genre-pill-label{font-size:9px}
-  #active-genre-label{padding:5px 10px;font-size:11px}
-  #fbar{
-    padding:8px 10px;gap:5px;
-    overflow-x:auto;flex-wrap:nowrap;
-    scrollbar-width:none;
-  }
-  #fbar::-webkit-scrollbar{display:none}
-  .fb{padding:5px 11px;font-size:11px;flex-shrink:0}
 
   /* STATUS BAR */
   #sbar{
@@ -722,60 +696,9 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
 </nav>
 
 <!-- MOBILE MENU -->
-<div id="mobile-menu">
-  <button class="mm-item on" data-f="todas">🏠 INICIO</button>
-  <div class="mm-sep"></div>
-  <div class="mm-sub">Categorías</div>
-  <button class="mm-item" data-f="peliculas">🎬 PELÍCULAS</button>
-  <button class="mm-item" data-f="series">📺 SERIES</button>
-  <button class="mm-item" data-f="animes">⛩ ANIMES</button>
-  <button class="mm-item" data-f="animados">🎨 ANIMADOS</button>
-  <button class="mm-item" data-f="doramas">🌸 DORAMAS</button>
-  <button class="mm-item" data-f="novelas">💋 NOVELAS</button>
-  <button class="mm-item" data-f="juegos">🎮 JUEGOS PC</button>
-  <div class="mm-sep"></div>
-  <div class="mm-sub">Estado</div>
-  <button class="mm-item" data-f="vista">✓ VISTAS</button>
-  <button class="mm-item" data-f="favorita">♥ FAVORITAS</button>
-  <button class="mm-item" data-f="pendiente">⏳ PENDIENTES</button>
-</div>
 
-<div id="fbar">
-  <span style="font-size:10px;color:#333;font-weight:700;letter-spacing:.5px;margin-right:2px">ESTADO:</span>
-  <button class="fb on" data-f="todas">Todas</button>
-  <button class="fb" data-f="vista">✓ Vistas</button>
-  <button class="fb" data-f="favorita">♥ Favoritas</button>
-  <button class="fb" data-f="pendiente">⏳ Pendientes</button>
-  <button class="fb" data-f="sin">Sin marcar</button>
-</div>
 
-<!-- BARRA DE GÉNEROS -->
-<div id="genre-bar">
-  <div class="genre-pill" data-g="28"><span class="genre-pill-icon">⚔️</span><span class="genre-pill-label">Acción</span></div>
-  <div class="genre-pill" data-g="12"><span class="genre-pill-icon">🗺️</span><span class="genre-pill-label">Aventura</span></div>
-  <div class="genre-pill" data-g="878"><span class="genre-pill-icon">🚀</span><span class="genre-pill-label">Ci. Ficción</span></div>
-  <div class="genre-pill" data-g="27"><span class="genre-pill-icon">👻</span><span class="genre-pill-label">Terror</span></div>
-  <div class="genre-pill" data-g="53"><span class="genre-pill-icon">🔪</span><span class="genre-pill-label">Thriller</span></div>
-  <div class="genre-pill" data-g="35"><span class="genre-pill-icon">😂</span><span class="genre-pill-label">Comedia</span></div>
-  <div class="genre-pill" data-g="18"><span class="genre-pill-icon">🎭</span><span class="genre-pill-label">Drama</span></div>
-  <div class="genre-pill" data-g="10749"><span class="genre-pill-icon">💕</span><span class="genre-pill-label">Romance</span></div>
-  <div class="genre-pill" data-g="16"><span class="genre-pill-icon">🎨</span><span class="genre-pill-label">Animación</span></div>
-  <div class="genre-pill" data-g="14"><span class="genre-pill-icon">🧙</span><span class="genre-pill-label">Fantasía</span></div>
-  <div class="genre-pill" data-g="80"><span class="genre-pill-icon">🔫</span><span class="genre-pill-label">Crimen</span></div>
-  <div class="genre-pill" data-g="9648"><span class="genre-pill-icon">🔍</span><span class="genre-pill-label">Misterio</span></div>
-  <div class="genre-pill" data-g="99"><span class="genre-pill-icon">🎬</span><span class="genre-pill-label">Documental</span></div>
-  <div class="genre-pill" data-g="36"><span class="genre-pill-icon">📜</span><span class="genre-pill-label">Historia</span></div>
-  <div class="genre-pill" data-g="10752"><span class="genre-pill-icon">🪖</span><span class="genre-pill-label">Bélica</span></div>
-  <div class="genre-pill" data-g="37"><span class="genre-pill-icon">🤠</span><span class="genre-pill-label">Western</span></div>
-  <div class="genre-pill" data-g="10402"><span class="genre-pill-icon">🎵</span><span class="genre-pill-label">Música</span></div>
-  <div class="genre-pill" data-g="10751"><span class="genre-pill-icon">👨‍👩‍👧</span><span class="genre-pill-label">Familia</span></div>
-</div>
 
-<!-- FILTRO ACTIVO -->
-<div id="active-genre-label">
-  <span>Filtrando por: <b id="active-genre-name"></b></span>
-  <button id="clear-genre-btn">✕ Quitar filtro</button>
-</div>
 
 <div id="sbar">
   <div style="display:flex;gap:12px;flex-wrap:wrap">
@@ -848,7 +771,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
 <!-- ══ ADMIN PANEL ══ -->
 <div id="admin-panel">
   <div id="admin-head">
-    <h1>🐺 ADMIN CLOUD RIDER</h1><span id="sb-status" style="font-size:11px;color:#444;margin-left:8px"></span>
+    <h1>🐺 ADMIN CLOUD RIDER</h1>
     <input id="admin-search" type="search" placeholder="🔍 Buscar título..." autocomplete="off">
     <select id="admin-filter-cat">
       <option value="">Todas las categorías</option>
@@ -867,14 +790,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
     </select>
     <button id="admin-close">✕ Cerrar</button>
   </div>
-  <div id="admin-mode-banner" style="display:none;background:rgba(245,158,11,.1);border-bottom:1px solid rgba(245,158,11,.2);padding:8px 20px;font-size:12px;color:#f59e0b;text-align:center">
-  ⚠ Estás en <b>modo local</b> (archivo en tu PC). Los cambios se guardan solo en tu navegador.<br>
-  Para que todos vean los cambios, <b>sube el archivo a Netlify</b>.
-</div>
-<div id="admin-online-banner" style="display:none;background:rgba(29,185,84,.08);border-bottom:1px solid rgba(29,185,84,.15);padding:8px 20px;font-size:12px;color:#1db954;text-align:center">
-  ✓ Modo online — los cambios se guardan en la nube y todos los ven
-</div>
-<div id="admin-stats-bar">
+  <div id="admin-stats-bar">
     <span>Total: <b id="adm-total">0</b></span>
     <span>Con info: <b id="adm-ok">0</b></span>
     <span>Sin info: <b id="adm-missing">0</b></span>
@@ -990,8 +906,15 @@ var CL={peliculas:'Película',series:'Serie',animes:'Anime',animados:'Animado',
 
 /* ── STORAGE ── */
 function LS(k,v){try{if(v===undefined)return JSON.parse(localStorage.getItem(k));localStorage.setItem(k,JSON.stringify(v));}catch(e){return null;}}
-function load(){var s=LS('cr_s4'),c=LS('cr_c4'),ct=LS('cr_cart');
-  if(s)uState=s;if(c)cache=c;if(ct)cart=ct;}
+function load(){
+  var VER='cr_v7';
+  if(!LS(VER)){
+    try{['cr_s4','cr_c4','cr_c3','cr_c2','cr_s3','cr_cart','cr_overrides'].forEach(function(k){localStorage.removeItem(k);});LS(VER,'1');}catch(e){}
+  }
+  var s=LS('cr_s4'),ct=LS('cr_cart');
+  if(s&&typeof s==='object')uState=s;
+  if(ct&&Array.isArray(ct))cart=ct;
+}
 function saveS(){LS('cr_s4',uState);}
 function saveC(){LS('cr_c4',cache);}
 function saveCart(){LS('cr_cart',cart);}
@@ -1270,6 +1193,7 @@ function updateStats(){
 
 /* ── FILTER ── */
 function filtered(){
+  if(!DB||!DB.length)return[];
   var items=DB.map(function(m,i){return{t:m.t,y:m.y,c:m.c,i:i};});
   if(q){var lq=q.toLowerCase();items=items.filter(function(m){return m.t.toLowerCase().indexOf(lq)!==-1||(m.y&&m.y.indexOf(lq)!==-1);});}
   /* category from nav */
@@ -1282,7 +1206,7 @@ function filtered(){
     if(sf==='sin')items=items.filter(function(m){return getS(m.i)==='none';});
     else items=items.filter(function(m){return getS(m.i)===sf;});
   }
-  if(genreF){var gf=parseInt(genreF);items=items.filter(function(m){var c=cache[ck(m.t,m.y)];return c&&c.g&&c.g.indexOf(gf)!==-1;});}
+  if(genreF){var gf=parseInt(genreF);var gfName=GN[gf]||'';items=items.filter(function(m){var c=cache[ck(m.t,m.y)];if(!c||!c.g||!c.g.length)return false;return c.g.some(function(g){return g===gf||String(g)===String(genreF)||(gfName&&String(g).toLowerCase()===gfName.toLowerCase());});});}
   if(yearF)items=items.filter(function(m){return m.y===yearF;});
   if(sort==='az')items.sort(function(a,b){return a.t.localeCompare(b.t,'es',{sensitivity:'base'});});
   else if(sort==='za')items.sort(function(a,b){return b.t.localeCompare(a.t,'es',{sensitivity:'base'});});
@@ -1298,7 +1222,8 @@ function esc(s){return(''+s).replace(/[<>&"]/g,function(c){return c==='<'?'&lt;'
 var CAT_EMOJI={peliculas:'🎬',series:'📺',animes:'⛩',animados:'🎨',doramas:'🌸',novelas:'💋',juegos:'🎮'};
 
 function makeCard(m){
-  var i=m.i,s=getS(i),k=ck(m.t,m.y),cd=cache[k];
+  if(!m||m.i===undefined)return document.createElement('div');
+  var i=m.i,s=getS(i),k=ck(m.t,m.y),cd=getEffectiveCache(i);
   var inCart=cart.some(function(x){return x.i===i;});
   var card=document.createElement('div');card.className='card';
   card.addEventListener('click',function(e){if(!e.target.closest('.card-acts'))openDetail(i);});
@@ -1309,7 +1234,7 @@ function makeCard(m){
   ph.innerHTML=ICON+'<span>'+esc(m.t.substring(0,35))+'</span>';
   pw.appendChild(ph);
   if(cd&&cd.p){
-    var imgSrc=(cd.src==='animeflv'||cd.src==='rawg')?cd.p:(IMG+cd.p);
+    var imgSrc=(cd.p&&cd.p.indexOf('http')===0)?cd.p:(IMG+cd.p);
     var img=document.createElement('img');img.alt=m.t;
     img.loading='lazy';img.decoding='async';
     img.onload=function(){img.classList.add('ok');ph.style.display='none';};
@@ -1467,7 +1392,8 @@ function updateDetCartBtn(){
 /* ── DETAIL ── */
 function openDetail(i){
   detIdx=i;
-  var m=DB[i],k=ck(m.t,m.y),cd=cache[k];
+  if(!DB[i])return;
+  var m=DB[i],k=ck(m.t,m.y),cd=getEffectiveCache(i);
   var det=document.getElementById('detail');
   det.classList.add('open');document.body.style.overflow='hidden';det.scrollTop=0;
   document.getElementById('det-tit-nav').textContent=m.t;
@@ -1477,7 +1403,7 @@ function openDetail(i){
   var pp=document.getElementById('det-poster');pp.innerHTML='';
   if(cd&&cd.p){
     var pi=document.createElement('img');
-    pi.src=(cd.src==='animeflv'||cd.src==='rawg')?cd.p:(IMGL+cd.p);
+    pi.src=(cd.p&&cd.p.indexOf('http')===0)?cd.p:(IMGL+cd.p);
     pi.alt=m.t;pp.appendChild(pi);
   }
   else{pp.innerHTML='<div id="det-poster-ph">'+ICON+'</div>';}
@@ -1653,53 +1579,33 @@ document.querySelectorAll('[data-f]').forEach(function(b){
   });
 });
 
-var GENRE_LABELS={
-  '28':'Acción','12':'Aventura','878':'Ciencia ficción','27':'Terror',
-  '53':'Thriller','35':'Comedia','18':'Drama','10749':'Romance',
-  '16':'Animación','14':'Fantasía','80':'Crimen','9648':'Misterio',
-  '99':'Documental','36':'Historia','10752':'Bélica','37':'Western',
-  '10402':'Música','10751':'Familia','10759':'Acción y aventura',
-  '10765':'Sci-Fi y Fantasía'
-};
-
-function updateGenreUI(){
-  /* Sync all [data-g] elements */
-  document.querySelectorAll('[data-g]').forEach(function(x){
-    x.classList.remove('on');
-    x.style.color='';
+/* Dropdown toggle para GÉNEROS y AÑO */
+document.querySelectorAll('.nm-drop').forEach(function(wrap){
+  var btn=wrap.querySelector('.nm');
+  var menu=wrap.querySelector('.dmenu');
+  if(!btn||!menu)return;
+  btn.addEventListener('click',function(e){
+    e.stopPropagation();
+    var isOpen=menu.classList.contains('open');
+    document.querySelectorAll('.dmenu').forEach(function(m){m.classList.remove('open');});
+    if(!isOpen)menu.classList.add('open');
   });
-  var lbl=document.getElementById('active-genre-label');
-  var nm=document.getElementById('active-genre-name');
-  if(genreF){
-    /* Highlight matching pills and dropdown items */
-    document.querySelectorAll('[data-g="'+genreF+'"]').forEach(function(x){
-      x.classList.add('on');
-      if(x.tagName==='A') x.style.color='var(--cyan)';
-    });
-    if(lbl) lbl.classList.add('show');
-    if(nm) nm.textContent=GENRE_LABELS[genreF]||genreF;
-  } else {
-    if(lbl) lbl.classList.remove('show');
-    if(nm) nm.textContent='';
-  }
-}
+});
+document.addEventListener('click',function(){
+  document.querySelectorAll('.dmenu').forEach(function(m){m.classList.remove('open');});
+});
 
 document.querySelectorAll('[data-g]').forEach(function(a){
   a.addEventListener('click',function(e){
     e.preventDefault();
+    e.stopPropagation();
     genreF=(genreF===a.dataset.g)?null:a.dataset.g;
-    updateGenreUI();
+    document.querySelectorAll('[data-g]').forEach(function(x){x.classList.remove('on');x.style.color='';});
+    if(genreF){a.classList.add('on');a.style.color='var(--cyan)';}
+    document.querySelectorAll('.dmenu').forEach(function(m){m.classList.remove('open');});
     page=1;renderGrid();enqueue();
   });
 });
-
-/* Clear genre button */
-var clearGenreBtn=document.getElementById('clear-genre-btn');
-if(clearGenreBtn){
-  clearGenreBtn.addEventListener('click',function(){
-    genreF=null;updateGenreUI();page=1;renderGrid();enqueue();
-  });
-}
 
 var st2;
 document.getElementById('srch').addEventListener('input',function(e){
@@ -1730,12 +1636,6 @@ load();buildYears();updateStats();updateCartUI();renderGrid();enqueue();
    ADMIN PANEL
 ══════════════════════════════════════ */
 var ADMIN_PASS = 'razorxrd280502';
-var SB_URL   = 'https://zymggvedzsiilguonybt.supabase.co';
-var SB_KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp5bWdndmVkenNpaWxndW9ueWJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxODYzMDUsImV4cCI6MjA5NTc2MjMwNX0.GlwwLyMzD-aYp34c2HU7h-qk-BZy-y96LTKmbeHyuEs';
-var SB_TABLE = 'catalog_overrides';
-var sbSynced = false;
-/* Detect if running locally - Supabase won't work from file:// */
-var IS_LOCAL = (window.location.protocol === 'file:');
 var adminOpen  = false;
 var adminPage  = 1;
 var adminPer   = 50;
@@ -1747,117 +1647,22 @@ var editIdx    = -1;
 /* Override key: manually edited items stored here */
 var OVER_KEY = 'cr_overrides';
 var overrides = {};
-/* ── Supabase sync ── */
-function sbHeaders(){
-  return {
-    'apikey': SB_KEY,
-    'Authorization': 'Bearer ' + SB_KEY,
-    'Content-Type': 'application/json',
-    'Prefer': 'resolution=merge-duplicates,return=minimal',
-    'X-Client-Info': 'cloudrider-catalog'
-  };
-}
-
 function loadOverrides(){
-  /* Load from localStorage first (instant) */
-  try{ var o=localStorage.getItem(OVER_KEY);if(o)overrides=JSON.parse(o); }catch(e){}
-  /* Then sync from Supabase (latest from cloud) */
-  if(IS_LOCAL){
-    var sbEl=document.getElementById('sb-status');
-    if(sbEl) sbEl.innerHTML='<span style="color:#f59e0b">⚠ Modo local — sube a Netlify para sincronizar</span>';
-    return;
-  }
-  fetch(SB_URL+'/rest/v1/'+SB_TABLE+'?select=*&limit=10000',{
-    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
-  })
-  .then(function(r){return r.json();})
-  .then(function(rows){
-    if(!Array.isArray(rows)) return;
-    rows.forEach(function(row){
-      overrides[row.idx]={
-        r: row.rating||null,
-        seas: row.seasons||null,
-        eps: row.episodes||null,
-        g: row.genres?row.genres.split(',').map(function(s){return s.trim();}): [],
-        ov: row.overview||null,
-        p: row.poster||null,
-        b: row.backdrop||null,
-        url: row.url||null,
-        src: 'manual'
-      };
-    });
-    sbSynced=true;
-    /* Save merged result to localStorage */
-    try{localStorage.setItem(OVER_KEY,JSON.stringify(overrides));}catch(e){}
-    /* Update status indicator */
-    var sbEl=document.getElementById('sb-status');
-    if(sbEl) sbEl.innerHTML='<span style="color:#1db954">✓ Nube sincronizada ('+rows.length+' ediciones)</span>';
-    /* Re-render to show cloud data */
-    renderGrid();
-    if(adminOpen) renderAdminList();
-  })
-  .catch(function(e){
-    console.warn('Supabase sync failed:',e);
-    var sbEl=document.getElementById('sb-status');
-    if(sbEl) sbEl.innerHTML='<span style="color:#f59e0b">⚠ Sin conexión a nube (usando local)</span>';
-  });
-}
-
-function saveOverrides(){
-  /* Always save to localStorage */
-  try{localStorage.setItem(OVER_KEY,JSON.stringify(overrides));}catch(e){}
-}
-
-function saveOverrideToCloud(i){
-  var ov = overrides[i];
-  if(!ov) return;
-  var m = DB[i];
-  var row = {
-    idx: i,
-    title: m.t,
-    year: m.y||null,
-    category: m.c||null,
-    rating: ov.r||null,
-    seasons: ov.seas||null,
-    episodes: ov.eps||null,
-    genres: (ov.g&&ov.g.length)?ov.g.join(', '):null,
-    overview: ov.ov||null,
-    poster: ov.p||null,
-    backdrop: ov.b||null,
-    url: ov.url||null,
-    src: 'manual',
-    updated_at: new Date().toISOString()
-  };
-  if(IS_LOCAL){ console.log('Local mode: cloud save skipped'); return; }
-  fetch(SB_URL+'/rest/v1/'+SB_TABLE, {
-    method: 'POST',
-    headers: sbHeaders(),
-    body: JSON.stringify(row)
-  })
-  .then(function(r){
-    if(r.ok){
-      console.log('Saved to cloud: '+m.t);
-      var sbEl=document.getElementById('sb-status');
-      if(sbEl) sbEl.innerHTML='<span style="color:#1db954">✓ Guardado en nube</span>';
+  try{
+    var o=localStorage.getItem(OVER_KEY);
+    if(o){
+      var stored=JSON.parse(o);
+      Object.keys(stored).forEach(function(k){ overrides[k]=stored[k]; });
     }
-    else{ r.text().then(function(t){ console.warn('Cloud save error:',t); }); }
-  })
-  .catch(function(e){ console.warn('Cloud save failed:',e); });
+  }catch(e){ try{localStorage.removeItem(OVER_KEY);}catch(e2){} }
 }
-
-function deleteOverrideFromCloud(i){
-  if(IS_LOCAL) return;
-  fetch(SB_URL+'/rest/v1/'+SB_TABLE+'?idx=eq.'+i,{
-    method:'DELETE',
-    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
-  }).catch(function(e){ console.warn('Cloud delete failed:',e); });
-}
+function saveOverrides(){ try{ localStorage.setItem(OVER_KEY,JSON.stringify(overrides)); }catch(e){} }
 
 function getEffectiveCache(i){
-  /* Merge: override wins over API cache */
+  if(!DB||!DB[i]) return {p:null,b:null,id:null,tp:null,g:[],r:null,ov:null,eps:null,seas:null,src:null,url:null};
   var m=DB[i], k=ck(m.t,m.y);
   var base=cache[k]||{p:null,b:null,id:null,tp:null,g:[],r:null,ov:null,eps:null,seas:null,src:null,url:null};
-  var ov=overrides[i]||{};
+  var ov=(overrides[i]&&typeof overrides[i]==='object')?overrides[i]:{};
   return Object.assign({},base,ov);
 }
 
@@ -1865,9 +1670,6 @@ function openAdmin(){
   if(!adminOpen){ document.getElementById('admin-login').classList.add('open'); return; }
   document.getElementById('admin-panel').classList.add('open');
   document.body.style.overflow='hidden';
-  /* Show local vs online banner */
-  document.getElementById('admin-mode-banner').style.display = IS_LOCAL ? 'block' : 'none';
-  document.getElementById('admin-online-banner').style.display = IS_LOCAL ? 'none' : 'block';
   renderAdminList();
 }
 function closeAdmin(){
@@ -2046,8 +1848,6 @@ function saveEdit(){
     src: 'manual'
   };
   saveOverrides();
-  /* Save to Supabase cloud */
-  saveOverrideToCloud(editIdx);
 
   /* Also update the main cache so the catalog shows it immediately */
   var m=DB[i], k=ck(m.t,m.y);
@@ -2069,8 +1869,6 @@ function clearEdit(){
   var i=editIdx;
   delete overrides[i];
   saveOverrides();
-  /* Delete from Supabase cloud */
-  deleteOverrideFromCloud(i);
   var m=DB[i], k=ck(m.t,m.y);
   if(cache[k]){ delete cache[k]; saveC(); }
   document.getElementById('admin-edit').classList.remove('open');
@@ -2136,7 +1934,109 @@ if(mobileMenu){
 
 /* Load overrides on startup */
 loadOverrides();
+  loadCSVsFromGitHub();
 
+/* ══════════════════════════════════════════════════
+   AUTO-ACTUALIZACIÓN DESDE GITHUB CSV
+   Configura GITHUB_RAW_BASE con la URL raw de tu repo
+   Ejemplo: 'https://raw.githubusercontent.com/razor/cloudrider/main/'
+   Los CSVs deben llamarse: series_data.csv, peliculas_data.csv, etc.
+══════════════════════════════════════════════════ */
+var GITHUB_RAW_BASE = 'https://raw.githubusercontent.com/RazorXRD/Catalogo-Cloud-Rider/main/';
+var CSV_CAT_MAP = {
+  'series_data.csv':'series','peliculas_data.csv':'peliculas',
+  'animes_data.csv':'animes','animados_data.csv':'animados',
+  'doramas_data.csv':'doramas','novelas_data.csv':'novelas',
+  'juegos_data.csv':'juegos'
+};
+
+function parseCSV(text){
+  var lines=text.split(/\r?\n/).filter(function(l){return l.trim();});
+  if(!lines.length) return [];
+  var sep=lines[0].indexOf(';')>lines[0].indexOf(',')?';':',';
+  lines[0]=lines[0].replace(/^\uFEFF/,'');
+  var headers=lines[0].split(sep).map(function(h){return h.trim();});
+  var rows=[];
+  for(var i=1;i<lines.length;i++){
+    var cells=[],cur='',inQ=false;
+    for(var j=0;j<lines[i].length;j++){
+      var ch=lines[i][j];
+      if(ch==='"'){inQ=!inQ;}
+      else if(ch===sep&&!inQ){cells.push(cur);cur='';}
+      else cur+=ch;
+    }
+    cells.push(cur);
+    if(cells.length<2) continue;
+    var row={};
+    headers.forEach(function(h,idx){row[h]=(cells[idx]||'').trim();});
+    rows.push(row);
+  }
+  return rows;
+}
+
+function normCSV(s){
+  return s?s.toLowerCase().replace(/[^a-z0-9]/g,''):'';
+}
+
+function applyCSVRows(rows,cat){
+  var mapped=0;
+  var lookup={};
+  rows.forEach(function(row){
+    var t=row['Titulo']||row['titulo']||row['TITULO']||'';
+    if(t) lookup[normCSV(t)]=row;
+  });
+  if(!DB||!DB.length) return 0;
+  DB.forEach(function(m,i){
+    if(m.c!==cat) return;
+    var key=normCSV(m.t);
+    var row=lookup[key];
+    if(!row){
+      for(var k in lookup){
+        if(k.length>4&&(k.indexOf(key)===0||key.indexOf(k)===0)){row=lookup[k];break;}
+      }
+    }
+    if(!row) return;
+    var ov={};
+    var sinopsis=row['Sinopsis']||row['sinopsis']||'';
+    var poster=row['Link_Imagen']||row['Poster']||row['poster']||'';
+    var generos=row['Generos']||row['generos']||'';
+    var punt=row['Puntuacion_IMDb']||row['puntuacion']||'';
+    var temps=row['Temporadas']||row['temporadas']||'';
+    var eps=row['Capitulos']||row['capitulos']||row['Episodios']||'';
+    if(sinopsis) ov['ov']=sinopsis;
+    if(poster&&poster.indexOf('http')===0) ov['p']=poster;
+    if(generos) ov['g']=generos.split(',').map(function(g){return g.trim();}).filter(Boolean);
+    if(punt){try{ov['r']=String(Math.round(parseFloat(punt)*10)/10);}catch(e){}}
+    if(temps){try{ov['seas']=parseInt(temps);}catch(e){}}
+    if(eps){try{ov['eps']=parseInt(eps);}catch(e){}}
+    ov['src']='csv';
+    if(Object.keys(ov).length>1){
+      if(!overrides[i]||overrides[i].src==='csv'){
+        overrides[i]=ov; mapped++;
+      }
+    }
+  });
+  return mapped;
+}
+
+function loadCSVsFromGitHub(){
+  if(!GITHUB_RAW_BASE) return;
+  var files=Object.keys(CSV_CAT_MAP);
+  var done=0;
+  var total=files.length;
+  files.forEach(function(file){
+    var cat=CSV_CAT_MAP[file];
+    fetch(GITHUB_RAW_BASE+file+'?t='+Date.now())
+      .then(function(r){if(!r.ok)throw new Error(r.status);return r.text();})
+      .then(function(text){
+        applyCSVRows(parseCSV(text),cat);
+        done++;
+        if(done===total){saveOverrides();renderGrid();}
+        else renderGrid();
+      })
+      .catch(function(){done++;});
+  });
+}
 })();
 </script>
 
