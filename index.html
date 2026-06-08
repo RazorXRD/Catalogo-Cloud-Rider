@@ -1571,7 +1571,11 @@ function parseCSV(text){
   var lines=text.split(/\r?\n/).filter(function(l){ return l.trim(); });
   if(!lines.length) return [];
   var h0=lines[0];
-  var sep=(h0.split(';').length>=h0.split(',').length)?';':',';
+  var tabCount  = h0.split('\t').length - 1;
+  var semiCount = h0.split(';').length  - 1;
+  var commaCount= h0.split(',').length  - 1;
+  var sep = tabCount >= semiCount && tabCount >= commaCount ? '\t'
+          : semiCount >= commaCount ? ';' : ',';
   var headers=h0.split(sep).map(function(h){ return h.trim(); });
   var rows=[];
   for(var i=1;i<lines.length;i++){
@@ -1654,15 +1658,26 @@ function loadCSVsFromGitHub(){
   if(!GITHUB_RAW_BASE) return Promise.resolve();
 
   /*
-    Estrategia ETag:
-    - Guardamos en localStorage el ETag y el contenido de cada CSV.
-    - En cada visita hacemos un HEAD request (sin descargar el cuerpo) para
-      obtener el ETag actual de GitHub.
-    - Si el ETag coincide con el guardado → usamos la caché (instantáneo).
-    - Si cambió o no hay caché → descargamos el CSV nuevo y actualizamos.
-    - localStorage persiste entre sesiones, así que solo descarga cuando
-      el archivo realmente cambió en GitHub.
+    Estrategia SHA + ETag:
+    1. Pedimos el SHA del último commit de cada archivo via GitHub API
+       (funciona con CORS, es un JSON pequeño ~1kb por archivo).
+    2. Comparamos con el SHA guardado en localStorage.
+    3. Si coincide y tenemos datos → carga instantánea desde caché.
+    4. Si cambió o no hay caché → descargamos el CSV y guardamos el nuevo SHA.
+    5. Si la API de GitHub falla (rate limit / sin red) → fallback a ETag
+       del HEAD request, y si eso también falla, usamos datos guardados.
+    Resultado: detecta cambios en GitHub con 100% fiabilidad,
+    sin descargar el CSV salvo cuando realmente cambió.
   */
+  var GITHUB_API_BASE = 'https://api.github.com/repos/RazorXRD/Catalogo-Cloud-Rider/commits?per_page=1&path=';
+
+  /* Obtiene el SHA del último commit que tocó un archivo */
+  function getGithubSHA(file){
+    return fetch(GITHUB_API_BASE + file, { cache: 'no-store' })
+      .then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function(data){ return (data && data[0]) ? data[0].sha : null; })
+      .catch(function(){ return null; }); /* falla silenciosa → usará ETag */
+  }
 
   function fetchWithEtag(file){
     var cat      = CSV_CAT_MAP[file];
@@ -1670,49 +1685,80 @@ function loadCSVsFromGitHub(){
     var keyData  = 'csvdata_' + file;
     var url      = GITHUB_RAW_BASE + file;
 
+    /* Leer caché: primero localStorage, luego sessionStorage como fallback */
     var savedEtag = null;
     var savedData = null;
+    var usedSession = false;
     try {
       savedEtag = localStorage.getItem(keyEtag);
       savedData = localStorage.getItem(keyData);
     } catch(e){}
+    if(!savedData){
+      try {
+        savedData = sessionStorage.getItem(keyData);
+        if(savedData) usedSession = true;
+      } catch(e){}
+    }
 
-    /* HEAD request: solo headers, no descarga el cuerpo */
-    return fetch(url, { method: 'HEAD', cache: 'no-store' })
-      .then(function(r){
-        if(!r.ok) throw new Error(r.status);
-        var etag = r.headers.get('etag') || r.headers.get('last-modified') || null;
-
-        /* ETag igual y tenemos datos → usar caché */
-        if(etag && etag === savedEtag && savedData){
-          var n = applyCSVRows(parseCSV(savedData), cat);
-          console.log('[CSV] '+file+' → '+n+' mapeados ('+cat+') [caché OK]');
-          return;
+    /* Guardar en el storage correcto según disponibilidad */
+    function saveCache(etag, text){
+      try {
+        if(etag) localStorage.setItem(keyEtag, etag);
+        localStorage.setItem(keyData, text);
+      } catch(e){
+        /* localStorage lleno → sessionStorage (dura solo esta sesión) */
+        try {
+          sessionStorage.setItem(keyData, text);
+          console.warn('[CSV] localStorage lleno, usando sessionStorage para '+file);
+        } catch(e2){
+          console.warn('[CSV] Sin espacio de caché para '+file);
         }
+      }
+    }
 
-        /* ETag cambió o no hay caché → descargar */
-        return fetch(url + '?t=' + Date.now(), { cache: 'no-store' })
-          .then(function(r2){ if(!r2.ok) throw new Error(r2.status); return r2.text(); })
-          .then(function(text){
-            try {
-              if(etag) localStorage.setItem(keyEtag, etag);
-              localStorage.setItem(keyData, text);
-            } catch(e){
-              console.warn('[CSV] localStorage lleno, sin caché para '+file);
-            }
-            var n = applyCSVRows(parseCSV(text), cat);
-            console.log('[CSV] '+file+' → '+n+' mapeados ('+cat+') [actualizado]');
-          });
-      })
-      .catch(function(e){
-        /* Si falla el HEAD pero tenemos datos guardados, los usamos igual */
-        if(savedData){
-          var n = applyCSVRows(parseCSV(savedData), cat);
-          console.log('[CSV] '+file+' → '+n+' mapeados ('+cat+') [caché fallback]');
-        } else {
-          console.warn('[CSV] Error en '+file+':', e);
-        }
-      });
+    /* 1. Pedir SHA via GitHub API (~1kb JSON, CORS OK) */
+    return getGithubSHA(file).then(function(sha){
+
+      /* 2. SHA coincide y tenemos datos → caché instantánea */
+      if(sha && sha === savedEtag && savedData && !usedSession){
+        var n = applyCSVRows(parseCSV(savedData), cat);
+        console.log('[CSV] '+file+' → '+n+' ('+cat+') [caché OK]');
+        return;
+      }
+
+      /* 3. SHA cambió, no hay caché, o API falló → HEAD como fallback de detección */
+      return fetch(url, { method: 'HEAD', cache: 'no-store' })
+        .then(function(r){
+          if(!r.ok) throw new Error(r.status);
+          var etag = r.headers.get('etag') || r.headers.get('last-modified') || null;
+          var fingerprint = sha || etag; /* preferir SHA, usar ETag si API falló */
+
+          /* Si el fingerprint coincide y tenemos datos → caché */
+          if(fingerprint && fingerprint === savedEtag && savedData && !usedSession){
+            var n = applyCSVRows(parseCSV(savedData), cat);
+            console.log('[CSV] '+file+' → '+n+' ('+cat+') [caché OK]');
+            return;
+          }
+
+          /* 4. Cambió o sin caché → descargar CSV completo */
+          return fetch(url + '?t=' + Date.now(), { cache: 'no-store' })
+            .then(function(r2){ if(!r2.ok) throw new Error(r2.status); return r2.text(); })
+            .then(function(text){
+              saveCache(fingerprint, text);
+              var n = applyCSVRows(parseCSV(text), cat);
+              console.log('[CSV] '+file+' → '+n+' ('+cat+') [actualizado]');
+            });
+        })
+        .catch(function(e){
+          /* Sin red → usar lo que tengamos */
+          if(savedData){
+            var n = applyCSVRows(parseCSV(savedData), cat);
+            console.log('[CSV] '+file+' → '+n+' ('+cat+') [offline]');
+          } else {
+            console.warn('[CSV] Sin datos para '+file+':', e);
+          }
+        });
+    });
   }
 
   var files    = Object.keys(CSV_CAT_MAP);
