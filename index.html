@@ -879,105 +879,334 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
 <script>
 (function(){
 'use strict';
+var DB=JSON.parse(atob(document.getElementById('D').textContent));
+var TK='eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI1YTAwZDQ0NDg1NDlmMTg1OTg2MTM0YjBkYzg1ODA4ZSIsIm5iZiI6MTc3OTg0Njg1NS41MzMsInN1YiI6IjZhMTY0ZWM3ZmE3ZDQ0MDUxNjJmNjY5NCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.7CMd_XYSqbF7ralsRUtZxrMi6UwuXrfM1_Kn1XsKZtY';
+var WA='5355213690';
+var IMG='https://image.tmdb.org/t/p/w185';
+var IMGL='https://image.tmdb.org/t/p/w500';
+var IMGB='https://image.tmdb.org/t/p/w1280';
+var API='https://api.themoviedb.org/3';
+var PER=50;
 
-/* ══════════════════════════════════════════════════
-   CLOUD RIDER — CATÁLOGO (modo CSV-only, sin TMDB)
-══════════════════════════════════════════════════ */
-
-var DB = JSON.parse(atob(document.getElementById('D').textContent));
-var WA = '5355213690';
-var PER = 50;
-
-var page=1, catF='todas', genreF=null, yearF=null, q='', sort='az', statusF='todas';
-var uState={}, cart=[];
+var page=1,catF='todas',genreF=null,yearF=null,q='',sort='az',statusF='todas';
+var uState={},cache={},cart=[];
+var fQ=[],fBusy=false,fDone=0;
 var detIdx=-1;
 
-/* ── OVERRIDES — datos de CSV y edición admin ── */
-var OVER_KEY = 'cr_overrides';
-var overrides = {};
+/* ── OVERRIDES (datos propios: CSV o admin manual) ── */
+var OVER_KEY='cr_overrides';
+var overrides={};
 function loadOverrides(){
-  try{ var o=localStorage.getItem(OVER_KEY); if(o) overrides=JSON.parse(o); }catch(e){}
+  try{var o=localStorage.getItem(OVER_KEY);if(o)overrides=JSON.parse(o);}catch(e){}
 }
 function saveOverrides(){
-  try{ localStorage.setItem(OVER_KEY, JSON.stringify(overrides)); }catch(e){}
+  try{localStorage.setItem(OVER_KEY,JSON.stringify(overrides));}catch(e){}
 }
 
-/* Devuelve los datos del CSV (o admin) para el índice i */
-function getData(i){
-  return (overrides[i] && typeof overrides[i]==='object') ? overrides[i]
-       : {p:null,b:null,g:[],r:null,ov:null,eps:null,seas:null,src:null,url:null};
+function getEffectiveCache(i){
+  if(!DB||!DB[i])return{p:null,b:null,id:null,tp:null,g:[],r:null,ov:null,eps:null,seas:null,src:null,url:null};
+  var m=DB[i],k=ck(m.t,m.y);
+  var base=cache[k]||{p:null,b:null,id:null,tp:null,g:[],r:null,ov:null,eps:null,seas:null,src:null,url:null};
+  var ov=(overrides[i]&&typeof overrides[i]==='object')?overrides[i]:{};
+  return Object.assign({},base,ov);
 }
 
-/* ── ETIQUETAS ── */
-var CL = {peliculas:'Película',series:'Serie',animes:'Anime',animados:'Animado',
-          doramas:'Dorama',novelas:'Novela',juegos:'Juego PC'};
-var CAT_EMOJI = {peliculas:'🎬',series:'📺',animes:'⛩',animados:'🎨',
-                 doramas:'🌸',novelas:'💋',juegos:'🎮'};
+/* Genre map */
+var GN={28:'Acción',12:'Aventura',16:'Animación',35:'Comedia',80:'Crimen',
+  99:'Documental',18:'Drama',10751:'Familia',14:'Fantasía',27:'Terror',
+  9648:'Misterio',10749:'Romance',878:'Ciencia ficción',53:'Thriller',
+  10752:'Bélica',37:'Western',36:'Historia',10402:'Música',
+  10759:'Acción/Aventura',10765:'Sci-Fi y Fantasía'};
+
+/* Category labels */
+var CL={peliculas:'Película',series:'Serie',animes:'Anime',animados:'Animado',
+  doramas:'Dorama',novelas:'Novela',juegos:'Juego PC'};
 
 /* ── STORAGE ── */
-function LS(k,v){
-  try{
-    if(v===undefined) return JSON.parse(localStorage.getItem(k));
-    localStorage.setItem(k, JSON.stringify(v));
-  }catch(e){ return null; }
-}
+function LS(k,v){try{if(v===undefined)return JSON.parse(localStorage.getItem(k));localStorage.setItem(k,JSON.stringify(v));}catch(e){return null;}}
 function load(){
-  var VER='cr_v8';
+  var VER='cr_v7';
   if(!LS(VER)){
-    try{
-      ['cr_s4','cr_c4','cr_c3','cr_c2','cr_s3','cr_cart','cr_overrides']
-        .forEach(function(k){ localStorage.removeItem(k); });
-      LS(VER,'1');
-    }catch(e){}
+    try{['cr_s4','cr_c4','cr_c3','cr_c2','cr_s3','cr_cart','cr_overrides'].forEach(function(k){localStorage.removeItem(k);});LS(VER,'1');}catch(e){}
   }
-  var s=LS('cr_s4'), ct=LS('cr_cart');
-  if(s && typeof s==='object') uState=s;
-  if(ct && Array.isArray(ct)) cart=ct;
+  var s=LS('cr_s4'),ct=LS('cr_cart');
+  if(s&&typeof s==='object')uState=s;
+  if(ct&&Array.isArray(ct))cart=ct;
 }
-function saveS(){ LS('cr_s4', uState); }
-function saveCart(){ LS('cr_cart', cart); }
+function saveS(){LS('cr_s4',uState);}
+function saveC(){LS('cr_c4',cache);}
+function saveCart(){LS('cr_cart',cart);}
 
-function ck(t,y){ return t+'§'+y; }
-function getS(i){ return uState[i]||'none'; }
-function setS(i,st){
-  uState[i] = (uState[i]===st) ? 'none' : st;
-  saveS(); updateStats(); renderGrid();
-}
+function ck(t,y){return t+'§'+y;}
+function getS(i){return uState[i]||'none';}
+function setS(i,st){uState[i]=(uState[i]===st)?'none':st;saveS();updateStats();renderGrid();}
 
 /* ── BUILD YEAR DROPDOWN ── */
 function buildYears(){
   var years={};
-  DB.forEach(function(m){ if(m.y) years[m.y]=1; });
-  var sorted=Object.keys(years).sort(function(a,b){ return parseInt(b)-parseInt(a); });
+  DB.forEach(function(m){if(m.y)years[m.y]=1;});
+  var sorted=Object.keys(years).sort(function(a,b){return parseInt(b)-parseInt(a);});
   var drop=document.getElementById('year-drop');
   sorted.forEach(function(y){
-    var a=document.createElement('a'); a.href='#'; a.dataset.y=y; a.textContent=y;
+    var a=document.createElement('a');a.href='#';a.dataset.y=y;a.textContent=y;
     drop.appendChild(a);
   });
+  /* re-bind after adding */
   drop.querySelectorAll('[data-y]').forEach(function(a){
     a.addEventListener('click',function(e){
       e.preventDefault();
-      yearF = a.dataset.y||null;
-      document.querySelectorAll('[data-y]').forEach(function(x){ x.classList.remove('on'); x.style.color=''; });
-      if(yearF){ a.classList.add('on'); a.style.color='var(--cyan)'; }
-      page=1; renderGrid();
+      yearF=a.dataset.y||null;
+      document.querySelectorAll('[data-y]').forEach(function(x){x.classList.remove('on');x.style.color='';});
+      if(yearF){a.classList.add('on');a.style.color='var(--cyan)';}
+      page=1;renderGrid();
     });
   });
 }
 
-/* ── PROGRESS BAR — completo desde el inicio (no hay fetch API) ── */
-function progDone(){
-  var fill=document.getElementById('prog-fill');
-  if(fill){ fill.style.width='100%'; setTimeout(function(){ document.getElementById('prog-bar').style.opacity='0'; },800); }
+/* ── FETCH QUEUE ── */
+function enqueue(){
+  fQ = [];
+  var missing = [];
+  for(var i=0;i<DB.length;i++){
+    var eff = getEffectiveCache(i);
+    if(!eff.p && !eff.ov) missing.push(i);
+  }
+  fDone = DB.length - missing.length;
+  // Priorizar los de la página actual
+  var all = filtered();
+  var curPage = all.slice((page-1)*PER, page*PER);
+  var curSet = {};
+  curPage.forEach(function(m){ curSet[m.i] = 1; });
+  var priority = missing.filter(function(i){ return curSet[i]; });
+  var rest = missing.filter(function(i){ return !curSet[i]; });
+  fQ = priority.concat(rest);
+  progUpdate();
+  if(fQ.length) nextBatch();
+}
+function nextBatch(){
+  if(fBusy||!fQ.length)return;
+  fBusy=true;
+  /* Faster batches for first 50 (current page), slower for rest */
+  var batchSize=fDone<(DB.length-fQ.length+50)?4:3;
+  var delay=fDone<(DB.length-fQ.length+50)?200:600;
+  var batch=fQ.splice(0,batchSize);
+  Promise.all(batch.map(fetchOne)).then(function(){
+    fBusy=false;fDone+=batch.length;
+    progUpdate();saveC();
+    /* Only re-render if current page items changed */
+    var needsRender=batch.some(function(i){
+      var all2=filtered();
+      var curPage2=all2.slice((page-1)*PER,page*PER);
+      return curPage2.some(function(m){return m.i===i;});
+    });
+    if(needsRender)renderGrid();
+    setTimeout(nextBatch,delay);
+  });
+}
+function cleanTitle(t) {
+  /* Remove leading numbers/codes like (500), 007 -, etc. */
+  var s = t;
+  s = s.replace(/^\(\d+\)\s*/,'');
+  s = s.replace(/^\d{3}[\s\-–]+/,'');
+  s = s.replace(/\s*[\[\(][^\]\)]*[\]\)]\s*$/g,'');
+  s = s.replace(/\s+/g,' ').trim();
+  return s !== t ? s : null;
+}
+
+function fetchOne(i) {
+  var m = DB[i];
+  var k = ck(m.t, m.y);
+  var ov = overrides[i];
+  if(ov && (ov.p || ov.ov)) {
+    // Ya tienes información propia, no busques en APIs
+    cache[k] = cache[k] || {};
+    Object.assign(cache[k], ov);
+    return Promise.resolve();
+  }
+  var cat  = m.c;
+  var isAnime   = (cat === 'animes' || cat === 'animados');
+  var isTV      = (cat === 'series' || cat === 'doramas' || cat === 'novelas');
+  var isGame    = (cat === 'juegos');
+  var alt       = m.a || cleanTitle(m.t);
+
+  /* ── ANIME: AnimeFLV API (español) ── */
+  function fetchAnimeFLV(query) {
+    var url = 'https://animeflv.ahmedrangel.com/api/search?query=' + encodeURIComponent(query);
+    return fetch(url)
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        var data = (d.data || d.media || d.results || []);
+        if (!data.length) return null;
+        var hit = data[0];
+        var cover = hit.cover || hit.poster || hit.image || hit.thumbnail || null;
+        /* AnimeFLV covers: add base if relative */
+        if (cover && cover.indexOf('http') === -1) {
+          cover = 'https://animeflv.net' + cover;
+        }
+        return {
+          p: cover,
+          b: cover,
+          id: hit.id || hit.slug || null,
+          tp: 'anime',
+          g: (hit.genres || hit.tags || []).map(function(g){
+            return typeof g === 'string' ? g : (g.name || g.label || '');
+          }),
+          r: hit.rating || hit.score || null,
+          ov: hit.synopsis || hit.description || hit.overview || null,
+          eps: hit.episodes || hit.episodeCount || null,
+          seas: null,
+          url: hit.url || ('https://www3.animeflv.net/anime/' + (hit.id || hit.slug || '')),
+          src: 'animeflv'
+        };
+      }).catch(function(){ return null; });
+  }
+
+  /* ── ANIME: Jikan fallback (MyAnimeList) ── */
+  function fetchJikan(query) {
+    var url = 'https://api.jikan.moe/v4/anime?q=' + encodeURIComponent(query) + '&limit=5';
+    return fetch(url)
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        var data = (d.data || []);
+        if (!data.length) return null;
+        var hit = null;
+        if (m.y) {
+          hit = data.find(function(x){
+            return String(x.year || '') === m.y;
+          });
+        }
+        hit = hit || data[0];
+        return {
+          p: hit.images && hit.images.jpg ? hit.images.jpg.large_image_url || hit.images.jpg.image_url : null,
+          b: null,
+          id: hit.mal_id,
+          tp: 'anime',
+          g: (hit.genres||[]).map(function(g){ return g.name; }),
+          r: hit.score ? String(hit.score) : null,
+          ov: hit.synopsis || null,
+          eps: hit.episodes || null,
+          seas: null,
+          url: hit.url || null,
+          src: 'jikan'
+        };
+      }).catch(function(){ return null; });
+  }
+
+  /* ── GAMES: RAWG ── */
+  function fetchRAWG(query) {
+    var url = 'https://api.rawg.io/api/games?search=' + encodeURIComponent(query) + '&page_size=5&key=3e6f47deaf314f9988a8b2dc754acd48';
+    return fetch(url)
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        var res = d.results || [];
+        if (!res.length) return null;
+        var hit = res[0];
+        return {
+          p: hit.background_image || null,
+          b: hit.background_image || null,
+          id: hit.id,
+          tp: 'game',
+          g: (hit.genres||[]).map(function(g){ return g.name; }),
+          r: hit.metacritic ? String(hit.metacritic) : (hit.rating ? hit.rating.toFixed(1) : null),
+          ov: null,
+          eps: null,
+          seas: null,
+          src: 'rawg'
+        };
+      }).catch(function(){ return null; });
+  }
+
+  /* ── TV/MOVIES: TMDB with forced endpoint ── */
+  function fetchTMDB(query, year, forceEp) {
+    var ep = forceEp || (isTV ? 'search/tv' : 'search/multi');
+    var url = API + '/' + ep + '?query=' + encodeURIComponent(query) +
+              (year ? '&year=' + year : '') + '&language=es-ES';
+    return fetch(url, {headers:{'Authorization':'Bearer '+TK}})
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        var res = (d.results || []).map(function(x){
+          if (!x.media_type) x.media_type = (ep==='search/tv'?'tv':'movie');
+          return x;
+        });
+        var hit = null;
+        if (year) {
+          hit = res.find(function(x){
+            return (x.media_type==='movie'||x.media_type==='tv') &&
+              ((x.release_date||x.first_air_date||'').substring(0,4) === year);
+          });
+        }
+        hit = hit || res.find(function(x){ return x.media_type==='movie'||x.media_type==='tv'; });
+        if (!hit) return null;
+        return {
+          p: hit.poster_path || null,
+          b: hit.backdrop_path || null,
+          id: hit.id,
+          tp: hit.media_type,
+          g: hit.genre_ids || [],
+          r: hit.vote_average ? hit.vote_average.toFixed(1) : null,
+          ov: null, eps: null, seas: null,
+          src: 'tmdb'
+        };
+      }).catch(function(){ return null; });
+  }
+
+  function store(result) {
+    cache[k] = result || {p:null,b:null,id:null,tp:null,g:[],r:null,ov:null,eps:null,seas:null,src:null};
+  }
+
+  /* ── Build steps by category ── */
+  var steps = [];
+
+  if (isAnime) {
+    /* 1st: AnimeFLV (español, sinopsis en español) */
+    steps.push(function(){ return fetchAnimeFLV(m.t); });
+    if (alt) steps.push(function(){ return fetchAnimeFLV(alt); });
+    /* 2nd: Jikan/MAL fallback */
+    steps.push(function(){ return fetchJikan(m.t); });
+    if (alt) steps.push(function(){ return fetchJikan(alt); });
+    /* 3rd: TMDB multi last resort */
+    steps.push(function(){ return fetchTMDB(m.t, m.y, 'search/multi'); });
+
+  } else if (isGame) {
+    steps.push(function(){ return fetchRAWG(m.t); });
+    if (alt) steps.push(function(){ return fetchRAWG(alt); });
+
+  } else if (isTV) {
+    steps.push(function(){ return fetchTMDB(m.t, m.y, 'search/tv'); });
+    if (alt) steps.push(function(){ return fetchTMDB(alt, m.y, 'search/tv'); });
+    steps.push(function(){ return fetchTMDB(m.t, '', 'search/tv'); });
+    if (alt) steps.push(function(){ return fetchTMDB(alt, '', 'search/tv'); });
+    /* last resort: multi */
+    steps.push(function(){ return fetchTMDB(m.t, m.y, 'search/multi'); });
+
+  } else {
+    /* peliculas: multi, then movie */
+    steps.push(function(){ return fetchTMDB(m.t, m.y, 'search/multi'); });
+    if (alt) steps.push(function(){ return fetchTMDB(alt, m.y, 'search/multi'); });
+    steps.push(function(){ return fetchTMDB(m.t, '', 'search/movie'); });
+    if (alt) steps.push(function(){ return fetchTMDB(alt, '', 'search/movie'); });
+  }
+
+  function tryNext(idx) {
+    if (idx >= steps.length) { store(null); return Promise.resolve(); }
+    return steps[idx]().then(function(hit){
+      if (hit) { store(hit); return; }
+      return tryNext(idx + 1);
+    });
+  }
+  return tryNext(0);
+}
+
+function progUpdate(){
+  var pct=DB.length>0?(fDone/DB.length*100):100;
+  document.getElementById('prog-fill').style.width=pct+'%';
+  if(pct>=100)setTimeout(function(){document.getElementById('prog-bar').style.opacity='0';},1000);
 }
 
 /* ── STATS ── */
 function updateStats(){
   var v=0,f=0,p=0;
-  for(var i=0;i<DB.length;i++){
-    var s=getS(i);
-    if(s==='vista') v++; else if(s==='favorita') f++; else if(s==='pendiente') p++;
-  }
+  for(var i=0;i<DB.length;i++){var s=getS(i);if(s==='vista')v++;else if(s==='favorita')f++;else if(s==='pendiente')p++;}
   document.getElementById('st').textContent=DB.length;
   document.getElementById('sv').textContent=v;
   document.getElementById('sf').textContent=f;
@@ -986,215 +1215,198 @@ function updateStats(){
 
 /* ── FILTER ── */
 function filtered(){
-  if(!DB||!DB.length) return [];
-  var items=DB.map(function(m,i){ return {t:m.t,y:m.y,c:m.c,i:i}; });
-  if(q){
-    var lq=q.toLowerCase();
-    items=items.filter(function(m){ return m.t.toLowerCase().indexOf(lq)!==-1||(m.y&&m.y.indexOf(lq)!==-1); });
-  }
+  if(!DB||!DB.length)return[];
+  var items=DB.map(function(m,i){return{t:m.t,y:m.y,c:m.c,i:i};});
+  if(q){var lq=q.toLowerCase();items=items.filter(function(m){return m.t.toLowerCase().indexOf(lq)!==-1||(m.y&&m.y.indexOf(lq)!==-1);});}
+  /* category from nav */
   if(catF!=='todas'&&catF!=='vista'&&catF!=='favorita'&&catF!=='pendiente'&&catF!=='sin'){
-    items=items.filter(function(m){ return m.c===catF; });
+    items=items.filter(function(m){return m.c===catF;});
   }
-  var sf=(['vista','favorita','pendiente','sin'].indexOf(catF)>=0)?catF:statusF;
+  /* status filter */
+  var sf=catF==='vista'||catF==='favorita'||catF==='pendiente'||catF==='sin'?catF:statusF;
   if(sf!=='todas'){
-    if(sf==='sin') items=items.filter(function(m){ return getS(m.i)==='none'; });
-    else           items=items.filter(function(m){ return getS(m.i)===sf; });
+    if(sf==='sin')items=items.filter(function(m){return getS(m.i)==='none';});
+    else items=items.filter(function(m){return getS(m.i)===sf;});
   }
-  if(genreF){
-    var gfName=genreF.toLowerCase();
-    items=items.filter(function(m){
-      var d=getData(m.i);
-      if(!d.g||!d.g.length) return false;
-      return d.g.some(function(g){ return String(g).toLowerCase()===gfName; });
-    });
-  }
-  if(yearF){
-    items=items.filter(function(m){
-      /* El año del DB puede ser "2022 - 2023"; buscamos que empiece por yearF */
-      return m.y && (m.y===yearF || m.y.substring(0,4)===yearF);
-    });
-  }
-  if(sort==='az')  items.sort(function(a,b){ return a.t.localeCompare(b.t,'es',{sensitivity:'base'}); });
-  else if(sort==='za') items.sort(function(a,b){ return b.t.localeCompare(a.t,'es',{sensitivity:'base'}); });
-  else if(sort==='new') items.sort(function(a,b){ return (b.y||'0')>(a.y||'0')?1:-1; });
-  else items.sort(function(a,b){ return (a.y||'9999')>(b.y||'9999')?1:-1; });
+  if(genreF){var gf=parseInt(genreF);var gfName=GN[gf]||'';items=items.filter(function(m){var c=cache[ck(m.t,m.y)];if(!c||!c.g||!c.g.length)return false;return c.g.some(function(g){return g===gf||String(g)===String(genreF)||(gfName&&String(g).toLowerCase()===gfName.toLowerCase());});});}
+  if(yearF)items=items.filter(function(m){return m.y===yearF;});
+  if(sort==='az')items.sort(function(a,b){return a.t.localeCompare(b.t,'es',{sensitivity:'base'});});
+  else if(sort==='za')items.sort(function(a,b){return b.t.localeCompare(a.t,'es',{sensitivity:'base'});});
+  else if(sort==='new')items.sort(function(a,b){return(b.y||'0')>(a.y||'0')?1:-1;});
+  else items.sort(function(a,b){return(a.y||'9999')>(b.y||'9999')?1:-1;});
   return items;
 }
 
 /* ── CARD ── */
 var ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="2" y="2" width="20" height="20" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg>';
-function esc(s){ return(''+s).replace(/[<>&"]/g,function(c){ return c==='<'?'&lt;':c==='>'?'&gt;':c==='&'?'&amp;':'&quot;'; }); }
+function esc(s){return(''+s).replace(/[<>&"]/g,function(c){return c==='<'?'&lt;':c==='>'?'&gt;':c==='&'?'&amp;':'&quot;';});}
+
+var CAT_EMOJI={peliculas:'🎬',series:'📺',animes:'⛩',animados:'🎨',doramas:'🌸',novelas:'💋',juegos:'🎮'};
 
 function makeCard(m){
-  if(!m||m.i===undefined) return document.createElement('div');
-  var i=m.i, s=getS(i), cd=getData(i);
-  var inCart=cart.some(function(x){ return x.i===i; });
-  var card=document.createElement('div'); card.className='card';
-  card.addEventListener('click',function(e){ if(!e.target.closest('.card-acts')) openDetail(i); });
+  if(!m||m.i===undefined)return document.createElement('div');
+  var i=m.i,s=getS(i),k=ck(m.t,m.y),cd=getEffectiveCache(i);
+  var inCart=cart.some(function(x){return x.i===i;});
+  var card=document.createElement('div');card.className='card';
+  card.addEventListener('click',function(e){if(!e.target.closest('.card-acts'))openDetail(i);});
 
   /* poster */
-  var pw=document.createElement('div'); pw.className='poster';
-  var ph=document.createElement('div'); ph.className='poster-ph';
+  var pw=document.createElement('div');pw.className='poster';
+  var ph=document.createElement('div');ph.className='poster-ph';
   ph.innerHTML=ICON+'<span>'+esc(m.t.substring(0,35))+'</span>';
   pw.appendChild(ph);
-
-  if(cd && cd.p){
-    var img=document.createElement('img');
-    img.alt=m.t; img.loading='lazy'; img.decoding='async';
-    img.onload=function(){ img.classList.add('ok'); ph.style.display='none'; };
-    img.onerror=function(){ img.remove(); };
-    img.dataset.src=cd.p;
+  if(cd&&cd.p){
+    var imgSrc=(cd.p&&cd.p.indexOf('http')===0)?cd.p:(IMG+cd.p);
+    var img=document.createElement('img');img.alt=m.t;
+    img.loading='lazy';img.decoding='async';
+    img.onload=function(){img.classList.add('ok');ph.style.display='none';};
+    img.onerror=function(){img.remove();};
+    img.dataset.src=imgSrc;  /* lazy via observer */
     pw.appendChild(img);
     imgObserver.observe(img);
   }
-
   if(s!=='none'){
     var bdg=document.createElement('span');
     bdg.className='card-badge '+(s==='vista'?'bv':s==='favorita'?'bf':'bp');
     bdg.textContent=s==='vista'?'✓ Vista':s==='favorita'?'♥ Fav':'⏳';
     pw.appendChild(bdg);
   }
-
-  var cb2=document.createElement('span'); cb2.className='cat-badge cat-'+m.c;
+  /* category badge */
+  var cb2=document.createElement('span');
+  cb2.className='cat-badge cat-'+m.c;
   cb2.textContent=(CAT_EMOJI[m.c]||'')+' '+(CL[m.c]||m.c);
   pw.appendChild(cb2);
 
-  var ov=document.createElement('div'); ov.className='card-ov';
+  var ov=document.createElement('div');ov.className='card-ov';
   ov.innerHTML='<div class="ov-t">'+esc(m.t)+'</div><div class="ov-m">'+(m.y||'')+(cd&&cd.r?' · ⭐'+cd.r:'')+'</div>';
   pw.appendChild(ov);
   card.appendChild(pw);
 
-  var ci=document.createElement('div'); ci.className='card-info';
-  var ct=document.createElement('div'); ct.className='card-title'; ct.textContent=m.t; ci.appendChild(ct);
-  var cy=document.createElement('div'); cy.className='card-year'; cy.textContent=m.y||'—'; ci.appendChild(cy);
-
+  var ci=document.createElement('div');ci.className='card-info';
+  var ct=document.createElement('div');ct.className='card-title';ct.textContent=m.t;ci.appendChild(ct);
+  var cy=document.createElement('div');cy.className='card-year';cy.textContent=m.y||'—';ci.appendChild(cy);
   if(cd&&cd.g&&cd.g.length){
-    var cg=document.createElement('div'); cg.className='card-genres';
-    cg.textContent=cd.g.slice(0,2).map(function(g){ return String(g); }).filter(Boolean).join(' · ');
+    var cg=document.createElement('div');cg.className='card-genres';
+    cg.textContent=cd.g.slice(0,2).map(function(id){return typeof id==='string'?id:(GN[id]||'');}).filter(Boolean).join(' · ');
     ci.appendChild(cg);
   }
-
-  var ca=document.createElement('div'); ca.className='card-acts';
+  var ca=document.createElement('div');ca.className='card-acts';
   function mkA(lbl,st,cls){
-    var b=document.createElement('button');
-    b.className='ca'+(s===st?' '+cls:''); b.textContent=lbl; b.title=st;
-    b.addEventListener('click',function(e){ e.stopPropagation(); setS(i,st); });
-    return b;
+    var b=document.createElement('button');b.className='ca'+(s===st?' '+cls:'');b.textContent=lbl;b.title=st;
+    b.addEventListener('click',function(e){e.stopPropagation();setS(i,st);});return b;
   }
   ca.appendChild(mkA('✓','vista','av'));
   ca.appendChild(mkA('♥','favorita','af'));
   ca.appendChild(mkA('⏳','pendiente','ap'));
-
+  /* cart button */
   var cartBtn=document.createElement('button');
   cartBtn.className='ca'+(inCart?' ac':'');
   cartBtn.textContent=inCart?'✔':'🛒';
   cartBtn.title='Añadir al pedido';
-  cartBtn.addEventListener('click',function(e){ e.stopPropagation(); toggleCart(i); });
+  cartBtn.addEventListener('click',function(e){e.stopPropagation();toggleCart(i);});
   ca.appendChild(cartBtn);
-
-  ci.appendChild(ca); card.appendChild(ci);
+  ci.appendChild(ca);card.appendChild(ci);
   return card;
 }
 
 /* ── GRID + PAGER ── */
 function renderGrid(){
-  var all=filtered(), total=all.length;
+  var all=filtered(),total=all.length;
   var maxPg=Math.max(1,Math.ceil(total/PER));
-  if(page>maxPg) page=1;
-  var slice=all.slice((page-1)*PER, page*PER);
+  if(page>maxPg)page=1;
+  var slice=all.slice((page-1)*PER,page*PER);
+  /* Reprioritise queue for new page */
+  if(fQ.length){
+    var curSet2={};
+    slice.forEach(function(m){curSet2[m.i]=1;});
+    var pri2=fQ.filter(function(i){return curSet2[i];});
+    var rest2=fQ.filter(function(i){return !curSet2[i];});
+    fQ=pri2.concat(rest2);
+  }
   document.getElementById('cnt').textContent=total;
-  var grid=document.getElementById('grid'); grid.innerHTML='';
+  var grid=document.getElementById('grid');grid.innerHTML='';
   if(!slice.length){
-    var e=document.createElement('div'); e.id='empty';
+    var e=document.createElement('div');e.id='empty';
     e.innerHTML='<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#1a1a2a" stroke-width="1"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><p>Sin resultados. Prueba otro filtro.</p>';
-    grid.appendChild(e); document.getElementById('pager').innerHTML=''; return;
+    grid.appendChild(e);document.getElementById('pager').innerHTML='';return;
   }
   var f=document.createDocumentFragment();
-  slice.forEach(function(m){ f.appendChild(makeCard(m)); });
-  grid.appendChild(f); renderPager(maxPg);
+  slice.forEach(function(m){f.appendChild(makeCard(m));});
+  grid.appendChild(f);renderPager(maxPg);
 }
-
 function renderPager(max){
-  var pg=document.getElementById('pager'); pg.innerHTML='';
-  if(max<=1) return;
+  var pg=document.getElementById('pager');pg.innerHTML='';
+  if(max<=1)return;
   function mk(lbl,t,dis,on){
-    var b=document.createElement('button');
-    b.className='pg'+(on?' on':''); b.textContent=lbl; b.disabled=!!dis;
-    b.addEventListener('click',function(){ page=t; renderGrid(); window.scrollTo({top:0,behavior:'smooth'}); });
+    var b=document.createElement('button');b.className='pg'+(on?' on':'');
+    b.textContent=lbl;b.disabled=!!dis;
+    b.addEventListener('click',function(){page=t;renderGrid();enqueue();window.scrollTo({top:0,behavior:'smooth'});});
     return b;
   }
   pg.appendChild(mk('‹',page-1,page<=1));
-  var s=Math.max(1,page-2), e=Math.min(max,page+2);
-  if(s>1){
-    pg.appendChild(mk(1,1,false,false));
-    if(s>2){ var d=document.createElement('span'); d.className='pg-dots'; d.textContent='…'; pg.appendChild(d); }
-  }
-  for(var p2=s;p2<=e;p2++) pg.appendChild(mk(p2,p2,false,p2===page));
-  if(e<max){
-    if(e<max-1){ var d2=document.createElement('span'); d2.className='pg-dots'; d2.textContent='…'; pg.appendChild(d2); }
-    pg.appendChild(mk(max,max,false,false));
-  }
+  var s=Math.max(1,page-2),e=Math.min(max,page+2);
+  if(s>1){pg.appendChild(mk(1,1,false,false));if(s>2){var d=document.createElement('span');d.className='pg-dots';d.textContent='…';pg.appendChild(d);}}
+  for(var p2=s;p2<=e;p2++)pg.appendChild(mk(p2,p2,false,p2===page));
+  if(e<max){if(e<max-1){var d2=document.createElement('span');d2.className='pg-dots';d2.textContent='…';pg.appendChild(d2);}pg.appendChild(mk(max,max,false,false));}
   pg.appendChild(mk('›',page+1,page>=max));
 }
 
 /* ── CART ── */
 function toggleCart(i){
-  var idx=cart.findIndex(function(x){ return x.i===i; });
-  if(idx>=0){ cart.splice(idx,1); }
-  else{ var m=DB[i]; cart.push({i:i,t:m.t,y:m.y,c:m.c}); }
-  saveCart(); updateCartUI(); renderGrid();
-  if(detIdx===i) updateDetCartBtn();
+  var idx=cart.findIndex(function(x){return x.i===i;});
+  if(idx>=0){cart.splice(idx,1);}
+  else{var m=DB[i];cart.push({i:i,t:m.t,y:m.y,c:m.c});}
+  saveCart();updateCartUI();renderGrid();
+  if(detIdx===i)updateDetCartBtn();
 }
 function updateCartUI(){
   var n=cart.length;
   var cc=document.getElementById('cart-count');
-  cc.textContent=n; cc.classList.toggle('show',n>0);
+  cc.textContent=n;cc.classList.toggle('show',n>0);
   document.getElementById('cart-total').textContent=n;
   document.getElementById('cart-send').disabled=n===0;
   var ci=document.getElementById('cart-items');
   var empty=document.getElementById('cart-empty');
-  if(!n){ if(empty) empty.style.display='block'; ci.querySelectorAll('.cart-item').forEach(function(x){x.remove();}); return; }
-  if(empty) empty.style.display='none';
+  if(!n){if(empty)empty.style.display='block';
+    ci.querySelectorAll('.cart-item').forEach(function(x){x.remove();});return;}
+  if(empty)empty.style.display='none';
   ci.querySelectorAll('.cart-item').forEach(function(x){x.remove();});
   var f=document.createDocumentFragment();
   cart.forEach(function(item){
-    var cd=getData(item.i);
-    var div=document.createElement('div'); div.className='cart-item';
-    if(cd&&cd.p){
-      var img2=document.createElement('img'); img2.className='cart-item-img';
-      img2.src=cd.p; img2.alt=item.t; div.appendChild(img2);
-    } else {
-      var ph2=document.createElement('div'); ph2.className='cart-item-img'; div.appendChild(ph2);
-    }
-    var info=document.createElement('div'); info.className='cart-item-info';
-    var tt=document.createElement('div'); tt.className='cart-item-title'; tt.textContent=item.t; info.appendChild(tt);
-    var cat=document.createElement('div'); cat.className='cart-item-cat';
+    var k=ck(item.t,item.y),cd=cache[k];
+    var div=document.createElement('div');div.className='cart-item';
+    if(cd&&cd.p){var img2=document.createElement('img');img2.className='cart-item-img';img2.src=(cd.src==='animeflv'||cd.src==='rawg')?cd.p:(IMG+cd.p);img2.alt=item.t;div.appendChild(img2);}
+    else{var ph2=document.createElement('div');ph2.className='cart-item-img';div.appendChild(ph2);}
+    var info=document.createElement('div');info.className='cart-item-info';
+    var tt=document.createElement('div');tt.className='cart-item-title';tt.textContent=item.t;info.appendChild(tt);
+    var cat=document.createElement('div');cat.className='cart-item-cat';
     cat.textContent=(CAT_EMOJI[item.c]||'')+' '+(CL[item.c]||item.c)+(item.y?' · '+item.y:'');
-    info.appendChild(cat); div.appendChild(info);
-    var del=document.createElement('button'); del.className='cart-item-del'; del.textContent='✕'; del.title='Quitar';
-    (function(ii){ del.addEventListener('click',function(){ toggleCart(ii); }); })(item.i);
-    div.appendChild(del); f.appendChild(div);
+    info.appendChild(cat);div.appendChild(info);
+    var del=document.createElement('button');del.className='cart-item-del';del.textContent='✕';del.title='Quitar';
+    (function(ii){del.addEventListener('click',function(){toggleCart(ii);});})(item.i);
+    div.appendChild(del);f.appendChild(div);
   });
   ci.appendChild(f);
 }
-function openCart(){ document.getElementById('cart-panel').classList.add('open'); document.getElementById('cart-overlay').classList.add('show'); }
-function closeCart(){ document.getElementById('cart-panel').classList.remove('open'); document.getElementById('cart-overlay').classList.remove('show'); }
+function openCart(){document.getElementById('cart-panel').classList.add('open');document.getElementById('cart-overlay').classList.add('show');}
+function closeCart(){document.getElementById('cart-panel').classList.remove('open');document.getElementById('cart-overlay').classList.remove('show');}
 function sendWhatsApp(){
-  if(!cart.length) return;
+  if(!cart.length)return;
   var lines=['🎬 *PEDIDO CLOUD RIDER*',''];
   var groups={};
-  cart.forEach(function(item){ if(!groups[item.c]) groups[item.c]=[]; groups[item.c].push(item); });
+  cart.forEach(function(item){if(!groups[item.c])groups[item.c]=[];groups[item.c].push(item);});
   Object.keys(groups).forEach(function(cat){
     lines.push('*'+(CAT_EMOJI[cat]||'')+' '+(CL[cat]||cat).toUpperCase()+'S:*');
-    groups[cat].forEach(function(item){ lines.push('• '+item.t+(item.y?' ('+item.y+')':'')); });
+    groups[cat].forEach(function(item){lines.push('• '+item.t+(item.y?' ('+item.y+')':''));});
     lines.push('');
   });
   lines.push('_Enviado desde Cloud Rider Catálogo_');
-  window.open('https://wa.me/'+WA+'?text='+encodeURIComponent(lines.join('\n')),'_blank');
+  var msg=encodeURIComponent(lines.join('\n'));
+  window.open('https://wa.me/'+WA+'?text='+msg,'_blank');
 }
 function updateDetCartBtn(){
-  var btn=document.getElementById('det-add-cart'); if(!btn) return;
-  var inCart=cart.some(function(x){ return x.i===detIdx; });
+  var btn=document.getElementById('det-add-cart');if(!btn)return;
+  var inCart=cart.some(function(x){return x.i===detIdx;});
   btn.textContent=inCart?'✔ En el pedido':'🛒 Añadir al pedido';
   btn.classList.toggle('added',inCart);
 }
@@ -1202,78 +1414,162 @@ function updateDetCartBtn(){
 /* ── DETAIL ── */
 function openDetail(i){
   detIdx=i;
-  if(!DB[i]) return;
-  var m=DB[i], cd=getData(i);
+  if(!DB[i])return;
+  var m=DB[i],k=ck(m.t,m.y),cd=getEffectiveCache(i);
   var det=document.getElementById('detail');
-  det.classList.add('open'); document.body.style.overflow='hidden'; det.scrollTop=0;
+  det.classList.add('open');document.body.style.overflow='hidden';det.scrollTop=0;
   document.getElementById('det-tit-nav').textContent=m.t;
-  document.getElementById('det-backdrop').style.backgroundImage=(cd&&cd.b)?'url('+cd.b+')':'none';
+  document.getElementById('det-backdrop').style.backgroundImage=(cd&&cd.b)?'url('+IMGB+cd.b+')':'none';
   updateDetCartBtn();
 
-  /* Poster */
-  var pp=document.getElementById('det-poster'); pp.innerHTML='';
+  var pp=document.getElementById('det-poster');pp.innerHTML='';
   if(cd&&cd.p){
-    var pi=document.createElement('img'); pi.src=cd.p; pi.alt=m.t; pp.appendChild(pi);
-  } else {
-    pp.innerHTML='<div id="det-poster-ph">'+ICON+'</div>';
+    var pi=document.createElement('img');
+    pi.src=(cd.p&&cd.p.indexOf('http')===0)?cd.p:(IMGL+cd.p);
+    pi.alt=m.t;pp.appendChild(pi);
   }
+  else{pp.innerHTML='<div id="det-poster-ph">'+ICON+'</div>';}
 
-  /* Info panel */
-  var info=document.getElementById('det-info'); info.innerHTML='';
+  var info=document.getElementById('det-info');
+  info.innerHTML='<div class="spin-wrap"><div class="spin"></div>Cargando información...</div>';
   document.getElementById('det-cast-section').innerHTML='';
 
-  var nm=document.createElement('div'); nm.id='det-name'; nm.textContent=m.t; info.appendChild(nm);
-
-  /* Chips: año, categoría, rating, temporadas, episodios */
-  var chips=document.createElement('div'); chips.id='det-chips';
-  function chip(txt,cls){
-    var sp=document.createElement('span'); sp.className='chip '+(cls||''); sp.textContent=txt; chips.appendChild(sp);
+  function showBasic(){
+    info.innerHTML='';
+    var nm=document.createElement('div');nm.id='det-name';nm.textContent=m.t;info.appendChild(nm);
+    var chips=document.createElement('div');chips.id='det-chips';
+    if(m.y){var ch=document.createElement('span');ch.className='chip';ch.textContent=m.y;chips.appendChild(ch);}
+    var tp=document.createElement('span');tp.className='chip tp';tp.textContent=(CAT_EMOJI[m.c]||'')+' '+(CL[m.c]||m.c);chips.appendChild(tp);
+    info.appendChild(chips);
+    var ov=document.createElement('div');ov.id='det-overview';
+    ov.innerHTML='<span id="det-not-found">No se encontró información en TMDB para este título.<br>Puede que el nombre esté en otro idioma o sea un título regional.</span>';
+    info.appendChild(ov);
+    appendActions(info,i);
   }
-  if(m.y) chip(m.y,'');
-  chip((CAT_EMOJI[m.c]||'')+' '+(CL[m.c]||m.c),'tp');
-  if(cd&&cd.r) chip('⭐ '+cd.r+' / 10','rat');
-  if(cd&&cd.seas&&cd.seas>0) chip(cd.seas+(cd.seas===1?' temporada':' temporadas'),'tp');
-  if(cd&&cd.eps &&cd.eps>0)  chip(cd.eps+' episodios','');
-  info.appendChild(chips);
 
-  /* Géneros */
-  if(cd&&cd.g&&cd.g.length){
-    var gd=document.createElement('div'); gd.id='det-genres';
-    cd.g.forEach(function(gn){
-      var sp=document.createElement('span'); sp.className='dg'; sp.textContent=String(gn); gd.appendChild(sp);
+  if(!cd||!cd.id){showBasic();return;}
+
+  /* Use game/anime detail or TMDB */
+  if(cd.src==='rawg'||cd.src==='jikan'||cd.src==='animeflv'){
+    info.innerHTML='';
+    var nm0=document.createElement('div');nm0.id='det-name';nm0.textContent=m.t;info.appendChild(nm0);
+    var chips0=document.createElement('div');chips0.id='det-chips';
+    if(m.y){var ch0=document.createElement('span');ch0.className='chip';ch0.textContent=m.y;chips0.appendChild(ch0);}
+    var tp0=document.createElement('span');tp0.className='chip tp';tp0.textContent=(CAT_EMOJI[m.c]||'')+' '+(CL[m.c]||m.c);chips0.appendChild(tp0);
+    if(cd.r){var rt0=document.createElement('span');rt0.className='chip rat';rt0.textContent=(cd.src==='rawg'?'Metacritic: ':'⭐ ')+cd.r+(cd.src==='jikan'?'/10':'');chips0.appendChild(rt0);}
+    if(cd.eps){var ep0=document.createElement('span');ep0.className='chip';ep0.textContent=cd.eps+' episodios';chips0.appendChild(ep0);}
+    info.appendChild(chips0);
+    if(cd.g&&cd.g.length){
+      var gd0=document.createElement('div');gd0.id='det-genres';
+      cd.g.forEach(function(gn){var sp=document.createElement('span');sp.className='dg';sp.textContent=gn;gd0.appendChild(sp);});
+      info.appendChild(gd0);
+    }
+    var ov0=document.createElement('div');ov0.id='det-overview';
+    ov0.textContent=cd.ov||'Sinopsis no disponible.';
+    info.appendChild(ov0);
+    /* AnimeFLV link */
+    if(cd.url){
+      var aflink=document.createElement('a');
+      aflink.className='trailer-btn';aflink.href=cd.url;
+      aflink.target='_blank';aflink.rel='noopener noreferrer';
+      aflink.innerHTML='&#127981; Ver en AnimeFLV';
+      info.appendChild(aflink);
+    }
+    appendActions(info,i);
+    return;
+  }
+  var ep=(cd.tp==='tv'||cd.tp==='series')?'tv':'movie';
+  fetch(API+'/'+ep+'/'+cd.id+'?language=es-ES&append_to_response=credits,videos,seasons',
+    {headers:{'Authorization':'Bearer '+TK}})
+  .then(function(r){return r.json();}).then(function(d){
+    info.innerHTML='';
+    var title=d.title||d.name||m.t;
+    var year=(d.release_date||d.first_air_date||m.y||'').substring(0,4);
+    if(d.backdrop_path)document.getElementById('det-backdrop').style.backgroundImage='url('+IMGB+d.backdrop_path+')';
+    if(d.poster_path){pp.innerHTML='';var pi2=document.createElement('img');pi2.src=IMGL+d.poster_path;pi2.alt=title;pp.appendChild(pi2);}
+
+    var nm=document.createElement('div');nm.id='det-name';nm.textContent=title;info.appendChild(nm);
+    if(d.tagline){var tl=document.createElement('div');tl.id='det-tagline';tl.textContent='"'+d.tagline+'"';info.appendChild(tl);}
+
+    var chips=document.createElement('div');chips.id='det-chips';
+    var epRuntime=d.episode_run_time&&d.episode_run_time.length?d.episode_run_time[0]:null;
+    [{l:year,c:''},{l:(CAT_EMOJI[m.c]||'')+' '+(CL[m.c]||m.c),c:'tp'},
+     d.vote_average?{l:'⭐ '+d.vote_average.toFixed(1)+' / 10',c:'rat'}:null,
+     d.runtime?{l:d.runtime+' min',c:''}:null,
+     epRuntime?{l:epRuntime+' min/ep',c:''}:null,
+     d.number_of_seasons?{l:d.number_of_seasons+(d.number_of_seasons===1?' temporada':' temporadas'),c:'tp'}:null,
+     d.number_of_episodes?{l:d.number_of_episodes+' episodios total',c:''}:null,
+    ].filter(Boolean).forEach(function(x){
+      var ch=document.createElement('span');ch.className='chip '+x.c;ch.textContent=x.l;chips.appendChild(ch);
     });
-    info.appendChild(gd);
-  }
+    info.appendChild(chips);
 
-  /* Sinopsis */
-  var ovDiv=document.createElement('div'); ovDiv.id='det-overview';
-  ovDiv.textContent=(cd&&cd.ov)?cd.ov:'Sinopsis no disponible.';
-  info.appendChild(ovDiv);
+    var ov=document.createElement('div');ov.id='det-overview';
+    ov.textContent=(d.overview&&d.overview.length>10)?d.overview:'Sinopsis no disponible en español.';
+    info.appendChild(ov);
 
-  /* Botón URL externa si existe */
-  if(cd&&cd.url){
-    var link=document.createElement('a');
-    link.className='trailer-btn'; link.href=cd.url;
-    link.target='_blank'; link.rel='noopener noreferrer';
-    link.innerHTML='&#9654; Ver más información';
-    info.appendChild(link);
-  }
+    if(d.genres&&d.genres.length){
+      var gd=document.createElement('div');gd.id='det-genres';
+      d.genres.forEach(function(g){var sp=document.createElement('span');sp.className='dg';sp.textContent=g.name;gd.appendChild(sp);});
+      info.appendChild(gd);
+    }
+    /* Seasons breakdown table */
+    if(d.seasons&&d.seasons.length){
+      var stbl=document.createElement('div');stbl.id='det-seasons';
+      var sh=document.createElement('div');sh.className='seasons-title';sh.textContent='TEMPORADAS';stbl.appendChild(sh);
+      var sgrid=document.createElement('div');sgrid.className='seasons-grid';
+      d.seasons.forEach(function(s){
+        if(s.season_number===0)return; /* skip specials */
+        var sc=document.createElement('div');sc.className='season-chip';
+        sc.innerHTML='<b>T'+s.season_number+'</b><span>'+(s.episode_count||'?')+' eps'+(s.air_date?' &middot; '+s.air_date.substring(0,4):'')+'</span>';
+        sgrid.appendChild(sc);
+      });
+      stbl.appendChild(sgrid);
+      info.appendChild(stbl);
+    }
+    appendActions(info,i);
 
-  appendActions(info,i);
+    var vids=((d.videos||{}).results||[]);
+    var tr=vids.find(function(v){return v.type==='Trailer'&&v.site==='YouTube';})||vids.find(function(v){return v.site==='YouTube';});
+    if(tr){
+      var td=document.createElement('div');td.id='det-trailer';
+      var tbtn=document.createElement('a');
+      tbtn.className='trailer-btn';
+      tbtn.href='https://www.youtube.com/watch?v='+tr.key;
+      tbtn.target='_blank';
+      tbtn.rel='noopener noreferrer';
+      tbtn.innerHTML='&#9654; Ver tr&aacute;iler en YouTube';
+      td.appendChild(tbtn);info.appendChild(td);
+    }
+
+    var cast=((d.credits||{}).cast||[]).slice(0,12); /* TMDB only */
+    if(cast.length){
+      var cs=document.getElementById('det-cast-section');
+      cs.innerHTML='<h3>REPARTO</h3>';
+      var cg=document.createElement('div');cg.id='det-cast';
+      cast.forEach(function(p){
+        var cc=document.createElement('div');cc.className='cc';
+        if(p.profile_path){var ci2=document.createElement('img');ci2.className='cc-img';ci2.src=IMG+p.profile_path;ci2.alt=p.name;ci2.loading='lazy';cc.appendChild(ci2);}
+        else{var cph=document.createElement('div');cph.className='cc-ph';cph.innerHTML=ICON;cc.appendChild(cph);}
+        var cn=document.createElement('div');cn.className='cc-name';cn.textContent=p.name;cc.appendChild(cn);
+        if(p.character){var cch=document.createElement('div');cch.className='cc-char';cch.textContent=p.character;cc.appendChild(cch);}
+        cg.appendChild(cc);
+      });
+      cs.appendChild(cg);
+    }
+  }).catch(showBasic);
 }
 
 function appendActions(parent,i){
   var s=getS(i);
-  var da=document.createElement('div'); da.id='det-acts';
+  var da=document.createElement('div');da.id='det-acts';
   function mkDA(lbl,st,cls){
-    var b=document.createElement('button');
-    b.className='da'+(s===st?' '+cls:''); b.textContent=lbl;
+    var b=document.createElement('button');b.className='da'+(s===st?' '+cls:'');b.textContent=lbl;
     b.addEventListener('click',function(){
       setS(i,st);
-      da.querySelectorAll('.da').forEach(function(x){ x.classList.remove('av','af','ap'); });
-      if(getS(i)===st) b.classList.add(cls);
-    });
-    return b;
+      da.querySelectorAll('.da').forEach(function(x){x.classList.remove('av','af','ap');});
+      if(getS(i)===st)b.classList.add(cls);
+    });return b;
   }
   da.appendChild(mkDA('✓  Vista','vista','av'));
   da.appendChild(mkDA('♥  Favorita','favorita','af'));
@@ -1281,87 +1577,134 @@ function appendActions(parent,i){
   parent.appendChild(da);
 }
 
-function closeDetail(){
-  document.getElementById('detail').classList.remove('open');
-  document.body.style.overflow=''; detIdx=-1;
-}
+function closeDetail(){document.getElementById('detail').classList.remove('open');document.body.style.overflow='';detIdx=-1;}
 
 /* ── EVENTS ── */
 document.getElementById('det-back').addEventListener('click',closeDetail);
-document.getElementById('det-add-cart').addEventListener('click',function(){ if(detIdx>=0) toggleCart(detIdx); });
-document.addEventListener('keydown',function(e){ if(e.key==='Escape'){ closeDetail(); closeCart(); } });
+document.getElementById('det-add-cart').addEventListener('click',function(){if(detIdx>=0)toggleCart(detIdx);});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeDetail();closeCart();}});
 document.getElementById('cart-btn').addEventListener('click',openCart);
 document.getElementById('cart-close').addEventListener('click',closeCart);
 document.getElementById('cart-overlay').addEventListener('click',closeCart);
 document.getElementById('cart-send').addEventListener('click',sendWhatsApp);
 
-/* Nav category */
+/* nav category + status */
 document.querySelectorAll('[data-f]').forEach(function(b){
   b.addEventListener('click',function(){
-    document.querySelectorAll('[data-f]').forEach(function(x){ x.classList.remove('on'); });
-    document.querySelectorAll('[data-f="'+b.dataset.f+'"]').forEach(function(x){ x.classList.add('on'); });
+    document.querySelectorAll('[data-f]').forEach(function(x){x.classList.remove('on');});
+    document.querySelectorAll('[data-f="'+b.dataset.f+'"]').forEach(function(x){x.classList.add('on');});
     catF=b.dataset.f;
     var statuses=['vista','favorita','pendiente','sin'];
     statusF=statuses.indexOf(b.dataset.f)>=0?b.dataset.f:'todas';
-    if(statuses.indexOf(b.dataset.f)<0) catF=b.dataset.f;
-    page=1; renderGrid();
+    if(statuses.indexOf(b.dataset.f)<0)catF=b.dataset.f;
+    page=1;renderGrid();enqueue();
   });
 });
 
-/* Dropdowns géneros y año */
+/* Dropdown toggle para GÉNEROS y AÑO */
 document.querySelectorAll('.nm-drop').forEach(function(wrap){
-  var btn=wrap.querySelector('.nm'), menu=wrap.querySelector('.dmenu');
-  if(!btn||!menu) return;
+  var btn=wrap.querySelector('.nm');
+  var menu=wrap.querySelector('.dmenu');
+  if(!btn||!menu)return;
   btn.addEventListener('click',function(e){
     e.stopPropagation();
     var isOpen=menu.classList.contains('open');
-    document.querySelectorAll('.dmenu').forEach(function(m){ m.classList.remove('open'); });
-    if(!isOpen) menu.classList.add('open');
+    document.querySelectorAll('.dmenu').forEach(function(m){m.classList.remove('open');});
+    if(!isOpen)menu.classList.add('open');
   });
 });
 document.addEventListener('click',function(){
-  document.querySelectorAll('.dmenu').forEach(function(m){ m.classList.remove('open'); });
+  document.querySelectorAll('.dmenu').forEach(function(m){m.classList.remove('open');});
 });
 
 document.querySelectorAll('[data-g]').forEach(function(a){
   a.addEventListener('click',function(e){
-    e.preventDefault(); e.stopPropagation();
-    var gName=a.textContent.trim();
-    genreF=(genreF===gName)?null:gName;
-    document.querySelectorAll('[data-g]').forEach(function(x){ x.classList.remove('on'); x.style.color=''; });
-    if(genreF){ a.classList.add('on'); a.style.color='var(--cyan)'; }
-    document.querySelectorAll('.dmenu').forEach(function(m){ m.classList.remove('open'); });
-    page=1; renderGrid();
+    e.preventDefault();
+    e.stopPropagation();
+    genreF=(genreF===a.dataset.g)?null:a.dataset.g;
+    document.querySelectorAll('[data-g]').forEach(function(x){x.classList.remove('on');x.style.color='';});
+    if(genreF){a.classList.add('on');a.style.color='var(--cyan)';}
+    document.querySelectorAll('.dmenu').forEach(function(m){m.classList.remove('open');});
+    page=1;renderGrid();enqueue();
   });
 });
 
 var st2;
 document.getElementById('srch').addEventListener('input',function(e){
-  clearTimeout(st2); st2=setTimeout(function(){ q=e.target.value.trim(); page=1; renderGrid(); },200);
+  clearTimeout(st2);st2=setTimeout(function(){q=e.target.value.trim();page=1;renderGrid();enqueue();},200);
 });
-document.getElementById('srt').addEventListener('change',function(e){
-  sort=e.target.value; page=1; renderGrid();
-});
-window.addEventListener('scroll',function(){
-  document.getElementById('bktop').classList.toggle('show',window.scrollY>500);
-});
-document.getElementById('bktop').addEventListener('click',function(){
-  window.scrollTo({top:0,behavior:'smooth'});
-});
+document.getElementById('srt').addEventListener('change',function(e){sort=e.target.value;page=1;renderGrid();enqueue();});
+window.addEventListener('scroll',function(){document.getElementById('bktop').classList.toggle('show',window.scrollY>500);});
+document.getElementById('bktop').addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});
 
-/* IntersectionObserver para carga lazy de imágenes */
-var imgObserver=new IntersectionObserver(function(entries){
+/* IntersectionObserver: only load images when they enter viewport */
+var imgObserver = new IntersectionObserver(function(entries){
   entries.forEach(function(entry){
     if(entry.isIntersecting){
-      var img=entry.target;
-      if(img.dataset.src){ img.src=img.dataset.src; delete img.dataset.src; imgObserver.unobserve(img); }
+      var img = entry.target;
+      if(img.dataset.src){
+        img.src = img.dataset.src;
+        delete img.dataset.src;
+        imgObserver.unobserve(img);
+      }
     }
   });
-},{rootMargin:'200px'});
+}, {rootMargin: '200px'});
+var DB;
+try {
+  DB = JSON.parse(atob(document.getElementById('D').textContent));
+} catch(e) {
+  console.error('Error al cargar la base de datos:', e);
+  document.body.innerHTML = '<div style="color:red;padding:20px">Error crítico: no se pudo cargar el catálogo.</div>';
+  throw e;
+}
+var TK='eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI1YTAwZDQ0NDg1NDlmMTg1OTg2MTM0YjBkYzg1ODA4ZSIsIm5iZiI6MTc3OTg0Njg1NS41MzMsInN1YiI6IjZhMTY0ZWM3ZmE3ZDQ0MDUxNjJmNjY5NCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.7CMd_XYSqbF7ralsRUtZxrMi6UwuXrfM1_Kn1XsKZtY';
+var WA='5355213690';
+var IMG='https://image.tmdb.org/t/p/w185';
+var IMGL='https://image.tmdb.org/t/p/w500';
+var IMGB='https://image.tmdb.org/t/p/w1280';
+var API='https://api.themoviedb.org/3';
+var PER=50;
 
-/* ── ADMIN ── */
-var ADMIN_PASS='cloudrider2024';
-var adminOpen=false, editIdx=-1, adminQ='', adminCat='', adminStatusF='', adminPage=1, adminPer=30;
+var page=1,catF='todas',genreF=null,yearF=null,q='',sort='az',statusF='todas';
+var uState={},cache={},cart=[];
+var fQ=[],fBusy=false,fDone=0;
+var detIdx=-1;
+
+// ========== DECLARACIÓN DE OVERRIDES (CORREGIDA) ==========
+var OVER_KEY = 'cr_overrides';
+var overrides = {};
+
+function loadOverrides(){
+  try{
+    var o = localStorage.getItem(OVER_KEY);
+    if(o) overrides = JSON.parse(o);
+  }catch(e){}
+}
+function saveOverrides(){
+  try{ localStorage.setItem(OVER_KEY, JSON.stringify(overrides)); }catch(e){}
+}
+loadOverrides();
+// =========================================================
+
+/* Genre map */
+var GN={28:'Acción',12:'Aventura',16:'Animación',35:'Comedia',80:'Crimen',
+  99:'Documental',18:'Drama',10751:'Familia',14:'Fantasía',27:'Terror',
+  9648:'Misterio',10749:'Romance',878:'Ciencia ficción',53:'Thriller',
+  10752:'Bélica',37:'Western',36:'Historia',10402:'Música',
+  10759:'Acción/Aventura',10765:'Sci-Fi y Fantasía'};
+
+/* Category labels */
+var CL={peliculas:'Película',series:'Serie',animes:'Anime',animados:'Animado',
+  doramas:'Dorama',novelas:'Novela',juegos:'Juego PC'};
+
+function getEffectiveCache(i){
+  if(!DB || !DB[i]) return {p:null,b:null,id:null,tp:null,g:[],r:null,ov:null,eps:null,seas:null,src:null,url:null};
+  var m = DB[i], k = ck(m.t, m.y);
+  var base = cache[k] || {p:null,b:null,id:null,tp:null,g:[],r:null,ov:null,eps:null,seas:null,src:null,url:null};
+  var ov = (overrides[i] && typeof overrides[i]==='object') ? overrides[i] : {};
+  return Object.assign({}, base, ov);
+}
 
 function openAdmin(){
   if(!adminOpen){ document.getElementById('admin-login').classList.add('open'); return; }
@@ -1373,25 +1716,42 @@ function closeAdmin(){
   document.getElementById('admin-panel').classList.remove('open');
   document.body.style.overflow='';
 }
+
+/* Login */
 function tryLogin(){
   var p=document.getElementById('admin-pass').value;
   var err=document.getElementById('admin-login-err');
   if(p===ADMIN_PASS){
     adminOpen=true;
     document.getElementById('admin-login').classList.remove('open');
-    document.getElementById('admin-pass').value=''; err.style.display='none';
+    document.getElementById('admin-pass').value='';
+    err.style.display='none';
     openAdmin();
   } else {
-    err.style.display='block'; document.getElementById('admin-pass').value='';
+    err.style.display='block';
+    document.getElementById('admin-pass').value='';
   }
 }
 
+/* Admin list */
 function getAdminFiltered(){
   var items=DB.map(function(m,i){ return {t:m.t,y:m.y,c:m.c,i:i}; });
-  if(adminQ){ var lq=adminQ.toLowerCase(); items=items.filter(function(m){ return m.t.toLowerCase().indexOf(lq)!==-1; }); }
+  if(adminQ){
+    var lq=adminQ.toLowerCase();
+    items=items.filter(function(m){ return m.t.toLowerCase().indexOf(lq)!==-1; });
+  }
   if(adminCat) items=items.filter(function(m){ return m.c===adminCat; });
-  if(adminStatusF==='missing') items=items.filter(function(m){ var d=getData(m.i); return !d.p&&!d.ov; });
-  else if(adminStatusF==='ok') items=items.filter(function(m){ var d=getData(m.i); return d.p||d.ov; });
+  if(adminStatusF==='missing'){
+    items=items.filter(function(m){
+      var ec=getEffectiveCache(m.i);
+      return !ec.p&&!ec.ov;
+    });
+  } else if(adminStatusF==='ok'){
+    items=items.filter(function(m){
+      var ec=getEffectiveCache(m.i);
+      return ec.p||ec.ov;
+    });
+  }
   items.sort(function(a,b){ return a.t.localeCompare(b.t,'es',{sensitivity:'base'}); });
   return items;
 }
@@ -1400,71 +1760,110 @@ function renderAdminList(){
   var all=getAdminFiltered();
   var maxPg=Math.max(1,Math.ceil(all.length/adminPer));
   if(adminPage>maxPg) adminPage=1;
-  var slice=all.slice((adminPage-1)*adminPer, adminPage*adminPer);
-  var okCount=0, missCount=0;
-  for(var i=0;i<DB.length;i++){ var d=getData(i); if(d.p||d.ov) okCount++; else missCount++; }
+  var slice=all.slice((adminPage-1)*adminPer,adminPage*adminPer);
+
+  /* Stats */
+  var okCount=0,missCount=0;
+  for(var i=0;i<DB.length;i++){
+    var ec=getEffectiveCache(i);
+    if(ec.p||ec.ov) okCount++; else missCount++;
+  }
   document.getElementById('adm-total').textContent=DB.length;
   document.getElementById('adm-ok').textContent=okCount;
   document.getElementById('adm-missing').textContent=missCount;
-  var list=document.getElementById('admin-list'); list.innerHTML='';
+
+  var list=document.getElementById('admin-list');
+  list.innerHTML='';
   var frag=document.createDocumentFragment();
+
   slice.forEach(function(m){
-    var i=m.i, d=getData(i), hasInfo=!!(d.p||d.ov);
-    var row=document.createElement('div'); row.className='admin-row';
-    var pimg=document.createElement('img'); pimg.className='admin-row-poster';
-    if(d.p) pimg.src=d.p;
-    pimg.onerror=function(){ this.style.opacity='.2'; };
+    var i=m.i, ec=getEffectiveCache(i);
+    var hasInfo=!!(ec.p||ec.ov);
+    var row=document.createElement('div');
+    row.className='admin-row';
+
+    /* Poster */
+    var pimg=document.createElement('img');
+    pimg.className='admin-row-poster';
+    if(ec.p){
+      var src=(ec.src==='animeflv'||ec.src==='rawg'||ec.src==='jikan'||
+               (ec.p&&ec.p.indexOf('http')===0))?ec.p:('https://image.tmdb.org/t/p/w92'+ec.p);
+      pimg.src=src;
+    }
+    pimg.onerror=function(){this.style.opacity='.2';};
     row.appendChild(pimg);
-    var info=document.createElement('div'); info.className='admin-row-info';
-    var tt=document.createElement('div'); tt.className='admin-row-title'; tt.textContent=m.t; info.appendChild(tt);
-    var meta=document.createElement('div'); meta.className='admin-row-meta';
-    meta.textContent=(CL[m.c]||m.c)+(m.y?' · '+m.y:'')+(d.r?' · ⭐'+d.r:'');
-    info.appendChild(meta); row.appendChild(info);
+
+    /* Info */
+    var info=document.createElement('div');info.className='admin-row-info';
+    var tt=document.createElement('div');tt.className='admin-row-title';tt.textContent=m.t;info.appendChild(tt);
+    var meta=document.createElement('div');meta.className='admin-row-meta';
+    var catLabel={'peliculas':'Película','series':'Serie','animes':'Anime','animados':'Animado',
+      'doramas':'Dorama','novelas':'Novela','juegos':'Juego PC'};
+    meta.textContent=(catLabel[m.c]||m.c)+(m.y?' · '+m.y:'')+(ec.r?' · ⭐'+ec.r:'');
+    info.appendChild(meta);
+    row.appendChild(info);
+
+    /* Status badge */
     var badge=document.createElement('span');
     badge.className='admin-row-status '+(hasInfo?'ars-ok':'ars-missing');
     badge.textContent=hasInfo?'✓ OK':'Sin info';
     row.appendChild(badge);
-    var eb=document.createElement('button'); eb.className='admin-row-edit'; eb.textContent='✏️ Editar';
+
+    /* Edit button */
+    var eb=document.createElement('button');eb.className='admin-row-edit';
+    eb.textContent='✏️ Editar';
     eb.addEventListener('click',function(e){ e.stopPropagation(); openEdit(i); });
-    row.appendChild(eb); frag.appendChild(row);
+    row.appendChild(eb);
+    frag.appendChild(row);
   });
   list.appendChild(frag);
-  renderAdminPager(maxPg, all.length);
+
+  /* Pager */
+  renderAdminPager(maxPg,all.length);
 }
 
 function renderAdminPager(max,total){
-  var pg=document.getElementById('admin-pager'); pg.innerHTML='';
+  var pg=document.getElementById('admin-pager');pg.innerHTML='';
   var info=document.createElement('span');
   info.style.cssText='font-size:11px;color:#444;padding:5px 8px';
-  info.textContent=total+' títulos'; pg.appendChild(info);
-  if(max<=1) return;
+  info.textContent=total+' títulos';
+  pg.appendChild(info);
+  if(max<=1)return;
   function mk(lbl,t,on){
-    var b=document.createElement('button'); b.className='apg'+(on?' on':''); b.textContent=lbl;
-    b.addEventListener('click',function(){ adminPage=t; renderAdminList(); document.getElementById('admin-list').scrollTop=0; });
+    var b=document.createElement('button');b.className='apg'+(on?' on':'');b.textContent=lbl;
+    b.addEventListener('click',function(){adminPage=t;renderAdminList();document.getElementById('admin-list').scrollTop=0;});
     return b;
   }
   pg.appendChild(mk('‹',adminPage-1,false));
-  var s=Math.max(1,adminPage-2), e=Math.min(max,adminPage+2);
+  var s=Math.max(1,adminPage-2),e=Math.min(max,adminPage+2);
   for(var p2=s;p2<=e;p2++) pg.appendChild(mk(p2,p2,p2===adminPage));
   pg.appendChild(mk('›',adminPage+1,false));
 }
 
+/* Edit modal */
 function openEdit(i){
   editIdx=i;
-  var m=DB[i], d=getData(i);
+  var m=DB[i], ec=getEffectiveCache(i);
   document.getElementById('ae-title').value=m.t;
   document.getElementById('ae-year').value=m.y||'';
   document.getElementById('ae-cat').value=m.c||'peliculas';
-  document.getElementById('ae-rating').value=d.r||'';
-  document.getElementById('ae-seasons').value=d.seas||'';
-  document.getElementById('ae-episodes').value=d.eps||'';
-  document.getElementById('ae-genres').value=d.g?d.g.map(function(g){ return String(g); }).join(', '):'';
-  document.getElementById('ae-overview').value=d.ov||'';
-  document.getElementById('ae-poster').value=d.p||'';
-  document.getElementById('ae-backdrop').value=d.b||'';
-  document.getElementById('ae-url').value=d.url||'';
+  document.getElementById('ae-rating').value=ec.r||'';
+  document.getElementById('ae-seasons').value=ec.seas||'';
+  document.getElementById('ae-episodes').value=ec.eps||'';
+  document.getElementById('ae-genres').value=
+    ec.g?ec.g.map(function(g){return typeof g==='string'?g:(GN[g]||g);}).join(', '):'';
+  document.getElementById('ae-overview').value=ec.ov||'';
+  document.getElementById('ae-poster').value=
+    ec.p?(ec.p.indexOf('http')===0?ec.p:'https://image.tmdb.org/t/p/w342'+ec.p):'';
+  document.getElementById('ae-backdrop').value=
+    ec.b?(ec.b.indexOf('http')===0?ec.b:'https://image.tmdb.org/t/p/w1280'+ec.b):'';
+  document.getElementById('ae-url').value=ec.url||'';
+
+  /* Preview poster */
   var prev=document.getElementById('admin-edit-preview');
-  prev.src=d.p||''; prev.style.display=d.p?'block':'none';
+  var psrc=document.getElementById('ae-poster').value;
+  prev.src=psrc||'';
+  prev.style.display=psrc?'block':'none';
   document.getElementById('admin-save-msg').style.display='none';
   document.getElementById('admin-edit').classList.add('open');
 }
@@ -1475,111 +1874,230 @@ function saveEdit(){
   var poster=document.getElementById('ae-poster').value.trim();
   var backdrop=document.getElementById('ae-backdrop').value.trim();
   var genres=document.getElementById('ae-genres').value.trim();
+
+  /* Store override */
   overrides[i]={
     r: document.getElementById('ae-rating').value.trim()||null,
     seas: parseInt(document.getElementById('ae-seasons').value)||null,
     eps: parseInt(document.getElementById('ae-episodes').value)||null,
-    g: genres?genres.split(',').map(function(s){ return s.trim(); }).filter(Boolean):[],
+    g: genres?genres.split(',').map(function(s){return s.trim();}).filter(Boolean):[],
     ov: document.getElementById('ae-overview').value.trim()||null,
-    p: poster||null, b: backdrop||null,
+    p: poster||null,
+    b: backdrop||null,
     url: document.getElementById('ae-url').value.trim()||null,
     src: 'manual'
   };
   saveOverrides();
+
+  /* Also update the main cache so the catalog shows it immediately */
+  var m=DB[i], k=ck(m.t,m.y);
+  if(!cache[k]) cache[k]={};
+  Object.assign(cache[k],overrides[i]);
+  saveC();
+
   document.getElementById('admin-save-msg').style.display='block';
   setTimeout(function(){
     document.getElementById('admin-edit').classList.remove('open');
-    editIdx=-1; renderAdminList(); renderGrid();
+    editIdx=-1;
+    renderAdminList();
+    renderGrid(); /* refresh main catalog */
   },800);
 }
 
 function clearEdit(){
   if(editIdx<0) return;
-  delete overrides[editIdx]; saveOverrides();
+  var i=editIdx;
+  delete overrides[i];
+  saveOverrides();
+  var m=DB[i], k=ck(m.t,m.y);
+  if(cache[k]){ delete cache[k]; saveC(); }
   document.getElementById('admin-edit').classList.remove('open');
-  editIdx=-1; renderAdminList(); renderGrid();
+  editIdx=-1;
+  renderAdminList();
+  renderGrid();
 }
 
+/* Poster preview on URL change */
 document.getElementById('ae-poster').addEventListener('input',function(e){
   var prev=document.getElementById('admin-edit-preview');
-  prev.src=e.target.value; prev.style.display=e.target.value?'block':'none';
+  prev.src=e.target.value;
+  prev.style.display=e.target.value?'block':'none';
 });
-document.getElementById('admin-login-close').addEventListener('click',function(){ document.getElementById('admin-login').classList.remove('open'); });
+
+/* Admin events */
+document.getElementById('admin-login-close').addEventListener('click',function(){
+  document.getElementById('admin-login').classList.remove('open');
+});
 document.getElementById('admin-btn').addEventListener('click',openAdmin);
 document.getElementById('admin-close').addEventListener('click',closeAdmin);
 document.getElementById('admin-login-btn').addEventListener('click',tryLogin);
-document.getElementById('admin-pass').addEventListener('keydown',function(e){ if(e.key==='Enter') tryLogin(); });
+document.getElementById('admin-pass').addEventListener('keydown',function(e){
+  if(e.key==='Enter') tryLogin();
+});
 document.getElementById('admin-save-btn').addEventListener('click',saveEdit);
-document.getElementById('admin-cancel-btn').addEventListener('click',function(){ document.getElementById('admin-edit').classList.remove('open'); editIdx=-1; });
+document.getElementById('admin-cancel-btn').addEventListener('click',function(){
+  document.getElementById('admin-edit').classList.remove('open');editIdx=-1;
+});
 document.getElementById('admin-clear-btn').addEventListener('click',clearEdit);
 
 var admSt;
 document.getElementById('admin-search').addEventListener('input',function(e){
-  clearTimeout(admSt); admSt=setTimeout(function(){ adminQ=e.target.value.trim(); adminPage=1; renderAdminList(); },200);
+  clearTimeout(admSt);admSt=setTimeout(function(){adminQ=e.target.value.trim();adminPage=1;renderAdminList();},200);
 });
-document.getElementById('admin-filter-cat').addEventListener('change',function(e){ adminCat=e.target.value; adminPage=1; renderAdminList(); });
-document.getElementById('admin-filter-status').addEventListener('change',function(e){ adminStatusF=e.target.value; adminPage=1; renderAdminList(); });
+document.getElementById('admin-filter-cat').addEventListener('change',function(e){
+  adminCat=e.target.value;adminPage=1;renderAdminList();
+});
+document.getElementById('admin-filter-status').addEventListener('change',function(e){
+  adminStatusF=e.target.value;adminPage=1;renderAdminList();
+});
 
-/* ── HAMBURGER (móvil) ── */
-var hamburger=document.getElementById('hamburger');
-var mobileMenu=document.getElementById('mobile-menu');
+/* ── HAMBURGER MENU (mobile) ── */
+var hamburger = document.getElementById('hamburger');
+var mobileMenu = document.getElementById('mobile-menu');
 if(hamburger){
-  hamburger.addEventListener('click',function(){ hamburger.classList.toggle('open'); mobileMenu.classList.toggle('open'); });
+  hamburger.addEventListener('click', function(){
+    hamburger.classList.toggle('open');
+    mobileMenu.classList.toggle('open');
+  });
 }
+/* Mobile menu items share data-f with desktop nav */
+/* Already handled by the existing [data-f] querySelectorAll */
+/* Just close menu when item clicked */
 if(mobileMenu){
   mobileMenu.querySelectorAll('.mm-item').forEach(function(b){
-    b.addEventListener('click',function(){ hamburger.classList.remove('open'); mobileMenu.classList.remove('open'); });
+    b.addEventListener('click', function(){
+      hamburger.classList.remove('open');
+      mobileMenu.classList.remove('open');
+    });
   });
 }
 
 /* ══════════════════════════════════════════════════
-   CARGA DE CSV DESDE GITHUB
+   AUTO-ACTUALIZACIÓN DESDE GITHUB CSV
 ══════════════════════════════════════════════════ */
 var GITHUB_RAW_BASE = 'https://raw.githubusercontent.com/RazorXRD/Catalogo-Cloud-Rider/main/';
 var CSV_CAT_MAP = {
-  'series_data.csv'             : 'series',
-  'peliculas_data_avanzado.csv' : 'peliculas',
-  'animes_data.csv'             : 'animes',
-  'animados_data.csv'           : 'animados',
-  'doramas_data.csv'            : 'doramas',
-  'novelas_data.csv'            : 'novelas',
-  'juegos_data.csv'             : 'juegos'
+  'series_data.csv'            : 'series',
+  'peliculas_data_avanzado.csv': 'peliculas',
+  'animes_data.csv'            : 'animes',
+  'animados_data.csv'          : 'animados',
+  'doramas_data.csv'           : 'doramas',
+  'novelas_data.csv'           : 'novelas',
+  'juegos_data.csv'            : 'juegos'
 };
 
-/*
-  Esquema de columnas por categoría (ajustado a tus CSVs reales):
-  animados : Original ; Titulo     ; Anio ; Sinopsis ; Link_Imagen  ; Generos ; Puntuacion_IMDb  ; Temporadas ; Episodios
-  animes   : Titulo_original ; Titulo_encontrado ; Fuente ; Sinopsis ; Poster_URL ; Generos ; Puntuacion ; Episodios ; URL_Externa
-  doramas  : Titulo_original ; Titulo_encontrado ; Fuente ; Anio ; Sinopsis ; Poster_URL ; Generos ; Puntuacion_TMDB ; Temporadas ; Episodios ; URL_Externa
-  juegos   : Titulo_original ; Titulo_encontrado ; Fuente ; Anio ; Sinopsis ; Poster_URL ; Generos ; Desarrolladores ; Editores ; Puntuacion_Usuario ; Metascore ; URL_Slug
-  novelas  : Titulo_original ; Titulo_encontrado ; Fuente ; Anio ; Sinopsis ; Poster_URL ; Backdrop_URL ; Generos ; Puntuacion_TMDB ; Temporadas ; Episodios ; URL_TMDB
-  peliculas: Titulo_original ; Titulo_encontrado ; Fuente ; Anio ; Sinopsis ; Poster_URL ; Generos ; Puntuacion ; Duracion_min ; URL_Externa
-  series   : Titulo ; Anio ; Sinopsis ; Link_Imagen ; Generos ; Puntuacion_IMDb ; Temporadas ; Capitulos
-*/
+/* ── Esquema exacto de columnas por categoría ──────────────────────────────
+   animados : Original ; Titulo     ; Anio ; Sinopsis ; Link_Imagen  ; Generos ; Puntuacion_IMDb ; Temporadas ; Episodios
+   animes   : Titulo_original ; Titulo_encontrado ; Fuente ; Sinopsis ; Poster_URL ; Generos ; Puntuacion ; Episodios ; URL_Externa
+   doramas  : Titulo_original ; Titulo_encontrado ; Fuente ; Anio ; Sinopsis ; Poster_URL ; Generos ; Puntuacion_TMDB ; Temporadas ; Episodios ; URL_Externa
+   juegos   : Titulo_original ; Titulo_encontrado ; Fuente ; Anio ; Sinopsis ; Poster_URL ; Generos ; Desarrolladores ; Editores ; Puntuacion_Usuario ; Metascore ; URL_Slug
+   novelas  : Titulo_original ; Titulo_encontrado ; Fuente ; Anio ; Sinopsis ; Poster_URL ; Backdrop_URL ; Generos ; Puntuacion_TMDB ; Temporadas ; Episodios ; URL_TMDB
+   peliculas: Titulo_original ; Titulo_encontrado ; Fuente ; Anio ; Sinopsis ; Poster_URL ; Generos ; Puntuacion ; Duracion_min ; URL_Externa
+   series   : Titulo          ; Anio ; Sinopsis ; Link_Imagen ; Generos ; Puntuacion_IMDb ; Temporadas ; Capitulos
+──────────────────────────────────────────────────────────────────────────── */
 var CSV_SCHEMA = {
-  animados  : { keyClean:'Titulo',           keyOrig:'Original',         sinopsis:'Sinopsis', poster:'Link_Imagen', backdrop:null,         generos:'Generos', puntuacion:'Puntuacion_IMDb',  temporadas:'Temporadas', episodios:'Episodios', url:null,         anio:'Anio' },
-  animes    : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:null,         generos:'Generos', puntuacion:'Puntuacion',       temporadas:null,         episodios:'Episodios', url:'URL_Externa', anio:null   },
-  doramas   : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:null,         generos:'Generos', puntuacion:'Puntuacion_TMDB',  temporadas:'Temporadas', episodios:'Episodios', url:'URL_Externa', anio:'Anio' },
-  juegos    : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:null,         generos:'Generos', puntuacion:'Puntuacion_Usuario',temporadas:null,        episodios:null,        url:'URL_Slug',    anio:'Anio' },
-  novelas   : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion_TMDB',  temporadas:'Temporadas', episodios:'Episodios', url:'URL_TMDB',    anio:'Anio' },
-  peliculas : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:null,         generos:'Generos', puntuacion:'Puntuacion',       temporadas:null,         episodios:null,        url:'URL_Externa', anio:'Anio' },
-  series    : { keyClean:'Titulo',            keyOrig:null,               sinopsis:'Sinopsis', poster:'Link_Imagen', backdrop:null,         generos:'Generos', puntuacion:'Puntuacion_IMDb',  temporadas:'Temporadas', episodios:'Capitulos', url:null,          anio:'Anio' }
+  animados : {
+    keyClean  : 'Titulo',
+    keyOrig   : 'Original',
+    sinopsis  : 'Sinopsis',
+    poster    : 'Link_Imagen',
+    backdrop  : null,
+    generos   : 'Generos',
+    puntuacion: 'Puntuacion_IMDb',
+    temporadas: 'Temporadas',
+    episodios : 'Episodios',
+    anio      : 'Anio'
+  },
+  animes : {
+    keyClean  : 'Titulo_encontrado',
+    keyOrig   : 'Titulo_original',
+    sinopsis  : 'Sinopsis',
+    poster    : 'Poster_URL',
+    backdrop  : null,
+    generos   : 'Generos',
+    puntuacion: 'Puntuacion',
+    temporadas: null,
+    episodios : 'Episodios',
+    anio      : null
+  },
+  doramas : {
+    keyClean  : 'Titulo_encontrado',
+    keyOrig   : 'Titulo_original',
+    sinopsis  : 'Sinopsis',
+    poster    : 'Poster_URL',
+    backdrop  : null,
+    generos   : 'Generos',
+    puntuacion: 'Puntuacion_TMDB',
+    temporadas: 'Temporadas',
+    episodios : 'Episodios',
+    anio      : 'Anio'
+  },
+  juegos : {
+    keyClean  : 'Titulo_encontrado',
+    keyOrig   : 'Titulo_original',
+    sinopsis  : 'Sinopsis',
+    poster    : 'Poster_URL',
+    backdrop  : null,
+    generos   : 'Generos',
+    puntuacion: 'Puntuacion_Usuario',
+    temporadas: null,
+    episodios : null,
+    anio      : 'Anio'
+  },
+  novelas : {
+    keyClean  : 'Titulo_encontrado',
+    keyOrig   : 'Titulo_original',
+    sinopsis  : 'Sinopsis',
+    poster    : 'Poster_URL',
+    backdrop  : 'Backdrop_URL',
+    generos   : 'Generos',
+    puntuacion: 'Puntuacion_TMDB',
+    temporadas: 'Temporadas',
+    episodios : 'Episodios',
+    anio      : 'Anio'
+  },
+  peliculas : {
+    keyClean  : 'Titulo_encontrado',
+    keyOrig   : 'Titulo_original',
+    sinopsis  : 'Sinopsis',
+    poster    : 'Poster_URL',
+    backdrop  : null,
+    generos   : 'Generos',
+    puntuacion: 'Puntuacion',
+    temporadas: null,
+    episodios : null,
+    anio      : 'Anio'
+  },
+  series : {
+    keyClean  : 'Titulo',
+    keyOrig   : null,
+    sinopsis  : 'Sinopsis',
+    poster    : 'Link_Imagen',
+    backdrop  : null,
+    generos   : 'Generos',
+    puntuacion: 'Puntuacion_IMDb',
+    temporadas: 'Temporadas',
+    episodios : 'Capitulos',
+    anio      : 'Anio'
+  }
 };
 
 function parseCSV(text){
-  text=text.replace(/^\uFEFF/,'');
-  var lines=text.split(/\r?\n/).filter(function(l){ return l.trim(); });
+  /* Quitar BOM y normalizar saltos */
+  text = text.replace(/^\uFEFF/,'');
+  var lines = text.split(/\r?\n/).filter(function(l){ return l.trim(); });
   if(!lines.length) return [];
-  var h0=lines[0];
-  var sep=(h0.split(';').length>=h0.split(',').length)?';':',';
-  var headers=h0.split(sep).map(function(h){ return h.trim(); });
-  var rows=[];
-  for(var i=1;i<lines.length;i++){
+  /* Detectar separador: el que más aparece en el header */
+  var h0 = lines[0];
+  var sep = (h0.split(';').length >= h0.split(',').length) ? ';' : ',';
+  var headers = h0.split(sep).map(function(h){ return h.trim(); });
+  var rows = [];
+  for(var i=1; i<lines.length; i++){
     var cells=[], cur='', inQ=false;
-    for(var j=0;j<lines[i].length;j++){
+    for(var j=0; j<lines[i].length; j++){
       var ch=lines[i][j];
       if(ch==='"'){ inQ=!inQ; }
-      else if(ch===sep&&!inQ){ cells.push(cur); cur=''; }
+      else if(ch===sep && !inQ){ cells.push(cur); cur=''; }
       else cur+=ch;
     }
     cells.push(cur);
@@ -1592,59 +2110,79 @@ function parseCSV(text){
 }
 
 function normCSV(s){
+  /* Normaliza quitando acentos, espacios, símbolos, números de tamaño en corchetes */
   if(!s) return '';
   return s
-    .replace(/\[.*?\]/g,'')
+    .replace(/\[.*?\]/g,'')           /* quitar [1080p][3.5 Gb] etc */
     .toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')  /* quitar tildes */
     .replace(/[^a-z0-9]/g,'')
     .trim();
 }
 
 function applyCSVRows(rows, cat){
-  var schema=CSV_SCHEMA[cat];
-  if(!schema||!DB||!DB.length) return 0;
-  var lookupClean={}, lookupOrig={};
+  var schema = CSV_SCHEMA[cat];
+  if(!schema){ console.warn('[CSV] Sin schema para categoría: '+cat); return 0; }
+  if(!DB||!DB.length) return 0;
+
+  /* Construir lookups con las columnas correctas de este CSV */
+  var lookupClean = {};   /* por título limpio (Titulo / Titulo_encontrado) */
+  var lookupOrig  = {};   /* por título original con corchetes */
   rows.forEach(function(row){
-    var clean=schema.keyClean?(row[schema.keyClean]||''):'';
-    var orig =schema.keyOrig ?(row[schema.keyOrig] ||''):'';
-    if(clean) lookupClean[normCSV(clean)]=row;
-    if(orig)  lookupOrig [normCSV(orig)] =row;
+    var clean = schema.keyClean ? (row[schema.keyClean]||'') : '';
+    var orig  = schema.keyOrig  ? (row[schema.keyOrig] ||'') : '';
+    if(clean) lookupClean[normCSV(clean)] = row;
+    if(orig)  lookupOrig [normCSV(orig)]  = row;
   });
-  var mapped=0;
-  DB.forEach(function(m,i){
-    if(m.c!==cat) return;
-    var key=normCSV(m.t);
-    var row=lookupClean[key]||lookupOrig[key];
+
+  var mapped = 0;
+  DB.forEach(function(m, i){
+    if(m.c !== cat) return;
+    var key = normCSV(m.t);
+
+    /* Buscar en orden: exacto limpio → exacto original → prefijo limpio → prefijo original */
+    var row = lookupClean[key] || lookupOrig[key];
     if(!row){
-      var kk=Object.keys(lookupClean);
-      for(var x=0;x<kk.length;x++){ if(kk[x].length>3&&(key.indexOf(kk[x])===0||kk[x].indexOf(key)===0)){ row=lookupClean[kk[x]]; break; } }
+      var keys = Object.keys(lookupClean);
+      for(var x=0; x<keys.length; x++){
+        var k=keys[x];
+        if(k.length>3 && (key.indexOf(k)===0 || k.indexOf(key)===0)){ row=lookupClean[k]; break; }
+      }
     }
     if(!row){
-      var kk2=Object.keys(lookupOrig);
-      for(var y=0;y<kk2.length;y++){ if(kk2[y].length>3&&(key.indexOf(kk2[y])===0||kk2[y].indexOf(key)===0)){ row=lookupOrig[kk2[y]]; break; } }
+      var keys2 = Object.keys(lookupOrig);
+      for(var y=0; y<keys2.length; y++){
+        var k2=keys2[y];
+        if(k2.length>3 && (key.indexOf(k2)===0 || k2.indexOf(key)===0)){ row=lookupOrig[k2]; break; }
+      }
     }
     if(!row) return;
-    var ov={};
-    var sinopsis  =schema.sinopsis  ?(row[schema.sinopsis]  ||''):'';
-    var poster    =schema.poster    ?(row[schema.poster]    ||''):'';
-    var backdrop  =schema.backdrop  ?(row[schema.backdrop]  ||''):'';
-    var generos   =schema.generos   ?(row[schema.generos]   ||''):'';
-    var puntuacion=schema.puntuacion?(row[schema.puntuacion]||''):'';
-    var temporadas=schema.temporadas?(row[schema.temporadas]||''):'';
-    var episodios =schema.episodios ?(row[schema.episodios] ||''):'';
-    var urlExt    =schema.url       ?(row[schema.url]       ||''):'';
-    if(sinopsis)   ov.ov=sinopsis;
-    if(poster   &&poster.indexOf('http')===0)   ov.p=poster;
-    if(backdrop &&backdrop.indexOf('http')===0) ov.b=backdrop;
-    if(generos)    ov.g=generos.split(',').map(function(g){ return g.trim(); }).filter(Boolean);
-    if(puntuacion){ try{ ov.r=String(Math.round(parseFloat(puntuacion)*10)/10); }catch(e){} }
+
+    /* Extraer campos usando el schema exacto */
+    var ov = {};
+    var sinopsis   = schema.sinopsis   ? (row[schema.sinopsis]  ||'') : '';
+    var poster     = schema.poster     ? (row[schema.poster]    ||'') : '';
+    var backdrop   = schema.backdrop   ? (row[schema.backdrop]  ||'') : '';
+    var generos    = schema.generos    ? (row[schema.generos]   ||'') : '';
+    var puntuacion = schema.puntuacion ? (row[schema.puntuacion]||'') : '';
+    var temporadas = schema.temporadas ? (row[schema.temporadas]||'') : '';
+    var episodios  = schema.episodios  ? (row[schema.episodios] ||'') : '';
+
+    if(sinopsis)  ov.ov = sinopsis;
+    if(poster  && poster.indexOf('http')===0)   ov.p = poster;
+    if(backdrop&& backdrop.indexOf('http')===0) ov.b = backdrop;
+    if(generos)   ov.g = generos.split(',').map(function(g){ return g.trim(); }).filter(Boolean);
+    if(puntuacion){ try{ ov.r = String(Math.round(parseFloat(puntuacion)*10)/10); }catch(e){} }
     if(temporadas){ try{ var t=parseInt(temporadas); if(!isNaN(t)&&t>0) ov.seas=t; }catch(e){} }
-    if(episodios) { try{ var ep=parseInt(episodios);  if(!isNaN(ep)&&ep>0) ov.eps=ep;  }catch(e){} }
-    if(urlExt&&urlExt.indexOf('http')===0) ov.url=urlExt;
-    ov.src='csv';
-    if(ov.p||ov.ov){
-      if(!overrides[i]||overrides[i].src==='csv'){ overrides[i]=ov; mapped++; }
+    if(episodios) { try{ var e=parseInt(episodios);  if(!isNaN(e)&&e>0) ov.eps=e;  }catch(e){} }
+    ov.src = 'csv';
+
+    /* Solo guardar si tiene al menos poster o sinopsis */
+    if(ov.p || ov.ov){
+      if(!overrides[i] || overrides[i].src==='csv'){
+        overrides[i] = ov;
+        mapped++;
+      }
     }
   });
   return mapped;
@@ -1652,13 +2190,13 @@ function applyCSVRows(rows, cat){
 
 function loadCSVsFromGitHub(){
   if(!GITHUB_RAW_BASE) return Promise.resolve();
-  var files=Object.keys(CSV_CAT_MAP);
-  var promises=files.map(function(file){
-    var cat=CSV_CAT_MAP[file];
-    return fetch(GITHUB_RAW_BASE+file+'?t='+Date.now())
+  var files = Object.keys(CSV_CAT_MAP);
+  var promises = files.map(function(file){
+    var cat = CSV_CAT_MAP[file];
+    return fetch(GITHUB_RAW_BASE + file + '?t=' + Date.now())
       .then(function(r){ if(!r.ok) throw new Error(r.status); return r.text(); })
       .then(function(text){
-        var n=applyCSVRows(parseCSV(text),cat);
+        var n = applyCSVRows(parseCSV(text), cat);
         console.log('[CSV] '+file+' → '+n+' mapeados ('+cat+')');
       })
       .catch(function(e){ console.warn('[CSV] Error en '+file+':', e); });
@@ -1666,21 +2204,21 @@ function loadCSVsFromGitHub(){
   return Promise.all(promises).then(function(){
     saveOverrides();
     renderGrid();
-    progDone();
-    console.log('[CSV] ✓ Total overrides:', Object.keys(overrides).length);
+    console.log('[CSV] ✓ Total overrides aplicados:', Object.keys(overrides).length);
   });
 }
-
-/* ── ARRANQUE ── */
-load();
-loadOverrides();
-buildYears();
-updateStats();
-updateCartUI();
-renderGrid();
-loadCSVsFromGitHub();
-
+load();           // Cargar localStorage
+loadOverrides();  // Cargar overrides (admin manual) desde localStorage
+buildYears();     // Construir años desde DB
+updateStats();    // Actualizar contadores
+updateCartUI();   // Mostrar carrito
+renderGrid();     // Pintar la cuadrícula inicial (sin datos aún)
+/* Cargar CSVs primero; solo al terminar, enqueue busca en APIs lo que falte */
+loadCSVsFromGitHub().then(function(){
+  enqueue();      // Solo procesa títulos sin poster ni sinopsis en CSV
+});
 })();
 </script>
+
 
 </body>
