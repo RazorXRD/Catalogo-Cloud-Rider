@@ -708,12 +708,21 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
     <span class="sc">⏳ Pend.: <b id="sp">0</b></span>
     <span class="sc">📋 Mostrando: <b id="cnt">-</b></span>
   </div>
-  <select id="srt">
-    <option value="az">A → Z</option>
-    <option value="za">Z → A</option>
-    <option value="new">Más reciente</option>
-    <option value="old">Más antiguo</option>
-  </select>
+  <div style="display:flex;align-items:center;gap:8px">
+    <select id="srt">
+      <option value="az">A → Z</option>
+      <option value="za">Z → A</option>
+      <option value="new">Más reciente</option>
+      <option value="old">Más antiguo</option>
+    </select>
+    <button onclick="hardRefresh()" title="Borrar caché y recargar datos del CSV" style="
+      background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.2);
+      color:var(--cyan);border-radius:6px;padding:4px 10px;font-size:11px;
+      cursor:pointer;font-family:var(--fb);white-space:nowrap;transition:all .15s;
+    " onmouseover="this.style.background='rgba(0,212,255,.18)'" onmouseout="this.style.background='rgba(0,212,255,.08)'">
+      🔄 Actualizar
+    </button>
+  </div>
 </div>
 
 <div id="grid"></div>
@@ -1678,11 +1687,27 @@ var overrides = {};
 function loadOverrides(){
   try{
     var o = localStorage.getItem(OVER_KEY);
-    if(o) overrides = JSON.parse(o);
+    if(o){
+      var all = JSON.parse(o);
+      /* Descartar los que vienen de CSV para que el CSV fresco siempre gane */
+      Object.keys(all).forEach(function(k){
+        if(!all[k] || all[k].src === 'csv') delete all[k];
+      });
+      overrides = all;
+    }
   }catch(e){}
 }
 function saveOverrides(){
   try{ localStorage.setItem(OVER_KEY, JSON.stringify(overrides)); }catch(e){}
+}
+function hardRefresh(){
+  /* Borra TODO el caché local (overrides + caché de TMDB) y recarga */
+  try{
+    localStorage.removeItem(OVER_KEY);
+    localStorage.removeItem('cr_cache');
+    localStorage.removeItem('cr_state');
+  }catch(e){}
+  location.reload(true);
 }
 loadOverrides();
 // =========================================================
