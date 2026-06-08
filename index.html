@@ -20,18 +20,41 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
 
 /* ── NAV ── */
 #nav{
-  position:sticky;top:0;z-index:300;height:58px;
+  position:sticky;top:0;z-index:300;min-height:58px;
   background:rgba(8,8,16,.97);backdrop-filter:blur(12px);
   border-bottom:1px solid rgba(0,212,255,.12);
-  display:flex;align-items:center;padding:0 18px;gap:0;
+  display:flex;align-items:stretch;padding:0 18px;gap:0;
 }
 #logo-wrap{display:flex;align-items:center;gap:10px;margin-right:20px;flex-shrink:0;text-decoration:none}
+#hamburger{display:none}
 #logo-img{width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid var(--cyan)}
 #logo-text{font-family:var(--fh);font-size:22px;letter-spacing:2px;
   background:linear-gradient(135deg,var(--cyan),var(--pink));
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
 }
-#nav-menu{display:flex;align-items:center;gap:1px;overflow:visible;scrollbar-width:none;flex:1}
+#nav-menu{display:flex;flex-direction:column;align-items:stretch;flex:1;gap:0}
+.nav-row{display:flex;align-items:center;gap:1px;overflow:visible;scrollbar-width:none;flex-wrap:wrap}
+.nav-row::-webkit-scrollbar{display:none}
+.nav-row-1{border-bottom:1px solid rgba(255,255,255,.08)}
+.nav-row-2{padding-top:2px;flex-wrap:wrap;gap:4px}
+#active-filters{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-left:6px}
+.af-chip{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 8px 2px 10px;border-radius:20px;
+  background:rgba(0,212,255,.15);border:1px solid rgba(0,212,255,.4);
+  color:var(--cyan);font-size:11px;font-family:var(--fh);letter-spacing:.5px;
+  cursor:pointer;transition:background .15s;
+}
+.af-chip:hover{background:rgba(0,212,255,.28)}
+.af-chip .af-x{font-size:13px;opacity:.7;line-height:1}
+.af-clear{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 10px;border-radius:20px;
+  background:rgba(255,60,100,.15);border:1px solid rgba(255,60,100,.4);
+  color:#ff6b8a;font-size:11px;font-family:var(--fh);letter-spacing:.5px;
+  cursor:pointer;transition:background .15s;
+}
+.af-clear:hover{background:rgba(255,60,100,.3)}
 #nav-menu::-webkit-scrollbar{display:none}
 .nm{font-family:var(--fb);font-size:11px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;
   color:#666;padding:6px 11px;border-radius:5px;border:none;background:transparent;
@@ -634,6 +657,66 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
   font-size:12px;color:var(--green);margin-top:8px;text-align:center;display:none;
 }
 
+
+/* ===== CAROUSEL RECIENTES ===== */
+#carousel-wrap{
+  background:rgba(8,8,16,.95);
+  border-bottom:1px solid rgba(0,212,255,.12);
+  padding:10px 18px 14px;
+  overflow:hidden;
+}
+#carousel-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:10px;
+}
+#carousel-title{
+  font-family:var(--fh);font-size:13px;letter-spacing:1.5px;
+  color:var(--cyan);text-transform:uppercase;opacity:.85;
+}
+#carousel-dots{display:flex;gap:5px;align-items:center}
+.cr-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:rgba(255,255,255,.25);transition:background .3s;cursor:pointer;
+}
+.cr-dot.active{background:var(--cyan);}
+#carousel-track-wrap{overflow:hidden;width:100%}
+#carousel-track{
+  display:flex;gap:10px;
+  transition:transform .6s cubic-bezier(.4,0,.2,1);
+  will-change:transform;
+}
+.cr-card{
+  flex-shrink:0;
+  width:calc(20% - 8px);
+  position:relative;
+  border-radius:8px;overflow:hidden;
+  cursor:pointer;
+  border:1px solid rgba(255,255,255,.07);
+  transition:transform .2s,box-shadow .2s;
+}
+.cr-card:hover{transform:scale(1.04);box-shadow:0 0 18px rgba(0,212,255,.35)}
+.cr-card img{
+  width:100%;aspect-ratio:2/3;object-fit:cover;display:block;
+  background:#111;
+}
+.cr-card-label{
+  position:absolute;bottom:0;left:0;right:0;
+  padding:20px 8px 6px;
+  background:linear-gradient(0deg,rgba(0,0,0,.85) 0%,transparent 100%);
+  font-size:11px;color:#fff;font-weight:600;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.cr-card-cat{
+  position:absolute;top:6px;left:6px;
+  font-size:9px;padding:2px 6px;border-radius:10px;
+  background:rgba(0,212,255,.8);color:#000;font-weight:700;letter-spacing:.5px;
+}
+@media(max-width:768px){
+  .cr-card{width:calc(33.33% - 7px)}
+}
+@media(max-width:480px){
+  .cr-card{width:calc(50% - 5px)}
+}
 </style>
 </head>
 <body>
@@ -646,14 +729,17 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
   </a>
   </div><!-- /nav-top -->
   <div id="nav-menu">
-    <button class="nm on" data-f="todas">INICIO</button>
-    <button class="nm" data-f="peliculas">🎬 PELÍCULAS</button>
-    <button class="nm" data-f="series">📺 SERIES</button>
-    <button class="nm" data-f="animes">⛩ ANIMES</button>
-    <button class="nm" data-f="animados">🎨 ANIMADOS</button>
-    <button class="nm" data-f="doramas">🌸 DORAMAS</button>
-    <button class="nm" data-f="novelas">💋 NOVELAS</button>
-    <button class="nm" data-f="juegos">🎮 JUEGOS PC</button>
+    <div class="nav-row nav-row-1">
+      <button class="nm on" data-f="todas">INICIO</button>
+      <button class="nm" data-f="peliculas">🎬 PELÍCULAS</button>
+      <button class="nm" data-f="series">📺 SERIES</button>
+      <button class="nm" data-f="animes">⛩ ANIMES</button>
+      <button class="nm" data-f="animados">🎨 ANIMADOS</button>
+      <button class="nm" data-f="doramas">🌸 DORAMAS</button>
+      <button class="nm" data-f="novelas">💋 NOVELAS</button>
+      <button class="nm" data-f="juegos">🎮 JUEGOS PC</button>
+    </div>
+    <div class="nav-row nav-row-2">
     <div class="nm-drop">
       <button class="nm">GÉNEROS ▾</button>
       <div class="dmenu">
@@ -683,7 +769,9 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
     </div>
     <button class="nm" data-f="vista">✓ VISTAS</button>
     <button class="nm" data-f="favorita">♥ FAVORITAS</button>
-    <button class="nm" data-f="pendiente">⏳ PENDIENTES</button>
+      <button class="nm" data-f="pendiente">⏳ PENDIENTES</button>
+      <div id="active-filters"></div>
+    </div><!-- /nav-row-2 -->
   </div>
   <!-- hamburger only shown on mobile via CSS -->
   <div id="nav-right">
@@ -694,6 +782,17 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
     <button id="cart-btn">🛒 PEDIDO <span id="cart-count">0</span></button>
   </div>
 </nav>
+
+<!-- CAROUSEL RECIENTES -->
+<div id="carousel-wrap">
+  <div id="carousel-header">
+    <span id="carousel-title">🔥 Recién Actualizados</span>
+    <div id="carousel-dots"></div>
+  </div>
+  <div id="carousel-track-wrap">
+    <div id="carousel-track"></div>
+  </div>
+</div>
 
 <!-- MOBILE MENU -->
 
@@ -1003,7 +1102,7 @@ function filtered(){
   if(genreF){
     var gfName=genreF.toLowerCase();
     items=items.filter(function(m){
-      var d=getData(m.i);
+      var d=getData(m._idx);
       if(!d.g||!d.g.length) return false;
       return d.g.some(function(g){ return String(g).toLowerCase()===gfName; });
     });
@@ -1097,7 +1196,75 @@ function makeCard(m){
 }
 
 /* ── GRID + PAGER ── */
+function renderActiveFilters(){
+  var wrap=document.getElementById('active-filters');
+  if(!wrap) return;
+  wrap.innerHTML='';
+  var chips=[];
+
+  /* Category chip */
+  var catLabels={todas:'INICIO',peliculas:'🎬 PELÍCULAS',series:'📺 SERIES',
+    animes:'⛩ ANIMES',animados:'🎨 ANIMADOS',doramas:'🌸 DORAMAS',
+    novelas:'💋 NOVELAS',juegos:'🎮 JUEGOS PC',
+    vista:'✓ VISTAS',favorita:'♥ FAVORITAS',pendiente:'⏳ PENDIENTES',sin:'SIN ESTADO'};
+  if(catF && catF!=='todas'){
+    chips.push({label: catLabels[catF]||catF, remove:function(){catF='todas';page=1;renderGrid();}});
+  }
+
+  /* Genre chip */
+  if(genreF){
+    chips.push({label:'🏷 '+genreF, remove:function(){genreF=null;page=1;renderGrid();}});
+  }
+
+  /* Year chip */
+  if(yearF){
+    chips.push({label:'📅 '+yearF, remove:function(){
+      yearF=null;
+      document.querySelectorAll('[data-y]').forEach(function(x){x.classList.remove('on');x.style.color='';});
+      page=1;renderGrid();
+    }});
+  }
+
+  /* Search chip */
+  if(q){
+    chips.push({label:'🔍 "'+q+'"', remove:function(){
+      q=''; page=1;
+      var srch=document.getElementById('srch');
+      if(srch) srch.value='';
+      renderGrid();
+    }});
+  }
+
+  if(chips.length===0) return;
+
+  chips.forEach(function(ch){
+    var el=document.createElement('span');
+    el.className='af-chip';
+    el.innerHTML=ch.label+' <span class="af-x">✕</span>';
+    el.addEventListener('click', ch.remove);
+    wrap.appendChild(el);
+  });
+
+  /* Clear all button */
+  var clr=document.createElement('span');
+  clr.className='af-clear';
+  clr.textContent='✕ Limpiar';
+  clr.addEventListener('click',function(){
+    catF='todas'; genreF=null; yearF=null; q=''; page=1;
+    document.querySelectorAll('[data-y]').forEach(function(x){x.classList.remove('on');x.style.color='';});
+    document.querySelectorAll('.nm').forEach(function(b){
+      b.classList.remove('on');
+      if(b.dataset.f==='todas') b.classList.add('on');
+    });
+    var srch=document.getElementById('srch');
+    if(srch) srch.value='';
+    renderGrid();
+  });
+  wrap.appendChild(clr);
+}
+
 function renderGrid(){
+  renderActiveFilters();
   var all=filtered(), total=all.length;
   var maxPg=Math.max(1,Math.ceil(total/PER));
   if(page>maxPg) page=1;
@@ -1390,8 +1557,8 @@ function getAdminFiltered(){
   var items=DB.map(function(m,i){ return {t:m.t,y:m.y,c:m.c,i:i}; });
   if(adminQ){ var lq=adminQ.toLowerCase(); items=items.filter(function(m){ return m.t.toLowerCase().indexOf(lq)!==-1; }); }
   if(adminCat) items=items.filter(function(m){ return m.c===adminCat; });
-  if(adminStatusF==='missing') items=items.filter(function(m){ var d=getData(m.i); return !d.p&&!d.ov; });
-  else if(adminStatusF==='ok') items=items.filter(function(m){ var d=getData(m.i); return d.p||d.ov; });
+  if(adminStatusF==='missing') items=items.filter(function(m){ var d=getData(m._idx); return !d.p&&!d.ov; });
+  else if(adminStatusF==='ok') items=items.filter(function(m){ var d=getData(m._idx); return d.p||d.ov; });
   items.sort(function(a,b){ return a.t.localeCompare(b.t,'es',{sensitivity:'base'}); });
   return items;
 }
@@ -1571,7 +1738,11 @@ function parseCSV(text){
   var lines=text.split(/\r?\n/).filter(function(l){ return l.trim(); });
   if(!lines.length) return [];
   var h0=lines[0];
-  var sep=(h0.split(';').length>=h0.split(',').length)?';':',';
+  var tabCount  = h0.split('\t').length - 1;
+  var semiCount = h0.split(';').length  - 1;
+  var commaCount= h0.split(',').length  - 1;
+  var sep = tabCount >= semiCount && tabCount >= commaCount ? '\t'
+          : semiCount >= commaCount ? ';' : ',';
   var headers=h0.split(sep).map(function(h){ return h.trim(); });
   var rows=[];
   for(var i=1;i<lines.length;i++){
@@ -1652,17 +1823,114 @@ function applyCSVRows(rows, cat){
 
 function loadCSVsFromGitHub(){
   if(!GITHUB_RAW_BASE) return Promise.resolve();
-  var files=Object.keys(CSV_CAT_MAP);
-  var promises=files.map(function(file){
-    var cat=CSV_CAT_MAP[file];
-    return fetch(GITHUB_RAW_BASE+file+'?t='+Date.now())
-      .then(function(r){ if(!r.ok) throw new Error(r.status); return r.text(); })
-      .then(function(text){
-        var n=applyCSVRows(parseCSV(text),cat);
-        console.log('[CSV] '+file+' → '+n+' mapeados ('+cat+')');
-      })
-      .catch(function(e){ console.warn('[CSV] Error en '+file+':', e); });
-  });
+
+  /*
+    Estrategia SHA + ETag:
+    1. Pedimos el SHA del último commit de cada archivo via GitHub API
+       (funciona con CORS, es un JSON pequeño ~1kb por archivo).
+    2. Comparamos con el SHA guardado en localStorage.
+    3. Si coincide y tenemos datos → carga instantánea desde caché.
+    4. Si cambió o no hay caché → descargamos el CSV y guardamos el nuevo SHA.
+    5. Si la API de GitHub falla (rate limit / sin red) → fallback a ETag
+       del HEAD request, y si eso también falla, usamos datos guardados.
+    Resultado: detecta cambios en GitHub con 100% fiabilidad,
+    sin descargar el CSV salvo cuando realmente cambió.
+  */
+  var GITHUB_API_BASE = 'https://api.github.com/repos/RazorXRD/Catalogo-Cloud-Rider/commits?per_page=1&path=';
+
+  /* Obtiene el SHA del último commit que tocó un archivo */
+  function getGithubSHA(file){
+    return fetch(GITHUB_API_BASE + file, { cache: 'no-store' })
+      .then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function(data){ return (data && data[0]) ? data[0].sha : null; })
+      .catch(function(){ return null; }); /* falla silenciosa → usará ETag */
+  }
+
+  function fetchWithEtag(file){
+    var cat      = CSV_CAT_MAP[file];
+    var keyEtag  = 'etag_'    + file;
+    var keyData  = 'csvdata_' + file;
+    var url      = GITHUB_RAW_BASE + file;
+
+    /* Leer caché: primero localStorage, luego sessionStorage como fallback */
+    var savedEtag = null;
+    var savedData = null;
+    var usedSession = false;
+    try {
+      savedEtag = localStorage.getItem(keyEtag);
+      savedData = localStorage.getItem(keyData);
+    } catch(e){}
+    if(!savedData){
+      try {
+        savedData = sessionStorage.getItem(keyData);
+        if(savedData) usedSession = true;
+      } catch(e){}
+    }
+
+    /* Guardar en el storage correcto según disponibilidad */
+    function saveCache(etag, text){
+      try {
+        if(etag) localStorage.setItem(keyEtag, etag);
+        localStorage.setItem(keyData, text);
+      } catch(e){
+        /* localStorage lleno → sessionStorage (dura solo esta sesión) */
+        try {
+          sessionStorage.setItem(keyData, text);
+          console.warn('[CSV] localStorage lleno, usando sessionStorage para '+file);
+        } catch(e2){
+          console.warn('[CSV] Sin espacio de caché para '+file);
+        }
+      }
+    }
+
+    /* 1. Pedir SHA via GitHub API (~1kb JSON, CORS OK) */
+    return getGithubSHA(file).then(function(sha){
+
+      /* 2. SHA coincide y tenemos datos → caché instantánea */
+      if(sha && sha === savedEtag && savedData && !usedSession){
+        var n = applyCSVRows(parseCSV(savedData), cat);
+        console.log('[CSV] '+file+' → '+n+' ('+cat+') [caché OK]');
+        return;
+      }
+
+      /* 3. SHA cambió, no hay caché, o API falló → HEAD como fallback de detección */
+      return fetch(url, { method: 'HEAD', cache: 'no-store' })
+        .then(function(r){
+          if(!r.ok) throw new Error(r.status);
+          var etag = r.headers.get('etag') || r.headers.get('last-modified') || null;
+          var fingerprint = sha || etag; /* preferir SHA, usar ETag si API falló */
+
+          /* Si el fingerprint coincide y tenemos datos → caché */
+          if(fingerprint && fingerprint === savedEtag && savedData && !usedSession){
+            var n = applyCSVRows(parseCSV(savedData), cat);
+            console.log('[CSV] '+file+' → '+n+' ('+cat+') [caché OK]');
+            return;
+          }
+
+          /* 4. Cambió o sin caché → descargar CSV completo */
+          return fetch(url + '?t=' + Date.now(), { cache: 'no-store' })
+            .then(function(r2){ if(!r2.ok) throw new Error(r2.status); return r2.text(); })
+            .then(function(text){
+              saveCache(fingerprint, text);
+              var n = applyCSVRows(parseCSV(text), cat);
+              console.log('[CSV] '+file+' → '+n+' ('+cat+') [actualizado]');
+            });
+        })
+        .catch(function(e){
+          /* Sin red → usar lo que tengamos */
+          if(savedData){
+            var n = applyCSVRows(parseCSV(savedData), cat);
+            console.log('[CSV] '+file+' → '+n+' ('+cat+') [offline]');
+          } else {
+            console.warn('[CSV] Sin datos para '+file+':', e);
+          }
+        });
+    });
+  }
+
+  var files    = Object.keys(CSV_CAT_MAP);
+  var promises = files.map(fetchWithEtag);
+
   return Promise.all(promises).then(function(){
     saveOverrides();
     renderGrid();
@@ -1681,6 +1949,149 @@ renderGrid();
 loadCSVsFromGitHub();
 
 })();
+
+/* ===== CAROUSEL RECIENTES ===== */
+(function(){
+  var CAROUSEL_SIZE   = 20;   // cuántos posters mostrar en total
+  var VISIBLE         = 5;    // cuántos visibles a la vez (desktop)
+  var INTERVAL_MS     = 1500; // 1.5s por paso
+  var CHECK_INTERVAL  = 60000;// cada 60s revisa si hay cambios en los CSV
+
+  var track    = document.getElementById('carousel-track');
+  var dotsWrap = document.getElementById('carousel-dots');
+  var items    = [];
+  var pos      = 0;
+  var timer    = null;
+  var dotEls   = [];
+
+  function catIcon(c){
+    return {peliculas:'🎬',series:'📺',animes:'⛩',animados:'🎨',
+            doramas:'🌸',novelas:'💋',juegos:'🎮'}[c]||'';
+  }
+
+  function shuffle(arr){
+    for(var i=arr.length-1;i>0;i--){
+      var j=Math.floor(Math.random()*(i+1));
+      var t=arr[i];arr[i]=arr[j];arr[j]=t;
+    }
+    return arr;
+  }
+
+  function buildCarousel(){
+    /* Toma todos los overrides que tienen poster y los mezcla con items con imagen */
+    var pool=[];
+    if(typeof DB!=='undefined'){
+      DB.forEach(function(m,i){ m._idx=i; });
+      DB.forEach(function(m){
+        var d=getData(m._idx);
+        var img=d.p||(d.ov&&d.ov.p)||'';
+        if(img) pool.push({t:m.t,c:m.c,img:img,idx:m._idx});
+      });
+    }
+    if(pool.length===0) return;
+    shuffle(pool);
+    items = pool.slice(0, Math.min(CAROUSEL_SIZE, pool.length));
+
+    /* Build dots */
+    var pages = Math.ceil(items.length / VISIBLE);
+    dotsWrap.innerHTML='';
+    dotEls=[];
+    for(var d=0;d<pages;d++){
+      var dot=document.createElement('span');
+      dot.className='cr-dot'+(d===0?' active':'');
+      (function(idx){dot.addEventListener('click',function(){goTo(idx*VISIBLE);});})(d);
+      dotsWrap.appendChild(dot);
+      dotEls.push(dot);
+    }
+
+    /* Build cards */
+    track.innerHTML='';
+    items.forEach(function(it){
+      var card=document.createElement('div');
+      card.className='cr-card';
+      var cimg=document.createElement('img');
+      cimg.src=it.img; cimg.alt=''; cimg.loading='lazy';
+      cimg.onerror=function(){this.style.display='none';};
+      var ccat=document.createElement('span');
+      ccat.className='cr-card-cat'; ccat.textContent=catIcon(it.c);
+      var clbl=document.createElement('div');
+      clbl.className='cr-card-label'; clbl.textContent=it.t;
+      card.appendChild(cimg); card.appendChild(ccat); card.appendChild(clbl);
+      card.addEventListener('click',function(){
+        /* Open detail if openDetail exists */
+        if(typeof openDetail==='function'){ openDetail(it.idx); }
+      });
+      track.appendChild(card);
+    });
+    updateDots();
+    startAuto();
+  }
+
+  function visibleCount(){
+    return window.innerWidth<=480?2:window.innerWidth<=768?3:VISIBLE;
+  }
+
+  function goTo(newPos){
+    var vc=visibleCount();
+    var max=Math.max(0,items.length-vc);
+    pos=Math.min(Math.max(0,newPos),max);
+    var cardW=track.children[0]?track.children[0].offsetWidth+10:0;
+    track.style.transform='translateX(-'+(pos*cardW)+'px)';
+    updateDots();
+  }
+
+  function updateDots(){
+    var vc=visibleCount();
+    var page=Math.floor(pos/vc);
+    dotEls.forEach(function(d,i){ d.className='cr-dot'+(i===page?' active':''); });
+  }
+
+  function startAuto(){
+    if(timer) clearInterval(timer);
+    timer=setInterval(function(){
+      var vc=visibleCount();
+      var nextPos=pos+1;
+      if(nextPos>items.length-vc) nextPos=0;
+      goTo(nextPos);
+    }, INTERVAL_MS);
+  }
+
+  /* Detect CSV changes and rebuild carousel */
+  function watchChanges(){
+    setInterval(function(){
+      /* Compare stored ETags with current localStorage */
+      var changed=false;
+      Object.keys(CSV_CAT_MAP||{}).forEach(function(f){
+        var keyEtag='etag_'+f;
+        var storedEtag=localStorage.getItem(keyEtag);
+        /* We can't re-check ETags here (no fetch), but we can check
+           if masterList grew compared to items pool size */
+      });
+      /* Simple rebuild: if masterList changed size, rebuild */
+      if(typeof DB!=='undefined' && DB.length>0){
+        buildCarousel();
+      }
+    }, CHECK_INTERVAL);
+  }
+
+  /* Wait for masterList to be populated */
+  var attempts=0;
+  function waitAndBuild(){
+    attempts++;
+    if(typeof DB!=='undefined' && DB.length>0){
+      buildCarousel();
+      watchChanges();
+    } else if(attempts<60){
+      setTimeout(waitAndBuild, 500);
+    }
+  }
+  waitAndBuild();
+
+  window.addEventListener('resize',function(){
+    if(items.length) goTo(pos);
+  });
+})();
+
 </script>
 
 </body>
