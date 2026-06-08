@@ -2016,19 +2016,32 @@ function normCSV(s){
 
 function applyCSVRows(rows,cat){
   var mapped=0;
+  /* Construir lookup por Titulo Y por Original (columna del nombre en DB) */
   var lookup={};
+  var lookupOrig={};
   rows.forEach(function(row){
     var t=row['Titulo']||row['titulo']||row['TITULO']||'';
+    var o=row['Original']||row['original']||'';
     if(t) lookup[normCSV(t)]=row;
+    if(o) lookupOrig[normCSV(o)]=row;
   });
   if(!DB||!DB.length) return 0;
   DB.forEach(function(m,i){
     if(m.c!==cat) return;
     var key=normCSV(m.t);
+    /* 1) match exacto por Titulo */
     var row=lookup[key];
+    /* 2) match exacto por Original (nombre con corchetes/tamaño que guarda el DB) */
+    if(!row) row=lookupOrig[key];
+    /* 3) match parcial por prefijo */
     if(!row){
       for(var k in lookup){
         if(k.length>4&&(k.indexOf(key)===0||key.indexOf(k)===0)){row=lookup[k];break;}
+      }
+    }
+    if(!row){
+      for(var k2 in lookupOrig){
+        if(k2.length>4&&(k2.indexOf(key)===0||key.indexOf(k2)===0)){row=lookupOrig[k2];break;}
       }
     }
     if(!row) return;
@@ -2038,7 +2051,7 @@ function applyCSVRows(rows,cat){
     var generos=row['Generos']||row['generos']||'';
     var punt=row['Puntuacion_IMDb']||row['puntuacion']||'';
     var temps=row['Temporadas']||row['temporadas']||'';
-    var eps=row['Capitulos']||row['capitulos']||row['Episodios']||'';
+    var eps=row['Episodios']||row['Capitulos']||row['capitulos']||'';
     if(sinopsis) ov['ov']=sinopsis;
     if(poster&&poster.indexOf('http')===0) ov['p']=poster;
     if(generos) ov['g']=generos.split(',').map(function(g){return g.trim();}).filter(Boolean);
@@ -2056,21 +2069,22 @@ function applyCSVRows(rows,cat){
 }
 
 function loadCSVsFromGitHub(){
-  if(!GITHUB_RAW_BASE) return;
+  if(!GITHUB_RAW_BASE) return Promise.resolve();
   var files=Object.keys(CSV_CAT_MAP);
-  var done=0;
-  var total=files.length;
-  files.forEach(function(file){
+  var promises=files.map(function(file){
     var cat=CSV_CAT_MAP[file];
-    fetch(GITHUB_RAW_BASE+file+'?t='+Date.now())
+    return fetch(GITHUB_RAW_BASE+file+'?t='+Date.now())
       .then(function(r){if(!r.ok)throw new Error(r.status);return r.text();})
       .then(function(text){
-        applyCSVRows(parseCSV(text),cat);
-        done++;
-        if(done===total){saveOverrides();renderGrid();}
-        else renderGrid();
+        var n=applyCSVRows(parseCSV(text),cat);
+        console.log('[CSV] '+file+' → '+n+' títulos mapeados en "'+cat+'"');
       })
-      .catch(function(){done++;});
+      .catch(function(e){console.warn('[CSV] Error cargando '+file+':',e);});
+  });
+  return Promise.all(promises).then(function(){
+    saveOverrides();
+    renderGrid();
+    console.log('[CSV] Todos los CSVs cargados. overrides:',Object.keys(overrides).length);
   });
 }
 load();           // Cargar localStorage
@@ -2078,9 +2092,11 @@ loadOverrides();  // Cargar overrides (admin manual) desde localStorage
 buildYears();     // Construir años desde DB
 updateStats();    // Actualizar contadores
 updateCartUI();   // Mostrar carrito
-renderGrid();     // Pintar la cuadrícula
-loadCSVsFromGitHub(); // Cargar datos de CSVs (GitHub) antes de llamar a TMDB
-enqueue();        // Iniciar carga de imágenes desde APIs (solo los que faltan)
+renderGrid();     // Pintar la cuadrícula inicial (sin datos aún)
+/* Cargar CSVs primero; solo al terminar, enqueue busca en APIs lo que falte */
+loadCSVsFromGitHub().then(function(){
+  enqueue();      // Solo procesa títulos sin poster ni sinopsis en CSV
+});
 })();
 </script>
 
