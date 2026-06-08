@@ -893,6 +893,24 @@ var uState={},cache={},cart=[];
 var fQ=[],fBusy=false,fDone=0;
 var detIdx=-1;
 
+/* ── OVERRIDES (datos propios: CSV o admin manual) ── */
+var OVER_KEY='cr_overrides';
+var overrides={};
+function loadOverrides(){
+  try{var o=localStorage.getItem(OVER_KEY);if(o)overrides=JSON.parse(o);}catch(e){}
+}
+function saveOverrides(){
+  try{localStorage.setItem(OVER_KEY,JSON.stringify(overrides));}catch(e){}
+}
+
+function getEffectiveCache(i){
+  if(!DB||!DB[i])return{p:null,b:null,id:null,tp:null,g:[],r:null,ov:null,eps:null,seas:null,src:null,url:null};
+  var m=DB[i],k=ck(m.t,m.y);
+  var base=cache[k]||{p:null,b:null,id:null,tp:null,g:[],r:null,ov:null,eps:null,seas:null,src:null,url:null};
+  var ov=(overrides[i]&&typeof overrides[i]==='object')?overrides[i]:{};
+  return Object.assign({},base,ov);
+}
+
 /* Genre map */
 var GN={28:'Acción',12:'Aventura',16:'Animación',35:'Comedia',80:'Crimen',
   99:'Documental',18:'Drama',10751:'Familia',14:'Fantasía',27:'Terror',
@@ -947,25 +965,23 @@ function buildYears(){
 
 /* ── FETCH QUEUE ── */
 function enqueue(){
-  fQ=[];
-  /* Build full missing list */
-  var missing=[];
-  for(var i=0;i<DB.length;i++){if(!cache[ck(DB[i].t,DB[i].y)])missing.push(i);}
-  fDone=DB.length-missing.length;
-
-  /* Prioritise current visible page items */
-  var all=filtered();
-  var maxPg=Math.max(1,Math.ceil(all.length/PER));
-  var curPage=all.slice((page-1)*PER, page*PER);
-  var curSet={};
-  curPage.forEach(function(m){curSet[m.i]=1;});
-
-  var priority=missing.filter(function(i){return curSet[i];});
-  var rest=missing.filter(function(i){return !curSet[i];});
-  fQ=priority.concat(rest);
-
+  fQ = [];
+  var missing = [];
+  for(var i=0;i<DB.length;i++){
+    var eff = getEffectiveCache(i);
+    if(!eff.p && !eff.ov) missing.push(i);
+  }
+  fDone = DB.length - missing.length;
+  // Priorizar los de la página actual
+  var all = filtered();
+  var curPage = all.slice((page-1)*PER, page*PER);
+  var curSet = {};
+  curPage.forEach(function(m){ curSet[m.i] = 1; });
+  var priority = missing.filter(function(i){ return curSet[i]; });
+  var rest = missing.filter(function(i){ return !curSet[i]; });
+  fQ = priority.concat(rest);
   progUpdate();
-  if(fQ.length)nextBatch();
+  if(fQ.length) nextBatch();
 }
 function nextBatch(){
   if(fBusy||!fQ.length)return;
@@ -998,9 +1014,15 @@ function cleanTitle(t) {
 }
 
 function fetchOne(i) {
-  var m = DB[i], k = ck(m.t, m.y);
-  if (cache[k]) return Promise.resolve();
-
+  var m = DB[i];
+  var k = ck(m.t, m.y);
+  var ov = overrides[i];
+  if(ov && (ov.p || ov.ov)) {
+    // Ya tienes información propia, no busques en APIs
+    cache[k] = cache[k] || {};
+    Object.assign(cache[k], ov);
+    return Promise.resolve();
+  }
   var cat  = m.c;
   var isAnime   = (cat === 'animes' || cat === 'animados');
   var isTV      = (cat === 'series' || cat === 'doramas' || cat === 'novelas');
@@ -1656,20 +1678,13 @@ var overrides = {};
 function loadOverrides(){
   try{
     var o = localStorage.getItem(OVER_KEY);
-    if(o){
-      var stored = JSON.parse(o);
-      Object.keys(stored).forEach(function(k){ overrides[k] = stored[k]; });
-    }
-  }catch(e){ 
-    try{ localStorage.removeItem(OVER_KEY); }catch(e2){} 
-  }
+    if(o) overrides = JSON.parse(o);
+  }catch(e){}
 }
-
-function saveOverrides(){ 
-  try{ localStorage.setItem(OVER_KEY, JSON.stringify(overrides)); }catch(e){} 
+function saveOverrides(){
+  try{ localStorage.setItem(OVER_KEY, JSON.stringify(overrides)); }catch(e){}
 }
-
-loadOverrides();  // Inicializar overrides
+loadOverrides();
 // =========================================================
 
 /* Genre map */
@@ -1684,11 +1699,11 @@ var CL={peliculas:'Película',series:'Serie',animes:'Anime',animados:'Animado',
   doramas:'Dorama',novelas:'Novela',juegos:'Juego PC'};
 
 function getEffectiveCache(i){
-  if(!DB||!DB[i]) return {p:null,b:null,id:null,tp:null,g:[],r:null,ov:null,eps:null,seas:null,src:null,url:null};
-  var m=DB[i], k=ck(m.t,m.y);
-  var base=cache[k]||{p:null,b:null,id:null,tp:null,g:[],r:null,ov:null,eps:null,seas:null,src:null,url:null};
-  var ov=(overrides[i]&&typeof overrides[i]==='object')?overrides[i]:{};
-  return Object.assign({},base,ov);
+  if(!DB || !DB[i]) return {p:null,b:null,id:null,tp:null,g:[],r:null,ov:null,eps:null,seas:null,src:null,url:null};
+  var m = DB[i], k = ck(m.t, m.y);
+  var base = cache[k] || {p:null,b:null,id:null,tp:null,g:[],r:null,ov:null,eps:null,seas:null,src:null,url:null};
+  var ov = (overrides[i] && typeof overrides[i]==='object') ? overrides[i] : {};
+  return Object.assign({}, base, ov);
 }
 
 function openAdmin(){
@@ -1957,87 +1972,216 @@ if(mobileMenu){
   });
 }
 
-/* Load overrides on startup */
-loadOverrides();
-  loadCSVsFromGitHub();
-
 /* ══════════════════════════════════════════════════
    AUTO-ACTUALIZACIÓN DESDE GITHUB CSV
-   Configura GITHUB_RAW_BASE con la URL raw de tu repo
-   Ejemplo: 'https://raw.githubusercontent.com/razor/cloudrider/main/'
-   Los CSVs deben llamarse: series_data.csv, peliculas_data.csv, etc.
 ══════════════════════════════════════════════════ */
 var GITHUB_RAW_BASE = 'https://raw.githubusercontent.com/RazorXRD/Catalogo-Cloud-Rider/main/';
 var CSV_CAT_MAP = {
-  'series_data.csv':'series','peliculas_data.csv':'peliculas',
-  'animes_data.csv':'animes','animados_data.csv':'animados',
-  'doramas_data.csv':'doramas','novelas_data.csv':'novelas',
-  'juegos_data.csv':'juegos'
+  'series_data.csv'            : 'series',
+  'peliculas_data_avanzado.csv': 'peliculas',
+  'animes_data.csv'            : 'animes',
+  'animados_data.csv'          : 'animados',
+  'doramas_data.csv'           : 'doramas',
+  'novelas_data.csv'           : 'novelas',
+  'juegos_data.csv'            : 'juegos'
+};
+
+/* ── Esquema exacto de columnas por categoría ──────────────────────────────
+   animados : Original ; Titulo     ; Anio ; Sinopsis ; Link_Imagen  ; Generos ; Puntuacion_IMDb ; Temporadas ; Episodios
+   animes   : Titulo_original ; Titulo_encontrado ; Fuente ; Sinopsis ; Poster_URL ; Generos ; Puntuacion ; Episodios ; URL_Externa
+   doramas  : Titulo_original ; Titulo_encontrado ; Fuente ; Anio ; Sinopsis ; Poster_URL ; Generos ; Puntuacion_TMDB ; Temporadas ; Episodios ; URL_Externa
+   juegos   : Titulo_original ; Titulo_encontrado ; Fuente ; Anio ; Sinopsis ; Poster_URL ; Generos ; Desarrolladores ; Editores ; Puntuacion_Usuario ; Metascore ; URL_Slug
+   novelas  : Titulo_original ; Titulo_encontrado ; Fuente ; Anio ; Sinopsis ; Poster_URL ; Backdrop_URL ; Generos ; Puntuacion_TMDB ; Temporadas ; Episodios ; URL_TMDB
+   peliculas: Titulo_original ; Titulo_encontrado ; Fuente ; Anio ; Sinopsis ; Poster_URL ; Generos ; Puntuacion ; Duracion_min ; URL_Externa
+   series   : Titulo          ; Anio ; Sinopsis ; Link_Imagen ; Generos ; Puntuacion_IMDb ; Temporadas ; Capitulos
+──────────────────────────────────────────────────────────────────────────── */
+var CSV_SCHEMA = {
+  animados : {
+    keyClean  : 'Titulo',
+    keyOrig   : 'Original',
+    sinopsis  : 'Sinopsis',
+    poster    : 'Link_Imagen',
+    backdrop  : null,
+    generos   : 'Generos',
+    puntuacion: 'Puntuacion_IMDb',
+    temporadas: 'Temporadas',
+    episodios : 'Episodios',
+    anio      : 'Anio'
+  },
+  animes : {
+    keyClean  : 'Titulo_encontrado',
+    keyOrig   : 'Titulo_original',
+    sinopsis  : 'Sinopsis',
+    poster    : 'Poster_URL',
+    backdrop  : null,
+    generos   : 'Generos',
+    puntuacion: 'Puntuacion',
+    temporadas: null,
+    episodios : 'Episodios',
+    anio      : null
+  },
+  doramas : {
+    keyClean  : 'Titulo_encontrado',
+    keyOrig   : 'Titulo_original',
+    sinopsis  : 'Sinopsis',
+    poster    : 'Poster_URL',
+    backdrop  : null,
+    generos   : 'Generos',
+    puntuacion: 'Puntuacion_TMDB',
+    temporadas: 'Temporadas',
+    episodios : 'Episodios',
+    anio      : 'Anio'
+  },
+  juegos : {
+    keyClean  : 'Titulo_encontrado',
+    keyOrig   : 'Titulo_original',
+    sinopsis  : 'Sinopsis',
+    poster    : 'Poster_URL',
+    backdrop  : null,
+    generos   : 'Generos',
+    puntuacion: 'Puntuacion_Usuario',
+    temporadas: null,
+    episodios : null,
+    anio      : 'Anio'
+  },
+  novelas : {
+    keyClean  : 'Titulo_encontrado',
+    keyOrig   : 'Titulo_original',
+    sinopsis  : 'Sinopsis',
+    poster    : 'Poster_URL',
+    backdrop  : 'Backdrop_URL',
+    generos   : 'Generos',
+    puntuacion: 'Puntuacion_TMDB',
+    temporadas: 'Temporadas',
+    episodios : 'Episodios',
+    anio      : 'Anio'
+  },
+  peliculas : {
+    keyClean  : 'Titulo_encontrado',
+    keyOrig   : 'Titulo_original',
+    sinopsis  : 'Sinopsis',
+    poster    : 'Poster_URL',
+    backdrop  : null,
+    generos   : 'Generos',
+    puntuacion: 'Puntuacion',
+    temporadas: null,
+    episodios : null,
+    anio      : 'Anio'
+  },
+  series : {
+    keyClean  : 'Titulo',
+    keyOrig   : null,
+    sinopsis  : 'Sinopsis',
+    poster    : 'Link_Imagen',
+    backdrop  : null,
+    generos   : 'Generos',
+    puntuacion: 'Puntuacion_IMDb',
+    temporadas: 'Temporadas',
+    episodios : 'Capitulos',
+    anio      : 'Anio'
+  }
 };
 
 function parseCSV(text){
-  var lines=text.split(/\r?\n/).filter(function(l){return l.trim();});
+  /* Quitar BOM y normalizar saltos */
+  text = text.replace(/^\uFEFF/,'');
+  var lines = text.split(/\r?\n/).filter(function(l){ return l.trim(); });
   if(!lines.length) return [];
-  var sep=lines[0].indexOf(';')>lines[0].indexOf(',')?';':',';
-  lines[0]=lines[0].replace(/^\uFEFF/,'');
-  var headers=lines[0].split(sep).map(function(h){return h.trim();});
-  var rows=[];
-  for(var i=1;i<lines.length;i++){
-    var cells=[],cur='',inQ=false;
-    for(var j=0;j<lines[i].length;j++){
+  /* Detectar separador: el que más aparece en el header */
+  var h0 = lines[0];
+  var sep = (h0.split(';').length >= h0.split(',').length) ? ';' : ',';
+  var headers = h0.split(sep).map(function(h){ return h.trim(); });
+  var rows = [];
+  for(var i=1; i<lines.length; i++){
+    var cells=[], cur='', inQ=false;
+    for(var j=0; j<lines[i].length; j++){
       var ch=lines[i][j];
-      if(ch==='"'){inQ=!inQ;}
-      else if(ch===sep&&!inQ){cells.push(cur);cur='';}
+      if(ch==='"'){ inQ=!inQ; }
+      else if(ch===sep && !inQ){ cells.push(cur); cur=''; }
       else cur+=ch;
     }
     cells.push(cur);
     if(cells.length<2) continue;
     var row={};
-    headers.forEach(function(h,idx){row[h]=(cells[idx]||'').trim();});
+    headers.forEach(function(h,idx){ row[h]=(cells[idx]||'').trim(); });
     rows.push(row);
   }
   return rows;
 }
 
 function normCSV(s){
-  return s?s.toLowerCase().replace(/[^a-z0-9]/g,''):'';
+  /* Normaliza quitando acentos, espacios, símbolos, números de tamaño en corchetes */
+  if(!s) return '';
+  return s
+    .replace(/\[.*?\]/g,'')           /* quitar [1080p][3.5 Gb] etc */
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')  /* quitar tildes */
+    .replace(/[^a-z0-9]/g,'')
+    .trim();
 }
 
-function applyCSVRows(rows,cat){
-  var mapped=0;
-  var lookup={};
-  rows.forEach(function(row){
-    var t=row['Titulo']||row['titulo']||row['TITULO']||'';
-    if(t) lookup[normCSV(t)]=row;
-  });
+function applyCSVRows(rows, cat){
+  var schema = CSV_SCHEMA[cat];
+  if(!schema){ console.warn('[CSV] Sin schema para categoría: '+cat); return 0; }
   if(!DB||!DB.length) return 0;
-  DB.forEach(function(m,i){
-    if(m.c!==cat) return;
-    var key=normCSV(m.t);
-    var row=lookup[key];
+
+  /* Construir lookups con las columnas correctas de este CSV */
+  var lookupClean = {};   /* por título limpio (Titulo / Titulo_encontrado) */
+  var lookupOrig  = {};   /* por título original con corchetes */
+  rows.forEach(function(row){
+    var clean = schema.keyClean ? (row[schema.keyClean]||'') : '';
+    var orig  = schema.keyOrig  ? (row[schema.keyOrig] ||'') : '';
+    if(clean) lookupClean[normCSV(clean)] = row;
+    if(orig)  lookupOrig [normCSV(orig)]  = row;
+  });
+
+  var mapped = 0;
+  DB.forEach(function(m, i){
+    if(m.c !== cat) return;
+    var key = normCSV(m.t);
+
+    /* Buscar en orden: exacto limpio → exacto original → prefijo limpio → prefijo original */
+    var row = lookupClean[key] || lookupOrig[key];
     if(!row){
-      for(var k in lookup){
-        if(k.length>4&&(k.indexOf(key)===0||key.indexOf(k)===0)){row=lookup[k];break;}
+      var keys = Object.keys(lookupClean);
+      for(var x=0; x<keys.length; x++){
+        var k=keys[x];
+        if(k.length>3 && (key.indexOf(k)===0 || k.indexOf(key)===0)){ row=lookupClean[k]; break; }
+      }
+    }
+    if(!row){
+      var keys2 = Object.keys(lookupOrig);
+      for(var y=0; y<keys2.length; y++){
+        var k2=keys2[y];
+        if(k2.length>3 && (key.indexOf(k2)===0 || k2.indexOf(key)===0)){ row=lookupOrig[k2]; break; }
       }
     }
     if(!row) return;
-    var ov={};
-    var sinopsis=row['Sinopsis']||row['sinopsis']||'';
-    var poster=row['Link_Imagen']||row['Poster']||row['poster']||'';
-    var generos=row['Generos']||row['generos']||'';
-    var punt=row['Puntuacion_IMDb']||row['puntuacion']||'';
-    var temps=row['Temporadas']||row['temporadas']||'';
-    var eps=row['Capitulos']||row['capitulos']||row['Episodios']||'';
-    if(sinopsis) ov['ov']=sinopsis;
-    if(poster&&poster.indexOf('http')===0) ov['p']=poster;
-    if(generos) ov['g']=generos.split(',').map(function(g){return g.trim();}).filter(Boolean);
-    if(punt){try{ov['r']=String(Math.round(parseFloat(punt)*10)/10);}catch(e){}}
-    if(temps){try{ov['seas']=parseInt(temps);}catch(e){}}
-    if(eps){try{ov['eps']=parseInt(eps);}catch(e){}}
-    ov['src']='csv';
-    if(Object.keys(ov).length>1){
-      if(!overrides[i]||overrides[i].src==='csv'){
-        overrides[i]=ov; mapped++;
+
+    /* Extraer campos usando el schema exacto */
+    var ov = {};
+    var sinopsis   = schema.sinopsis   ? (row[schema.sinopsis]  ||'') : '';
+    var poster     = schema.poster     ? (row[schema.poster]    ||'') : '';
+    var backdrop   = schema.backdrop   ? (row[schema.backdrop]  ||'') : '';
+    var generos    = schema.generos    ? (row[schema.generos]   ||'') : '';
+    var puntuacion = schema.puntuacion ? (row[schema.puntuacion]||'') : '';
+    var temporadas = schema.temporadas ? (row[schema.temporadas]||'') : '';
+    var episodios  = schema.episodios  ? (row[schema.episodios] ||'') : '';
+
+    if(sinopsis)  ov.ov = sinopsis;
+    if(poster  && poster.indexOf('http')===0)   ov.p = poster;
+    if(backdrop&& backdrop.indexOf('http')===0) ov.b = backdrop;
+    if(generos)   ov.g = generos.split(',').map(function(g){ return g.trim(); }).filter(Boolean);
+    if(puntuacion){ try{ ov.r = String(Math.round(parseFloat(puntuacion)*10)/10); }catch(e){} }
+    if(temporadas){ try{ var t=parseInt(temporadas); if(!isNaN(t)&&t>0) ov.seas=t; }catch(e){} }
+    if(episodios) { try{ var e=parseInt(episodios);  if(!isNaN(e)&&e>0) ov.eps=e;  }catch(e){} }
+    ov.src = 'csv';
+
+    /* Solo guardar si tiene al menos poster o sinopsis */
+    if(ov.p || ov.ov){
+      if(!overrides[i] || overrides[i].src==='csv'){
+        overrides[i] = ov;
+        mapped++;
       }
     }
   });
@@ -2045,29 +2189,34 @@ function applyCSVRows(rows,cat){
 }
 
 function loadCSVsFromGitHub(){
-  if(!GITHUB_RAW_BASE) return;
-  var files=Object.keys(CSV_CAT_MAP);
-  var done=0;
-  var total=files.length;
-  files.forEach(function(file){
-    var cat=CSV_CAT_MAP[file];
-    fetch(GITHUB_RAW_BASE+file+'?t='+Date.now())
-      .then(function(r){if(!r.ok)throw new Error(r.status);return r.text();})
+  if(!GITHUB_RAW_BASE) return Promise.resolve();
+  var files = Object.keys(CSV_CAT_MAP);
+  var promises = files.map(function(file){
+    var cat = CSV_CAT_MAP[file];
+    return fetch(GITHUB_RAW_BASE + file + '?t=' + Date.now())
+      .then(function(r){ if(!r.ok) throw new Error(r.status); return r.text(); })
       .then(function(text){
-        applyCSVRows(parseCSV(text),cat);
-        done++;
-        if(done===total){saveOverrides();renderGrid();}
-        else renderGrid();
+        var n = applyCSVRows(parseCSV(text), cat);
+        console.log('[CSV] '+file+' → '+n+' mapeados ('+cat+')');
       })
-      .catch(function(){done++;});
+      .catch(function(e){ console.warn('[CSV] Error en '+file+':', e); });
+  });
+  return Promise.all(promises).then(function(){
+    saveOverrides();
+    renderGrid();
+    console.log('[CSV] ✓ Total overrides aplicados:', Object.keys(overrides).length);
   });
 }
 load();           // Cargar localStorage
+loadOverrides();  // Cargar overrides (admin manual) desde localStorage
 buildYears();     // Construir años desde DB
 updateStats();    // Actualizar contadores
 updateCartUI();   // Mostrar carrito
-renderGrid();     // Pintar la cuadrícula
-enqueue();        // Iniciar carga de imágenes desde APIs
+renderGrid();     // Pintar la cuadrícula inicial (sin datos aún)
+/* Cargar CSVs primero; solo al terminar, enqueue busca en APIs lo que falte */
+loadCSVsFromGitHub().then(function(){
+  enqueue();      // Solo procesa títulos sin poster ni sinopsis en CSV
+});
 })();
 </script>
 
