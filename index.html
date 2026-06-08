@@ -893,6 +893,24 @@ var uState={},cache={},cart=[];
 var fQ=[],fBusy=false,fDone=0;
 var detIdx=-1;
 
+/* ── OVERRIDES (datos propios: CSV o admin manual) ── */
+var OVER_KEY='cr_overrides';
+var overrides={};
+function loadOverrides(){
+  try{var o=localStorage.getItem(OVER_KEY);if(o)overrides=JSON.parse(o);}catch(e){}
+}
+function saveOverrides(){
+  try{localStorage.setItem(OVER_KEY,JSON.stringify(overrides));}catch(e){}
+}
+
+function getEffectiveCache(i){
+  if(!DB||!DB[i])return{p:null,b:null,id:null,tp:null,g:[],r:null,ov:null,eps:null,seas:null,src:null,url:null};
+  var m=DB[i],k=ck(m.t,m.y);
+  var base=cache[k]||{p:null,b:null,id:null,tp:null,g:[],r:null,ov:null,eps:null,seas:null,src:null,url:null};
+  var ov=(overrides[i]&&typeof overrides[i]==='object')?overrides[i]:{};
+  return Object.assign({},base,ov);
+}
+
 /* Genre map */
 var GN={28:'Acción',12:'Aventura',16:'Animación',35:'Comedia',80:'Crimen',
   99:'Documental',18:'Drama',10751:'Familia',14:'Fantasía',27:'Terror',
@@ -947,7 +965,6 @@ function buildYears(){
 
 /* ── FETCH QUEUE ── */
 function enqueue(){
-  function enqueue(){
   fQ = [];
   var missing = [];
   for(var i=0;i<DB.length;i++){
@@ -997,13 +1014,15 @@ function cleanTitle(t) {
 }
 
 function fetchOne(i) {
+  var m = DB[i];
+  var k = ck(m.t, m.y);
   var ov = overrides[i];
-if(ov && (ov.p || ov.ov)) {
-  // Ya tienes información propia, no busques en APIs
-  cache[ck(m.t,m.y)] = cache[ck(m.t,m.y)] || {};
-  Object.assign(cache[ck(m.t,m.y)], ov);
-  return Promise.resolve();
-}
+  if(ov && (ov.p || ov.ov)) {
+    // Ya tienes información propia, no busques en APIs
+    cache[k] = cache[k] || {};
+    Object.assign(cache[k], ov);
+    return Promise.resolve();
+  }
   var cat  = m.c;
   var isAnime   = (cat === 'animes' || cat === 'animados');
   var isTV      = (cat === 'series' || cat === 'doramas' || cat === 'novelas');
@@ -1953,10 +1972,6 @@ if(mobileMenu){
   });
 }
 
-/* Load overrides on startup */
-loadOverrides();
-  loadCSVsFromGitHub();
-
 /* ══════════════════════════════════════════════════
    AUTO-ACTUALIZACIÓN DESDE GITHUB CSV
    Configura GITHUB_RAW_BASE con la URL raw de tu repo
@@ -2059,11 +2074,13 @@ function loadCSVsFromGitHub(){
   });
 }
 load();           // Cargar localStorage
+loadOverrides();  // Cargar overrides (admin manual) desde localStorage
 buildYears();     // Construir años desde DB
 updateStats();    // Actualizar contadores
 updateCartUI();   // Mostrar carrito
 renderGrid();     // Pintar la cuadrícula
-enqueue();        // Iniciar carga de imágenes desde APIs
+loadCSVsFromGitHub(); // Cargar datos de CSVs (GitHub) antes de llamar a TMDB
+enqueue();        // Iniciar carga de imágenes desde APIs (solo los que faltan)
 })();
 </script>
 
