@@ -1100,11 +1100,32 @@ function filtered(){
     else           items=items.filter(function(m){ return getS(m.i)===sf; });
   }
   if(genreF){
-    var gfName=genreF.toLowerCase();
+    var gfName=genreF.toLowerCase().trim();
+    /* Alias map: filtro → palabras que también cuentan */
+    var gfAliases={
+      'terror':['terror','horror','miedo','suspense'],
+      'ciencia ficción':['ciencia ficción','sci-fi','sci fi','science fiction','ciencia-ficcion','scifi'],
+      'acción':['acción','accion','action'],
+      'animación':['animación','animacion','animation','animated'],
+      'fantasía':['fantasía','fantasia','fantasy'],
+      'bélica':['bélica','belica','war','guerra'],
+      'crimen':['crimen','crime','criminal'],
+      'thriller':['thriller','suspenso','suspense','thrill']
+    };
+    var terms = gfAliases[gfName] ? gfAliases[gfName] : [gfName];
     items=items.filter(function(m){
       var d=getData(m._idx);
-      if(!d.g||!d.g.length) return false;
-      return d.g.some(function(g){ return String(g).toLowerCase()===gfName; });
+      /* d.g puede ser array de strings o un string largo con separadores */
+      var genreStr='';
+      if(d.g && d.g.length){
+        genreStr = Array.isArray(d.g) ? d.g.join(' ').toLowerCase() : String(d.g).toLowerCase();
+      }
+      if(!genreStr) return false;
+      /* Normalizar separadores: ". " "| " "/ " → " " */
+      genreStr = genreStr.replace(/[.,|\/\\]/g,' ').replace(/\s+/g,' ');
+      return terms.some(function(term){
+        return genreStr.indexOf(term.toLowerCase())!==-1;
+      });
     });
   }
   if(yearF){
@@ -1808,7 +1829,7 @@ function applyCSVRows(rows, cat){
     if(sinopsis)   ov.ov=sinopsis;
     if(poster   &&poster.indexOf('http')===0)   ov.p=poster;
     if(backdrop &&backdrop.indexOf('http')===0) ov.b=backdrop;
-    if(generos)    ov.g=generos.split(',').map(function(g){ return g.trim(); }).filter(Boolean);
+    if(generos)    ov.g=generos.split(/[,|;]|\. |\s\/\s/).map(function(g){ return g.trim(); }).filter(Boolean);
     if(puntuacion){ try{ ov.r=String(Math.round(parseFloat(puntuacion)*10)/10); }catch(e){} }
     if(temporadas){ try{ var t=parseInt(temporadas); if(!isNaN(t)&&t>0) ov.seas=t; }catch(e){} }
     if(episodios) { try{ var ep=parseInt(episodios);  if(!isNaN(ep)&&ep>0) ov.eps=ep;  }catch(e){} }
@@ -1883,44 +1904,29 @@ function loadCSVsFromGitHub(){
       }
     }
 
-    /* 1. Pedir SHA via GitHub API (~1kb JSON, CORS OK) */
+    /* 1. Pedir SHA via GitHub API (CORS OK, ~1kb) para detectar cambios */
     return getGithubSHA(file).then(function(sha){
 
-      /* 2. SHA coincide y tenemos datos → caché instantánea */
+      /* 2. SHA coincide y tenemos datos → caché instantánea, sin descargar CSV */
       if(sha && sha === savedEtag && savedData && !usedSession){
         var n = applyCSVRows(parseCSV(savedData), cat);
         console.log('[CSV] '+file+' → '+n+' ('+cat+') [caché OK]');
         return;
       }
 
-      /* 3. SHA cambió, no hay caché, o API falló → HEAD como fallback de detección */
-      return fetch(url, { method: 'HEAD', cache: 'no-store' })
-        .then(function(r){
-          if(!r.ok) throw new Error(r.status);
-          var etag = r.headers.get('etag') || r.headers.get('last-modified') || null;
-          var fingerprint = sha || etag; /* preferir SHA, usar ETag si API falló */
-
-          /* Si el fingerprint coincide y tenemos datos → caché */
-          if(fingerprint && fingerprint === savedEtag && savedData && !usedSession){
-            var n = applyCSVRows(parseCSV(savedData), cat);
-            console.log('[CSV] '+file+' → '+n+' ('+cat+') [caché OK]');
-            return;
-          }
-
-          /* 4. Cambió o sin caché → descargar CSV completo */
-          return fetch(url + '?t=' + Date.now(), { cache: 'no-store' })
-            .then(function(r2){ if(!r2.ok) throw new Error(r2.status); return r2.text(); })
-            .then(function(text){
-              saveCache(fingerprint, text);
-              var n = applyCSVRows(parseCSV(text), cat);
-              console.log('[CSV] '+file+' → '+n+' ('+cat+') [actualizado]');
-            });
+      /* 3. SHA cambió, no hay caché, o API de SHA falló → descargar CSV directo */
+      return fetch(url + '?t=' + Date.now())
+        .then(function(r){ if(!r.ok) throw new Error(r.status); return r.text(); })
+        .then(function(text){
+          saveCache(sha, text);
+          var n = applyCSVRows(parseCSV(text), cat);
+          console.log('[CSV] '+file+' → '+n+' ('+cat+') [actualizado]');
         })
         .catch(function(e){
-          /* Sin red → usar lo que tengamos */
+          /* Descarga falló pero tenemos datos guardados → usarlos */
           if(savedData){
             var n = applyCSVRows(parseCSV(savedData), cat);
-            console.log('[CSV] '+file+' → '+n+' ('+cat+') [offline]');
+            console.log('[CSV] '+file+' → '+n+' ('+cat+') [offline fallback]');
           } else {
             console.warn('[CSV] Sin datos para '+file+':', e);
           }
