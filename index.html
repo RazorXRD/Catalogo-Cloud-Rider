@@ -1,774 +1,921 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cloud Rider - Catálogo Multimedia Premium</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <style>
-        :root {
-            --bg-primary: #0a0e17;
-            --bg-secondary: #121824;
-            --bg-card: #1c2333;
-            --accent-color: #00bcd4;
-            --accent-hover: #00acc1;
-            --text-main: #ffffff;
-            --text-muted: #8b9bb4;
-            --star-color: #ffb300;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cloud Rider &mdash; Cat&aacute;logo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --cyan:#00d4ff;--pink:#ff1493;--dark-cyan:#00a8cc;
+  --bg:#080810;--s1:#0e0e18;--s2:#14141f;--s3:#1c1c2a;
+  --txt:#eaeaea;--muted:#777;--border:#1e1e2e;
+  --green:#1db954;--amber:#f59e0b;
+  --fh:'Bebas Neue',sans-serif;--fb:'Barlow',sans-serif;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100vh;overflow-x:hidden}
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Poppins', sans-serif;
-        }
+/* ── NAV ── */
+#nav{
+  position:sticky;top:0;z-index:300;min-height:58px;
+  background:rgba(8,8,16,.97);backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(0,212,255,.12);
+  display:flex;align-items:stretch;padding:0 18px;gap:0;
+}
+#logo-wrap{display:flex;align-items:center;gap:10px;margin-right:20px;flex-shrink:0;text-decoration:none}
+#hamburger{display:none}
+#logo-img{width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid var(--cyan)}
+#logo-text{font-family:var(--fh);font-size:22px;letter-spacing:2px;
+  background:linear-gradient(135deg,var(--cyan),var(--pink));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+#nav-menu{display:flex;flex-direction:column;align-items:stretch;flex:1;gap:0}
+.nav-row{display:flex;align-items:center;gap:1px;overflow:visible;scrollbar-width:none;flex-wrap:wrap}
+.nav-row::-webkit-scrollbar{display:none}
+.nav-row-1{border-bottom:1px solid rgba(255,255,255,.08)}
+.nav-row-2{padding-top:2px;flex-wrap:wrap;gap:4px}
+#active-filters{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-left:6px}
+.af-chip{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 8px 2px 10px;border-radius:20px;
+  background:rgba(0,212,255,.15);border:1px solid rgba(0,212,255,.4);
+  color:var(--cyan);font-size:11px;font-family:var(--fh);letter-spacing:.5px;
+  cursor:pointer;transition:background .15s;
+}
+.af-chip:hover{background:rgba(0,212,255,.28)}
+.af-chip .af-x{font-size:13px;opacity:.7;line-height:1}
+.af-clear{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 10px;border-radius:20px;
+  background:rgba(255,60,100,.15);border:1px solid rgba(255,60,100,.4);
+  color:#ff6b8a;font-size:11px;font-family:var(--fh);letter-spacing:.5px;
+  cursor:pointer;transition:background .15s;
+}
+.af-clear:hover{background:rgba(255,60,100,.3)}
+#nav-menu::-webkit-scrollbar{display:none}
+.nm{font-family:var(--fb);font-size:11px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;
+  color:#666;padding:6px 11px;border-radius:5px;border:none;background:transparent;
+  cursor:pointer;white-space:nowrap;transition:all .15s;}
+.nm:hover{color:#fff;background:rgba(255,255,255,.06)}
+.nm.on{color:var(--cyan)}
+.nm-drop{position:relative}
+.nm-drop:hover .dmenu{display:block}
+.dmenu.open{display:block !important}
+.dmenu{display:none;position:absolute;top:calc(100% + 2px);left:0;min-width:160px;
+  background:#0a0a14;border:1px solid rgba(0,212,255,.15);border-radius:8px;
+  padding:5px 0;z-index:400;box-shadow:0 10px 30px rgba(0,0,0,.8);}
+.dmenu.scrollable{max-height:280px;overflow-y:auto}
+.dmenu a{display:block;padding:7px 14px;font-size:11px;font-weight:600;letter-spacing:.6px;
+  text-transform:uppercase;color:#888;text-decoration:none;transition:all .12s;}
+.dmenu a:hover{color:var(--cyan);background:rgba(0,212,255,.06);padding-left:18px}
+.dmenu a.on{color:var(--cyan)}
+#nav-right{display:flex;align-items:center;gap:10px;margin-left:auto;flex-shrink:0}
+#srch{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
+  border-radius:18px;color:var(--txt);padding:0 14px;height:32px;font-size:12.5px;
+  font-family:var(--fb);outline:none;transition:all .2s;width:160px;}
+#srch:focus{border-color:var(--cyan);width:200px;background:rgba(0,212,255,.04)}
+#srch::placeholder{color:#333}
+#cart-btn{
+  position:relative;background:linear-gradient(135deg,var(--cyan),var(--pink));
+  border:none;border-radius:8px;color:#fff;padding:6px 14px;font-size:12px;
+  font-weight:700;cursor:pointer;font-family:var(--fb);letter-spacing:.5px;
+  white-space:nowrap;transition:opacity .15s;
+}
+#cart-btn:hover{opacity:.85}
+#cart-count{
+  position:absolute;top:-6px;right:-6px;background:var(--pink);color:#fff;
+  border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:700;
+  display:none;align-items:center;justify-content:center;
+}
+#cart-count.show{display:flex}
 
-        body {
-            background-color: var(--bg-primary);
-            color: var(--text-main);
-            overflow-x: hidden;
-            padding-bottom: 60px;
-        }
+/* ── STATUS BAR ── */
+#sbar{padding:7px 18px;display:flex;justify-content:space-between;align-items:center;
+  gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--border);}
+.sc{font-size:11px;color:#444}.sc b{color:var(--txt);font-weight:600}
+.sc.cy b{color:var(--cyan)}.sc.pk b{color:var(--pink)}.sc.gn b{color:var(--green)}
+#srt{background:rgba(255,255,255,.04);border:1px solid var(--border);color:#777;
+  border-radius:6px;padding:4px 9px;font-size:11.5px;cursor:pointer;outline:none;font-family:var(--fb);}
 
-        /* --- HEADER & NAVIGATION --- */
-        header {
-            background-color: var(--bg-secondary);
-            padding: 15px 5%;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
+/* ── GRID ── */
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));
+  gap:12px;padding:14px 18px 18px;}
 
-        @media (min-width: 768px) {
-            header {
-                flex-direction: row;
-                align-items: center;
-                justify-content: space-between;
-            }
-        }
+/* ── CARD ── */
+.card{border-radius:9px;overflow:hidden;cursor:pointer;position:relative;
+  background:var(--s1);border:1px solid var(--border);
+  transition:transform .2s ease,box-shadow .2s,border-color .2s;
+  contain:layout style;will-change:transform;}
+.card:hover{transform:translateY(-5px) scale(1.02);
+  box-shadow:0 12px 36px rgba(0,212,255,.15),0 0 0 1px var(--cyan);border-color:var(--cyan);z-index:2;}
+.poster{aspect-ratio:2/3;overflow:hidden;position:relative;background:var(--s2);}
+.poster img{width:100%;height:100%;object-fit:cover;display:block;
+  opacity:0;transition:opacity .3s ease;will-change:opacity;image-rendering:auto;}
+.poster img.ok{opacity:1}
+.poster-ph{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:8px;color:#1a1a2a;padding:10px;text-align:center;}
+.poster-ph svg{width:32px;height:32px;flex-shrink:0;opacity:.3}
+.poster-ph span{font-size:9.5px;color:#222;line-height:1.3;word-break:break-word}
+.card-badge{position:absolute;top:6px;left:6px;z-index:3;
+  font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:8px;letter-spacing:.3px;}
+.cat-badge{position:absolute;top:6px;right:6px;z-index:3;
+  font-size:8.5px;font-weight:700;padding:2px 6px;border-radius:6px;letter-spacing:.4px;
+  background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.1);color:#aaa;}
+.bv{background:rgba(29,185,84,.9);color:#fff}
+.bf{background:rgba(255,20,147,.9);color:#fff}
+.bp{background:rgba(245,158,11,.9);color:#fff}
+.card-ov{position:absolute;inset:0;
+  background:linear-gradient(0deg,rgba(0,0,0,.95) 0%,rgba(0,0,0,.2) 55%,transparent 100%);
+  opacity:0;transition:opacity .18s;display:flex;flex-direction:column;
+  justify-content:flex-end;padding:10px 8px 8px;pointer-events:none;}
+.card:hover .card-ov{opacity:1}
+.ov-t{font-size:11.5px;font-weight:600;color:#fff;line-height:1.3;margin-bottom:2px}
+.ov-m{font-size:10px;color:#aaa}
+.card-info{padding:7px 8px 8px}
+.card-title{font-size:11.5px;font-weight:500;color:var(--txt);line-height:1.35;
+  overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin-bottom:2px;}
+.card-year{font-size:10px;color:var(--muted);margin-bottom:5px}
+.card-genres{font-size:9.5px;color:#383848;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-acts{display:flex;gap:3px}
+.ca{flex:1;border:1px solid var(--border);background:transparent;color:#444;
+  font-size:12px;padding:4px;border-radius:5px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:all .14s;}
+.ca:hover{border-color:#555;color:#ccc}
+.ca.av{background:rgba(29,185,84,.12);border-color:var(--green);color:var(--green)}
+.ca.af{background:rgba(255,20,147,.12);border-color:var(--pink);color:var(--pink)}
+.ca.ap{background:rgba(245,158,11,.12);border-color:var(--amber);color:var(--amber)}
+.ca.ac{background:rgba(0,212,255,.12);border-color:var(--cyan);color:var(--cyan)}
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--text-main);
-            text-decoration: none;
-        }
+/* ── PAGER ── */
+#pager{display:flex;justify-content:center;gap:5px;padding:10px 18px 32px;flex-wrap:wrap}
+.pg{background:var(--s2);border:1px solid var(--border);color:#666;
+  border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;
+  transition:all .14s;font-family:var(--fb);}
+.pg:hover{border-color:#555;color:#fff}
+.pg.on{background:var(--cyan);border-color:var(--cyan);color:#000;font-weight:700}
+.pg:disabled{opacity:.25;cursor:not-allowed}
+.pg-dots{color:#333;padding:5px 3px;font-size:13px}
 
-        .brand i {
-            color: var(--accent-color);
-        }
+/* ── DETAIL ── */
+#detail{position:fixed;inset:0;z-index:600;overflow-y:auto;background:var(--bg);display:none;}
+#detail.open{display:block;animation:fadeIn .18s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+#det-nav{position:sticky;top:0;z-index:10;padding:12px 20px;
+  background:linear-gradient(180deg,rgba(8,8,16,.98) 0%,transparent 100%);
+  display:flex;align-items:center;gap:12px;}
+#det-back{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+  color:#fff;border-radius:7px;padding:7px 14px;font-size:12px;
+  cursor:pointer;font-family:var(--fb);display:flex;align-items:center;gap:5px;transition:all .15s;}
+#det-back:hover{background:rgba(255,255,255,.14)}
+#det-add-cart{background:linear-gradient(135deg,var(--cyan),var(--pink));
+  border:none;color:#fff;border-radius:7px;padding:7px 14px;font-size:12px;
+  font-weight:700;cursor:pointer;font-family:var(--fb);transition:opacity .15s;margin-left:auto;}
+#det-add-cart:hover{opacity:.85}
+#det-add-cart.added{background:#1a3a1a;border:1px solid var(--green);color:var(--green)}
+#det-tit-nav{font-family:var(--fh);font-size:16px;color:#fff;letter-spacing:1px;opacity:.6;
+  overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:300px;}
+#det-backdrop{position:fixed;top:0;left:0;right:0;height:65vh;
+  background-size:cover;background-position:center 20%;
+  mask-image:linear-gradient(180deg,rgba(0,0,0,.55) 0%,transparent 100%);
+  -webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,.55) 0%,transparent 100%);
+  pointer-events:none;z-index:0;}
+#det-body{position:relative;z-index:1;display:flex;gap:26px;
+  padding:16px 22px 36px;flex-wrap:wrap;margin-top:-30px;}
+#det-poster{width:185px;flex-shrink:0;border-radius:10px;overflow:hidden;
+  box-shadow:0 16px 48px rgba(0,0,0,.85);align-self:flex-start;margin-top:55px;}
+#det-poster img{width:100%;display:block}
+#det-poster-ph{width:100%;aspect-ratio:2/3;background:var(--s2);
+  display:flex;align-items:center;justify-content:center;color:#1a1a2a;}
+#det-info{flex:1;min-width:240px;padding-top:110px}
+#det-name{font-family:var(--fh);font-size:40px;
+  background:linear-gradient(135deg,#fff 60%,var(--cyan));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  letter-spacing:2px;line-height:1;margin-bottom:5px;text-shadow:none;}
+#det-tagline{font-size:12.5px;color:#555;font-style:italic;margin-bottom:14px}
+#det-chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px;align-items:center}
+.chip{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+  border-radius:14px;padding:3px 11px;font-size:11.5px;color:#bbb;}
+.chip.rat{background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.25);color:var(--amber)}
+.chip.tp{background:rgba(0,212,255,.08);border-color:rgba(0,212,255,.2);color:var(--cyan)}
+#det-overview{font-size:13px;color:#aaa;line-height:1.75;margin-bottom:16px;max-width:560px}
+#det-genres{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:16px}
+.dg{background:rgba(0,212,255,.07);border:1px solid rgba(0,212,255,.18);
+  color:var(--cyan);border-radius:14px;padding:3px 11px;font-size:11px;font-weight:600;}
+#det-acts{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:20px}
+.da{border:1px solid var(--border);background:rgba(255,255,255,.03);color:#777;
+  border-radius:7px;padding:7px 15px;font-size:12px;cursor:pointer;font-weight:600;
+  transition:all .16s;font-family:var(--fb);display:flex;align-items:center;gap:5px;}
+.da:hover{border-color:#666;color:#fff;background:rgba(255,255,255,.07)}
+.da.av{background:rgba(29,185,84,.1);border-color:var(--green);color:var(--green)}
+.da.af{background:rgba(255,20,147,.1);border-color:var(--pink);color:var(--pink)}
+.da.ap{background:rgba(245,158,11,.1);border-color:var(--amber);color:var(--amber)}
+#det-trailer{margin-top:6px}
+#det-trailer iframe{width:100%;max-width:520px;aspect-ratio:16/9;border-radius:9px;border:none;display:block;}
+#det-not-found{font-size:13px;color:#444;padding:8px 0;line-height:1.6}
+#det-cast-section{padding:0 22px 48px;position:relative;z-index:1}
+#det-cast-section h3{font-family:var(--fh);font-size:20px;letter-spacing:1px;
+  color:var(--cyan);margin-bottom:12px;}
+#det-cast{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:9px}
+.cc{text-align:center}
+.cc-img{width:100%;aspect-ratio:2/3;border-radius:6px;object-fit:cover;
+  background:var(--s2);display:block;margin-bottom:4px;}
+.cc-ph{width:100%;aspect-ratio:2/3;border-radius:6px;background:var(--s2);
+  display:flex;align-items:center;justify-content:center;color:#1a1a2a;margin-bottom:4px;}
+.cc-name{font-size:10px;color:#ccc;line-height:1.2}
+.cc-char{font-size:9.5px;color:#444;margin-top:2px}
+.spin-wrap{display:flex;align-items:center;gap:9px;color:#444;font-size:12.5px;padding:18px 0}
+.spin{width:17px;height:17px;border:2px solid #1a1a2a;border-top-color:var(--cyan);
+  border-radius:50%;animation:sp .7s linear infinite;flex-shrink:0}
+@keyframes sp{to{transform:rotate(360deg)}}
 
-        .search-container {
-            position: relative;
-            flex: 1;
-            max-width: 500px;
-            width: 100%;
-        }
+/* ── CART PANEL ── */
+#cart-panel{
+  position:fixed;top:0;right:-400px;width:360px;max-width:100vw;height:100vh;
+  background:#0a0a16;border-left:1px solid rgba(0,212,255,.15);
+  z-index:700;transition:right .28s cubic-bezier(.25,.46,.45,.94);
+  display:flex;flex-direction:column;
+}
+#cart-panel.open{right:0}
+#cart-head{padding:16px 18px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;}
+#cart-head h2{font-family:var(--fh);font-size:22px;letter-spacing:1px;
+  background:linear-gradient(135deg,var(--cyan),var(--pink));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+#cart-close{background:transparent;border:1px solid var(--border);color:#888;
+  border-radius:6px;padding:6px 10px;cursor:pointer;font-size:16px;}
+#cart-close:hover{border-color:#555;color:#fff}
+#cart-items{flex:1;overflow-y:auto;padding:12px 18px}
+.cart-item{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);align-items:center}
+.cart-item-img{width:40px;height:60px;border-radius:5px;object-fit:cover;background:var(--s2);flex-shrink:0}
+.cart-item-info{flex:1;min-width:0}
+.cart-item-title{font-size:12px;font-weight:500;color:var(--txt);
+  overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin-bottom:2px}
+.cart-item-cat{font-size:10px;color:#555;text-transform:uppercase;letter-spacing:.5px}
+.cart-item-del{background:transparent;border:none;color:#444;cursor:pointer;font-size:15px;padding:4px;
+  flex-shrink:0;transition:color .14s;}
+.cart-item-del:hover{color:var(--pink)}
+#cart-empty{text-align:center;padding:40px 20px;color:#333;font-size:13px}
+#cart-foot{padding:14px 18px;border-top:1px solid var(--border)}
+#cart-count-label{font-size:12px;color:#555;margin-bottom:10px}
+#cart-count-label b{color:var(--txt)}
+#cart-send{width:100%;background:linear-gradient(135deg,#25D366,#128C7E);
+  border:none;color:#fff;border-radius:8px;padding:12px;font-size:14px;font-weight:700;
+  cursor:pointer;font-family:var(--fb);letter-spacing:.5px;transition:opacity .15s;
+  display:flex;align-items:center;justify-content:center;gap:8px;}
+#cart-send:hover{opacity:.88}
+#cart-send:disabled{opacity:.3;cursor:not-allowed}
+#cart-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:699;display:none}
+#cart-overlay.show{display:block}
 
-        .search-container input {
-            width: 100%;
-            padding: 12px 20px 12px 45px;
-            background-color: var(--bg-card);
-            border: 1px solid transparent;
-            border-radius: 30px;
-            color: var(--text-main);
-            font-size: 14px;
-            outline: none;
-            transition: all 0.3s;
-        }
+/* ── TOAST ── */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:rgba(0,212,255,.15);border:1px solid rgba(0,212,255,.4);
+  color:#fff;padding:8px 18px;border-radius:30px;font-size:12px;font-weight:600;
+  z-index:999;pointer-events:none;opacity:0;transition:opacity .2s;}
+#toast.show{opacity:1}
 
-        .search-container input:focus {
-            border-color: var(--accent-color);
-            box-shadow: 0 0 10px rgba(0, 188, 212, 0.2);
-        }
-
-        .search-container i {
-            position: absolute;
-            left: 18px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-muted);
-        }
-
-        nav {
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-            white-space: nowrap;
-            padding-bottom: 5px;
-        }
-
-        nav::-webkit-scrollbar {
-            height: 4px;
-        }
-        nav::-webkit-scrollbar-thumb {
-            background: var(--bg-card);
-            border-radius: 10px;
-        }
-
-        .nav-btn {
-            background-color: var(--bg-card);
-            color: var(--text-muted);
-            border: none;
-            padding: 8px 16px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-weight: 500;
-            font-size: 13px;
-            transition: all 0.3s;
-            text-transform: capitalize;
-        }
-
-        .nav-btn.active, .nav-btn:hover {
-            background-color: var(--accent-color);
-            color: var(--bg-primary);
-            font-weight: 600;
-        }
-
-        /* --- FEATURED HERO BANNER --- */
-        .hero-banner {
-            position: relative;
-            width: 100%;
-            height: 45vh;
-            min-height: 300px;
-            background-size: cover;
-            background-position: center;
-            display: flex;
-            align-items: flex-end;
-            margin-bottom: 30px;
-            transition: background-image 0.5s ease-in-out;
-        }
-
-        .hero-banner::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(to top, var(--bg-primary) 5%, rgba(10,14,23,0.4) 70%, rgba(10,14,23,0.7));
-        }
-
-        .hero-content {
-            position: relative;
-            z-index: 2;
-            padding: 0 5% 40px 5%;
-            max-width: 800px;
-        }
-
-        .hero-tag {
-            background-color: var(--accent-color);
-            color: var(--bg-primary);
-            padding: 4px 12px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-            display: inline-block;
-            margin-bottom: 10px;
-        }
-
-        .hero-title {
-            font-size: 32px;
-            font-weight: 700;
-            margin-bottom: 10px;
-            line-height: 1.2;
-        }
-
-        .hero-desc {
-            color: var(--text-muted);
-            font-size: 14px;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        /* --- MAIN GRID --- */
-        main {
-            padding: 0 5%;
-        }
-
-        .section-title {
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .section-title span {
-            color: var(--accent-color);
-            text-transform: capitalize;
-        }
-
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            gap: 20px;
-        }
-
-        @media (min-width: 576px) {
-            .grid-container { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
-        }
-
-        /* --- CARD STYLING --- */
-        .card {
-            background-color: var(--bg-card);
-            border-radius: 12px;
-            overflow: hidden;
-            cursor: pointer;
-            transition: transform 0.3s, box-shadow 0.3s;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0, 188, 212, 0.25);
-        }
-
-        .card-img-wrapper {
-            position: relative;
-            width: 100%;
-            padding-top: 145%;
-            background-color: var(--bg-secondary);
-        }
-
-        .card-img-wrapper img {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            object-fit: cover;
-        }
-
-        .card-badge {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(10, 14, 23, 0.85);
-            backdrop-filter: blur(4px);
-            padding: 3px 8px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--accent-color);
-            text-transform: uppercase;
-        }
-
-        .card-rating {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(255, 179, 0, 0.9);
-            color: #000;
-            padding: 3px 6px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 3px;
-        }
-
-        .card-info {
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            flex-grow: 1;
-            justify-content: space-between;
-        }
-
-        .card-title {
-            font-size: 14px;
-            font-weight: 600;
-            line-height: 1.3;
-            margin-bottom: 5px;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        .card-meta {
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-
-        /* --- MODAL DETAILS --- */
-        .modal {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(6, 9, 15, 0.9);
-            backdrop-filter: blur(8px);
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-        }
-
-        .modal.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .modal-content {
-            background-color: var(--bg-secondary);
-            width: 100%;
-            max-width: 750px;
-            border-radius: 16px;
-            overflow: hidden;
-            position: relative;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-            border: 1px solid rgba(255,255,255,0.05);
-            transform: translateY(20px);
-            transition: transform 0.3s ease;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-
-        .modal.active .modal-content {
-            transform: translateY(0);
-        }
-
-        .modal-close {
-            position: absolute;
-            top: 15px; right: 15px;
-            background: rgba(0,0,0,0.5);
-            border: none; color: white;
-            width: 36px; height: 36px;
-            border-radius: 50%; cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 16px; z-index: 10;
-            transition: background 0.3s;
-        }
-
-        .modal-close:hover { background: var(--accent-color); color: var(--bg-primary); }
-
-        .modal-hero {
-            position: relative;
-            width: 100%;
-            height: 200px;
-            background-size: cover;
-            background-position: center;
-        }
-
-        .modal-hero::before {
-            content: ''; position: absolute; top:0; left:0; width:100%; height:100%;
-            background: linear-gradient(to top, var(--bg-secondary), rgba(18,24,36,0.2));
-        }
-
-        .modal-body {
-            padding: 25px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            position: relative;
-            margin-top: -60px;
-        }
-
-        @media (min-width: 576px) {
-            .modal-body { flex-direction: row; align-items: flex-start; }
-        }
-
-        .modal-poster {
-            width: 130px;
-            border-radius: 8px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
-            object-fit: cover;
-            flex-shrink: 0;
-            align-self: center;
-            background-color: var(--bg-card);
-        }
-
-        @media (min-width: 576px) {
-            .modal-poster { align-self: flex-start; width: 150px; }
-        }
-
-        .modal-details { flex: 1; }
-
-        .modal-title { font-size: 24px; font-weight: 700; margin-bottom: 5px; }
-        .modal-orig-title { font-size: 13px; color: var(--text-muted); font-style: italic; margin-bottom: 10px; }
-        
-        .modal-meta-row {
-            display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
-            margin-bottom: 15px; font-size: 13px;
-        }
-
-        .badge-year { background: var(--bg-card); padding: 2px 8px; border-radius: 4px; color: #fff;}
-        .badge-rating { background: var(--star-color); color: #000; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
-
-        .modal-overview {
-            font-size: 14px; color: #cbd5e1; line-height: 1.6; margin-bottom: 20px;
-            text-align: justify;
-        }
-
-        .modal-extra-info {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 12px; font-size: 13px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px;
-        }
-
-        .info-group span { color: var(--text-muted); display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;}
-        .info-group p { color: var(--text-main); font-weight: 500; }
-
-        .modal-action-btn {
-            display: inline-flex; align-items: center; gap: 8px;
-            background-color: var(--accent-color); color: var(--bg-primary);
-            padding: 10px 20px; border-radius: 8px; text-decoration: none;
-            font-weight: 600; font-size: 14px; margin-top: 15px; transition: background 0.3s;
-        }
-        .modal-action-btn:hover { background-color: var(--accent-hover); }
-
-        /* --- STATUS LABELS --- */
-        .status-msg {
-            grid-column: 1 / -1; text-align: center; padding: 40px;
-            color: var(--text-muted); font-size: 15px;
-        }
-        .status-msg i { font-size: 30px; color: var(--accent-color); display: block; margin-bottom: 10px; }
-    </style>
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
+  #hamburger{display:flex;align-items:center;background:transparent;border:none;color:#fff;font-size:22px;cursor:pointer;margin-right:12px}
+  #nav-menu{display:none;position:absolute;top:100%;left:0;right:0;background:#080810;border-bottom:1px solid var(--border);padding:10px 18px;max-height:75vh;overflow-y:auto}
+  #nav-menu.open{display:flex}
+  .nav-row{flex-direction:column;align-items:stretch}
+  .nav-row-1{border-bottom:none}
+  .nm{padding:9px 6px;text-align:left;border-bottom:1px solid rgba(255,255,255,.02)}
+  .dmenu{position:static;box-shadow:none;border:none;background:rgba(255,255,255,.02);padding-left:12px;margin:4px 0;display:block}
+  #nav-right{margin-left:auto}
+  #srch{width:110px}#srch:focus{width:130px}
+  #det-poster{width:130px;margin-top:20px}
+  #det-info{padding-top:20px}
+  #det-name{font-size:28px}
+}
+</style>
 </head>
 <body>
 
-    <header>
-        <a href="#" class="brand" onclick="cambiarCategoria('todos')">
-            <i class="fa-solid fa-cloud-bolt"></i> Cloud Rider
-        </a>
-        
-        <div class="search-container">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" id="buscador" placeholder="Buscar títulos, géneros o palabras clave..." oninput="filtrarCatalogo()">
-        </div>
-
-        <nav id="menu-categorias">
-            <button class="nav-btn active" onclick="cambiarCategoria('todos')">Todos</button>
-            <button class="nav-btn" onclick="cambiarCategoria('peliculas')">Películas</button>
-            <button class="nav-btn" onclick="cambiarCategoria('series')">Series</button>
-            <button class="nav-btn" onclick="cambiarCategoria('juegos')">Juegos</button>
-            <button class="nav-btn" onclick="cambiarCategoria('doramas')">Doramas</button>
-            <button class="nav-btn" onclick="cambiarCategoria('novelas')">Novelas</button>
-            <button class="nav-btn" onclick="cambiarCategoria('animados')">Animados</button>
-            <button class="nav-btn" onclick="cambiarCategoria('animes')">Animes</button>
-        </nav>
-    </header>
-
-    <div class="hero-banner" id="hero-banner">
-        <div class="hero-content">
-            <span class="hero-tag" id="hero-tag">Cloud Rider</span>
-            <h1 class="hero-title" id="hero-title">Cargando catálogo...</h1>
-            <p class="hero-desc" id="hero-desc">Espera un momento mientras sincronizamos tu base de datos distribuida en Vercel.</p>
-        </div>
+<div id="nav">
+  <button id="hamburger" onclick="toggleMobileMenu()">&#9776;</button>
+  <a href="#" id="logo-wrap" onclick="resetAllFilters(event)">
+    <img id="logo-img" src="https://images.unsplash.com/photo-1534447677768-be436bb09401?w=100&auto=format&fit=crop&q=60" alt="Logo">
+    <div id="logo-text">Cloud Rider</div>
+  </a>
+  
+  <div id="nav-menu">
+    <div class="nav-row nav-row-1" id="cat-menu-row">
+      </div>
+    <div class="nav-row nav-row-2">
+      <button class="nm on" id="btn-all-genres" onclick="filterGenre('')">Todos los géneros</button>
+      <div class="nm-drop">
+        <button class="nm" id="btn-dropdown-genres">Más géneros ▼</button>
+        <div class="dmenu scrollable" id="genres-dropdown"></div>
+      </div>
+      <div id="active-filters"></div>
     </div>
+  </div>
 
-    <main>
-        <h2 class="section-title">Explorando: <span id="titulo-seccion">Todo el catálogo</span></h2>
-        <div class="grid-container" id="contenedor-tarjetas">
-            <div class="status-msg"><i class="fa-solid fa-spinner fa-spin"></i> Cargando base de datos desde archivos CSV...</div>
-        </div>
-    </main>
+  <div id="nav-right">
+    <input type="text" id="srch" placeholder="Buscar..." oninput="handleSearch(this.value)">
+    <button id="cart-btn" onclick="toggleCart()">
+      Pedido
+      <div id="cart-count">0</div>
+    </button>
+  </div>
+</div>
 
-    <div class="modal" id="modal-detalle" onclick="cerrarModalExterno(event)">
-        <div class="modal-content">
-            <button class="modal-close" onclick="cerrarModal()"><i class="fa-solid fa-xmark"></i></button>
-            <div class="modal-hero" id="modal-hero-bg"></div>
-            <div class="modal-body">
-                <img class="modal-poster" id="modal-poster-img" src="" alt="Poster">
-                <div class="modal-details">
-                    <h2 class="modal-title" id="modal-txt-titulo"></h2>
-                    <p class="modal-orig-title" id="modal-txt-original"></p>
-                    
-                    <div class="modal-meta-row">
-                        <span class="badge-year" id="modal-txt-anio"></span>
-                        <span class="badge-rating" id="modal-txt-puntuacion"></span>
-                        <span id="modal-txt-generos" style="color: var(--accent-color); font-weight: 500;"></span>
-                    </div>
+<div id="sbar">
+  <div class="sc cy" id="stat-total">Items: <b>0</b></div>
+  <div class="sc" id="stat-filter" style="display:none">Filtrados: <b>0</b></div>
+  <select id="srt" onchange="handleSort(this.value)">
+    <option value="def">Por Defecto</option>
+    <option value="p_desc">Puntuación (Mayor a Menor)</option>
+    <option value="p_asc">Puntuación (Menor a Mayor)</option>
+    <option value="a_desc">Año (Más Recientes)</option>
+    <option value="a_asc">Año (Más Antiguos)</option>
+    <option value="t_asc">Título (A-Z)</option>
+    <option value="t_desc">Título (Z-A)</option>
+  </select>
+</div>
 
-                    <p class="modal-overview" id="modal-txt-sinopsis"></p>
+<div id="grid"></div>
+<div id="pager"></div>
 
-                    <div class="modal-extra-info" id="modal-contenedor-extras"></div>
-                    <div id="modal-contenedor-link"></div>
-                </div>
-            </div>
-        </div>
+<div id="detail">
+  <div id="det-backdrop"></div>
+  <div id="det-nav">
+    <button id="det-back" onclick="closeDetail()">← Volver</button>
+    <div id="det-tit-nav"></div>
+    <button id="det-add-cart" onclick="toggleCartDetail()"></button>
+  </div>
+  <div id="det-body">
+    <div id="det-poster"></div>
+    <div id="det-info">
+      <h1 id="det-name"></h1>
+      <div id="det-tagline"></div>
+      <div id="det-chips"></div>
+      <div id="det-genres"></div>
+      <div id="det-overview"></div>
+      <div id="det-acts"></div>
+      <div id="det-trailer"></div>
     </div>
+  </div>
+  <div id="det-cast-section" style="display:none">
+    <h3>Reparto Principal</h3>
+    <div id="det-cast"></div>
+  </div>
+</div>
 
-    <script>
-        // Al estar en Vercel, usamos rutas relativas directas al mismo directorio base
-        const CSV_FUENTES = {
-            peliculas: 'peliculas_data_avanzado.csv',
-            series: 'series_data.csv',
-            juegos: 'juegos_data.csv',
-            doramas: 'doramas_data.csv',
-            novelas: 'novelas_data.csv',
-            animados: 'animados_data.csv',
-            animes: 'animes_data.csv'
-        };
+<div id="cart-overlay" onclick="toggleCart()"></div>
+<div id="cart-panel">
+  <div id="cart-head">
+    <h2>Tu Pedido</h2>
+    <button id="cart-close" onclick="toggleCart()">&times;</button>
+  </div>
+  <div id="cart-items"></div>
+  <div id="cart-foot">
+    <div id="cart-count-label">Total de elementos: <b id="cart-total-qty">0</b></div>
+    <button id="cart-send" onclick="sendWhatsAppOrder()" disabled>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="display:inline-block;vertical-align:middle">
+        <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.4.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.5-5.739-1.446L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.413 9.863-9.849.002-2.634-1.023-5.11-2.885-6.974C16.528 1.91 14.05 .884 11.417.884c-5.44 0-9.865 4.414-9.868 9.851-.001 1.748.458 3.453 1.33 4.957l-.993 3.626 3.712-.974zm13.114-6.812c-.29-.145-1.717-.848-1.983-.944-.266-.096-.46-.145-.653.145-.193.29-.747.944-.916 1.137-.168.193-.338.217-.628.072-.29-.145-1.222-.45-2.328-1.437-.86-.767-1.44-1.716-1.609-2.006-.169-.29-.018-.447.127-.591.13-.13.29-.338.435-.507.145-.169.193-.29.29-.483.097-.193.048-.361-.024-.507-.072-.145-.653-1.573-.895-2.152-.236-.569-.475-.492-.653-.502-.17-.008-.362-.01-.556-.01-.193 0-.507.072-.772.361-.266.29-1.014.992-1.014 2.417s1.039 2.798 1.184 2.991c.145.193 2.043 3.12 4.949 4.373.692.298 1.232.476 1.654.61.696.221 1.33.19 1.83.115.556-.084 1.717-.7 1.959-1.376.242-.676.242-1.255.169-1.376-.073-.121-.266-.193-.556-.338z"/>
+      </svg>
+      Enviar Pedido por WhatsApp
+    </button>
+  </div>
+</div>
 
-        let DB = []; 
-        let categoriaActual = 'todos';
-        let intervaloHero = null;
+<div id="toast"></div>
 
-        // Parser tolerante y robusto adaptado a delimitador ';' e irregularidades de saltos de línea de Excel
-        function procesarTextoCSV(texto, categoriaAsignada) {
-            const lineas = texto.split(/\r?\n/);
-            if (lineas.length < 2) return [];
+<script>
+  /* CONFIGURACIÓN PRINCIPAL */
+  var WHATSAPP_NUMBER = "+5353106571";
+  var ITEMS_PER_PAGE = 30;
+  var INTERVAL_MS = 4000;
+  var CHECK_INTERVAL = 3000;
 
-            const encabezados = lineas[0].split(';').map(h => h.trim());
-            const registros = [];
+  var CSV_CAT_MAP = {
+    "peliculas": "uploaded:peliculas_data_avanzado.csv",
+    "series": "uploaded:series_data.csv",
+    "animes": "uploaded:animes_data.csv",
+    "animados": "uploaded:animados_data.csv",
+    "doramas": "uploaded:doramas_data.csv",
+    "novelas": "uploaded:novelas_data.csv",
+    "juegos": "uploaded:juegos_data.csv"
+  };
 
-            for (let i = 1; i < lineas.length; i++) {
-                let linea = lineas[i].trim();
-                if (!linea) continue; 
+  /* POOLS DE DATOS Globales */
+  var DB = [];
+  var items = [];
+  var genresSet = new Set();
+  var cart = [];
 
-                let columnas = [];
-                let dentroDeComillas = false;
-                let columnaActual = "";
+  /* FILTROS ACTIVOS */
+  var curCat = "";
+  var curGenre = "";
+  var curSearch = "";
+  var curSort = "def";
+  var pos = 0; // Puntero del carrusel si se requiere
 
-                for (let c = 0; c < linea.length; c++) {
-                    let char = linea[c];
-                    if (char === '"') {
-                        dentroDeComillas = !dentroDeComillas;
-                    } else if (char === ';' && !dentroDeComillas) {
-                        columnas.push(columnaActual.trim());
-                        columnaActual = "";
-                    } else {
-                        columnaActual += char;
-                    }
-                }
-                columnas.push(columnaActual.trim());
+  /* Inicialización de LocalStorage para Carrito */
+  if(localStorage.getItem('cr_cart')){
+    try{ cart = JSON.parse(localStorage.getItem('cr_cart')); }catch(e){ cart = []; }
+  }
 
-                let itemRaw = {};
-                encabezados.forEach((encabezado, index) => {
-                    let valor = columnas[index] || "";
-                    if (valor.startsWith('"') && valor.endsWith('"')) {
-                        valor = valor.slice(1, -1);
-                    }
-                    itemRaw[encabezado] = valor;
-                });
+  /* Cargar Base de Datos unificada de LocalStorage */
+  function loadMasterList(){
+    DB = [];
+    genresSet.clear();
+    Object.keys(CSV_CAT_MAP).forEach(function(cat){
+      var raw = localStorage.getItem('csv_' + cat);
+      if(!raw) return;
+      var lines = raw.split('\n');
+      if(lines.length < 2) return;
+      var headers = lines[0].split(';');
+      
+      for(var i=1; i<lines.length; i++){
+        if(!lines[i].trim()) continue;
+        var cols = lines[i].split(';');
+        var obj = { _category: cat };
+        headers.forEach(function(h, idx){
+          var val = cols[idx] ? cols[idx].trim() : "";
+          obj[h.trim()] = val;
+        });
 
-                // Mapeo unificado estricto de campos
-                let itemNormalizado = {
-                    id: `${categoriaAsignada}_${i}`,
-                    category: categoriaAsignada,
-                    titulo: itemRaw.Titulo_encontrado || itemRaw.Titulo || itemRaw.Titulo_original || itemRaw.Original || "Sin título",
-                    tituloOriginal: itemRaw.Titulo_original || itemRaw.Original || "",
-                    anio: itemRaw.Anio || "N/A",
-                    sinopsis: itemRaw.Sinopsis || "No hay sinopsis descriptiva disponible.",
-                    generos: itemRaw.Generos || "General",
-                    imagen: itemRaw.Poster_URL || itemRaw.Link_Imagen || "https://via.placeholder.com/300x450?text=No+Poster",
-                    backdrop: itemRaw.Backdrop_URL || itemRaw.Poster_URL || itemRaw.Link_Imagen || "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=1425",
-                    puntuacion: itemRaw.Puntuacion_TMDB || itemRaw.Puntuacion_IMDb || itemRaw.Puntuacion_Usuario || itemRaw.Puntuacion || "N/A",
-                    
-                    temporadas: itemRaw.Temporadas || "",
-                    episodios: itemRaw.Episodios || itemRaw.Capitulos || "",
-                    desarrollador: itemRaw.Desarrolladores || "",
-                    editor: itemRaw.Editores || "",
-                    duracion: itemRaw.Duracion_min || "",
-                    url: itemRaw.URL_Externa || itemRaw.URL_TMDB || itemRaw.URL_Slug || ""
-                };
+        // Estandarizar Título y Portada
+        obj._title = obj.Titulo || obj.Titulo_original || obj.Titulo_encontrado || obj.Original || "";
+        obj._poster = obj.Poster_URL || obj.Link_Imagen || obj.Poster || "";
+        obj._year = obj.Anio || obj.Año || "";
+        obj._genres = obj.Generos || obj.Géneros || "";
+        obj._rating = parseFloat(obj.Puntuacion || obj.Puntuacion_TMDB || obj.Puntuacion_IMDb || obj.Puntuacion_Usuario || "0");
+        obj._id = cat + '_' + i + '_' + obj._title.replace(/[^a-z0-9]/gi, '_');
 
-                registros.push(itemNormalizado);
+        if(obj._genres){
+          obj._genres.split(',').forEach(function(g){
+            var gt = g.trim();
+            if(gt && gt.toLowerCase() !== "sin géneros" && gt.toLowerCase() !== "sin generos"){
+              genresSet.add(gt);
             }
-            return registros;
+          });
         }
+        DB.push(obj);
+      }
+    });
 
-        // Carga asíncrona segura desde el dominio de Vercel
-        async function cargarBaseDeDatosDesdeCSV() {
-            DB = []; 
-            const contenedor = document.getElementById('contenedor-tarjetas');
-            
-            for (const [categoria, nombreArchivo] of Object.entries(CSV_FUENTES)) {
-                try {
-                    // Cache-busting para obligar a Vercel a servir los datos frescos si modificas el CSV
-                    const response = await fetch(`${nombreArchivo}?v=${Date.now()}`);
-                    if (!response.ok) {
-                        console.warn(`Archivo omitido o no encontrado en el servidor: ${nombreArchivo}`);
-                        continue;
-                    }
-                    
-                    const texto = await response.text();
-                    const itemsProcesados = procesarTextoCSV(texto, categoria);
-                    DB = DB.concat(itemsProcesados);
-                } catch (err) {
-                    console.error(`Error cargando recurso en red [${nombreArchivo}]:`, err);
-                }
-            }
+    document.getElementById('stat-total').innerHTML = 'Items: <b>' + DB.length + '</b>';
+    buildCategoryMenu();
+    buildGenresDropdown();
+    applyFilters();
+    updateCartUI();
+  }
 
-            if (DB.length === 0) {
-                contenedor.innerHTML = `<div class="status-msg"><i class="fa-solid fa-triangle-exclamation"></i> No se pudieron recuperar datos. Verifica que los archivos CSV estén en la raíz de tu Vercel.</div>`;
-                return;
-            }
+  function buildCategoryMenu(){
+    var html = '<button class="nm' + (curCat===''?' on':'') + '" onclick="filterCategory(\'\')">Todo</button>';
+    Object.keys(CSV_CAT_MAP).forEach(function(cat){
+      var count = DB.filter(function(x){ return x._category === cat; }).length;
+      if(count > 0){
+        html += '<button class="nm' + (curCat===cat?' on':'') + '" onclick="filterCategory(\''+cat+'\')">'+cat+' <span style="opacity:0.4; font-size:10px">(' Rhine + count +')</span></button>';
+      }
+    });
+    document.getElementById('cat-menu-row').innerHTML = html;
+  }
 
-            // Mezclado dinámico inicial
-            DB.sort(() => Math.random() - 0.5);
+  function buildGenresDropdown(){
+    var sorted = Array.from(genresSet).sort();
+    var html = '';
+    sorted.forEach(function(g){
+      html += '<a href="#" class="' + (curGenre===g?'on':'') + '" onclick="filterGenre(event, \''+g+'\')">' + g + '</a>';
+    });
+    document.getElementById('genres-dropdown').innerHTML = html;
+  }
 
-            renderizarTarjetas(DB);
-            iniciarHeroRotativo();
+  /* SISTEMA DE FILTRADO Y PAGINACIÓN */
+  function filterCategory(cat){
+    curCat = cat;
+    curGenre = "";
+    applyFilters();
+    buildCategoryMenu();
+  }
+
+  function filterGenre(e, g){
+    if(e) e.preventDefault();
+    curGenre = g;
+    applyFilters();
+    buildGenresDropdown();
+  }
+
+  function handleSearch(val){
+    curSearch = val.toLowerCase().trim();
+    applyFilters();
+  }
+
+  function handleSort(val){
+    curSort = val;
+    applyFilters();
+  }
+
+  function applyFilters(){
+    items = DB.filter(function(x){
+      if(curCat && x._category !== curCat) return false;
+      if(curGenre){
+        var gs = (x._genres || "").split(',').map(function(g){ return g.trim().toLowerCase(); });
+        if(!gs.includes(curGenre.toLowerCase())) return false;
+      }
+      if(curSearch){
+        var t = x._title.toLowerCase();
+        var s = (x.Sinopsis || "").toLowerCase();
+        if(!t.includes(curSearch) && !s.includes(curSearch)) return false;
+      }
+      return true;
+    });
+
+    // Ordenamiento
+    if(curSort === "p_desc") items.sort(function(a,b){ return b._rating - a._rating; });
+    else if(curSort === "p_asc") items.sort(function(a,b){ return a._rating - b._rating; });
+    else if(curSort === "a_desc") items.sort(function(a,b){ return b._year.localeCompare(a._year); });
+    else if(curSort === "a_asc") items.sort(function(a,b){ return a._year.localeCompare(b._year); });
+    else if(curSort === "t_asc") items.sort(function(a,b){ return a._title.localeCompare(b._title); });
+    else if(curSort === "t_desc") items.sort(function(a,b){ return b._title.localeCompare(a._title); });
+
+    var fBar = document.getElementById('stat-filter');
+    if(curCat || curGenre || curSearch){
+      fBar.style.display = "block";
+      fBar.innerHTML = 'Filtrados: <b>' + items.length + '</b>';
+    } else {
+      fBar.style.display = "none";
+    }
+
+    updateChips();
+    goToPage(0);
+  }
+
+  function updateChips(){
+    var wrap = document.getElementById('active-filters');
+    var html = '';
+    if(curGenre){
+      html += '<div class="af-chip" onclick="filterGenre(null, \'\')">Género: ' + curGenre + ' <span class="af-x">&times;</span></div>';
+    }
+    if(curSearch){
+      html += '<div class="af-chip" onclick="clearSearch()">Buscar: ' + curSearch + ' <span class="af-x">&times;</span></div>';
+    }
+    if(curGenre || curSearch){
+      html += '<div class="af-clear" onclick="resetAllFilters(null)">Limpiar Filtros</div>';
+    }
+    wrap.innerHTML = html;
+  }
+
+  function clearSearch(){
+    document.getElementById('srch').value = "";
+    curSearch = "";
+    applyFilters();
+  }
+
+  function resetAllFilters(e){
+    if(e) e.preventDefault();
+    curCat = "";
+    curGenre = "";
+    curSearch = "";
+    document.getElementById('srch').value = "";
+    document.getElementById('srt').value = "def";
+    curSort = "def";
+    applyFilters();
+    buildCategoryMenu();
+    buildGenresDropdown();
+  }
+
+  var curPage = 0;
+  function goToPage(p){
+    curPage = p;
+    var start = p * ITEMS_PER_PAGE;
+    var end = start + ITEMS_PER_PAGE;
+    var slice = items.slice(start, end);
+
+    var grid = document.getElementById('grid');
+    if(slice.length === 0){
+      grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:#444; font-size:13px">No se encontraron resultados que coincidan con los filtros.</div>';
+      document.getElementById('pager').innerHTML = "";
+      return;
+    }
+
+    var html = '';
+    slice.forEach(function(x){
+      var isAdded = cart.some(function(c){ return c._id === x._id; });
+      var badgeHtml = x._rating > 0 ? '<div class="card-badge bv">★ ' + x._rating.toFixed(1) + '</div>' : '';
+      
+      html += '<div class="card" onclick="openDetail(\''+x._id+'\')">' +
+        '<div class="poster">' +
+          badgeHtml +
+          '<div class="cat-badge">' + x._category + '</div>' +
+          '<div class="poster-ph">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M4 19h16V5H4v14z M2 21h20V3H2v18z M8 11a2 2 0 100-4 2 2 0 000 4z M5 17l5-5 4 4 1-1 4 4"/></svg>' +
+            '<span>' + x._title + '</span>' +
+          '</div>' +
+          '<img src="' + x._poster + '" alt="" onload="this.className=\'ok\'" onerror="this.style.display=\'none\'">' +
+          '<div class="card-ov">' +
+            '<div class="ov-t">' + x._title + '</div>' +
+            '<div class="ov-m">' + (x._year ? x._year : '') + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="card-info">' +
+          '<div class="card-title">' + x._title + '</div>' +
+          '<div class="card-year">' + (x._year ? x._year : '&nbsp;') + '</div>' +
+          '<div class="card-genres">' + (x._genres ? x._genres : '&nbsp;') + '</div>' +
+          '<div class="card-acts" onclick="event.stopPropagation()">' +
+            (isAdded ? 
+              '<button class="ca av" onclick="removeFromCart(\''+x._id+'\')">✓ Agregado</button>' :
+              '<button class="ca" onclick="addToCart(\''+x._id+'\')">+ Pedido</button>'
+            ) +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    });
+    grid.innerHTML = html;
+    buildPager();
+  }
+
+  function buildPager(){
+    var totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
+    if(totalPages <= 1){
+      document.getElementById('pager').innerHTML = "";
+      return;
+    }
+    var html = '<button class="pg" onclick="goToPage('+(curPage-1)+')" '+(curPage===0?'disabled':'')+'>«</button>';
+    
+    var range = 2;
+    for(var i=0; i<totalPages; i++){
+      if(i===0 || i===totalPages-1 || (i>=curPage-range && i<=curPage+range)){
+        if(i===curPage){
+          html += '<button class="pg on">'+(i+1)+'</button>';
+        } else {
+          html += '<button class="pg" onclick="goToPage('+i+')">'+(i+1)+'</button>';
         }
+      } else if(i===1 || i===totalPages-2){
+        html += '<span class="pg-dots">...</span>';
+      }
+    }
+    html += '<button class="pg" onclick="goToPage('+(curPage+1)+')" '+(curPage===totalPages-1?'disabled':'')+'>»</button>';
+    document.getElementById('pager').innerHTML = html;
+  }
 
-        function renderizarTarjetas(listaElementos) {
-            const contenedor = document.getElementById('contenedor-tarjetas');
-            contenedor.innerHTML = "";
+  /* OPERACIONES DEL CARRITO */
+  function addToCart(id){
+    var match = DB.find(function(x){ return x._id === id; });
+    if(match && !cart.some(function(c){ return c._id === id; })){
+      cart.push(match);
+      saveCart();
+      showToast("Agregado al pedido");
+    }
+  }
 
-            if (listaElementos.length === 0) {
-                contenedor.innerHTML = `<div class="status-msg"><i class="fa-solid fa-magnifying-glass"></i> No hay resultados para esta búsqueda.</div>`;
-                return;
-            }
+  function removeFromCart(id){
+    cart = cart.filter(function(c){ return c._id !== id; });
+    saveCart();
+    showToast("Removido del pedido");
+  }
 
-            listaElementos.forEach(item => {
-                const tarjeta = document.createElement('div');
-                tarjeta.className = 'card';
-                tarjeta.onclick = () => abrirModal(item);
+  function saveCart(){
+    localStorage.setItem('cr_cart', JSON.stringify(cart));
+    updateCartUI();
+    
+    // Refrescar página actual y vista de detalles para sincronizar botones
+    if(document.getElementById('detail').className === "open"){
+      var openId = document.getElementById('detail').getAttribute('data-open-id');
+      if(openId) refreshDetailCartBtn(openId);
+    }
+    var currentScroll = window.scrollY;
+    goToPage(curPage);
+    window.scrollTo(0, currentScroll);
+  }
 
-                let txtPuntuacion = item.puntuacion !== "N/A" ? parseFloat(item.puntuacion).toFixed(1) : "N/A";
-                let anioLimpio = item.anio.split('-')[0].trim();
+  function updateCartUI(){
+    var btnCount = document.getElementById('cart-count');
+    var qtyLabel = document.getElementById('cart-total-qty');
+    var sendBtn = document.getElementById('cart-send');
+    var itemsWrap = document.getElementById('cart-items');
 
-                tarjeta.innerHTML = `
-                    <div class="card-img-wrapper">
-                        <span class="card-badge">${item.category}</span>
-                        ${txtPuntuacion !== "N/A" && txtPuntuacion !== "0.0" ? `<span class="card-rating"><i class="fa-solid fa-star"></i> ${txtPuntuacion}</span>` : ''}
-                        <img src="${item.imagen}" alt="${item.titulo}" loading="lazy" onerror="this.src='https://via.placeholder.com/300x450?text=Sin+Imagen'">
-                    </div>
-                    <div class="card-info">
-                        <h3 class="card-title">${item.titulo}</h3>
-                        <div class="card-meta">
-                            <span><i class="fa-regular fa-calendar"></i> ${anioLimpio !== "" ? anioLimpio : 'N/A'}</span>
-                        </div>
-                    </div>
-                `;
-                contenedor.appendChild(tarjeta);
-            });
+    btnCount.innerText = cart.length;
+    qtyLabel.innerText = cart.length;
+    if(cart.length > 0){
+      btnCount.className = "show";
+      sendBtn.removeAttribute('disabled');
+    } else {
+      btnCount.className = "";
+      sendBtn.setAttribute('disabled', 'true');
+    }
+
+    if(cart.length === 0){
+      itemsWrap.innerHTML = '<div id="cart-empty">Tu pedido está vacío.</div>';
+      return;
+    }
+
+    var html = '';
+    cart.forEach(function(x){
+      html += '<div class="cart-item">' +
+        '<img class="cart-item-img" src="' + x._poster + '" onerror="this.style.opacity=0">' +
+        '<div class="cart-item-info">' +
+          '<div class="cart-item-title">' + x._title + '</div>' +
+          '<div class="cart-item-cat">' + x._category + (x._year ? ' • '+x._year : '') + '</div>' +
+        '</div>' +
+        '<button class="cart-item-del" onclick="removeFromCart(\''+x._id+'\')">&times;</button>' +
+      '</div>';
+    });
+    itemsWrap.innerHTML = html;
+  }
+
+  function toggleCart(){
+    var panel = document.getElementById('cart-panel');
+    var overlay = document.getElementById('cart-overlay');
+    if(panel.className === "open"){
+      panel.className = "";
+      overlay.className = "";
+    } else {
+      panel.className = "open";
+      overlay.className = "show";
+    }
+  }
+
+  /* DETALLES EXPANDIDOS */
+  function openDetail(id){
+    var x = DB.find(function(item){ return item._id === id; });
+    if(!x) return;
+
+    var det = document.getElementById('detail');
+    det.setAttribute('data-open-id', id);
+    document.getElementById('det-tit-nav').innerText = x._title;
+    document.getElementById('det-name').innerText = x._title;
+    document.getElementById('det-tagline').innerText = x._category.toUpperCase() + (x._year ? ' • ' + x._year : '');
+    document.getElementById('det-overview').innerText = x.Sinopsis || "Sin sinopsis disponible.";
+    
+    // Backdrop y Portada
+    if(x.Backdrop_URL){
+      document.getElementById('det-backdrop').style.backgroundImage = "url('"+x.Backdrop_URL+"')";
+    } else {
+      document.getElementById('det-backdrop').style.backgroundImage = "url('"+x._poster+"')";
+    }
+    document.getElementById('det-poster').innerHTML = '<img src="'+x._poster+'" onerror="this.style.opacity=0">';
+
+    // Chips básicos
+    var chips = '';
+    if(x._rating > 0) chips += '<div class="chip rat">★ ' + x._rating.toFixed(1) + '</div>';
+    if(x.Temporadas) chips += '<div class="chip">' + x.Temporadas + ' Temp.</div>';
+    if(x.Episodios || x.Capitulos) chips += '<div class="chip">' + (x.Episodios || x.Capitulos) + ' Caps.</div>';
+    if(x.Duracion_min) chips += '<div class="chip">' + x.Duracion_min + ' min</div>';
+    document.getElementById('det-chips').innerHTML = chips;
+
+    // Géneros
+    var genresHtml = '';
+    if(x._genres){
+      x._genres.split(',').forEach(function(g){
+        genresHtml += '<div class="dg">' + g.trim() + '</div>';
+      });
+    }
+    document.getElementById('det-genres').innerHTML = genresHtml;
+
+    // Enlaces o slugs de TMDB / RAWG
+    var actsHtml = '';
+    var extUrl = x.URL_Externa || x.URL_TMDB || (x.URL_Slug ? 'https://rawg.io/games/' + x.URL_Slug : '');
+    if(extUrl){
+      actsHtml += '<button class="da ac" onclick="window.open(\''+extUrl+'\',\'_blank\')">Ver Ficha Externa ↗</button>';
+    }
+    document.getElementById('det-acts').innerHTML = actsHtml;
+    document.getElementById('det-trailer').innerHTML = "";
+    document.getElementById('det-cast-section').style.display = "none";
+
+    refreshDetailCartBtn(id);
+    det.className = "open";
+    window.scrollTo(0,0);
+    
+    // Buscar metadatos complementarios en segundo plano (Trailers y Reparto)
+    fetchExtendedMeta(x);
+  }
+
+  function refreshDetailCartBtn(id){
+    var isAdded = cart.some(function(c){ return c._id === id; });
+    var btn = document.getElementById('det-add-cart');
+    if(isAdded){
+      btn.className = "added";
+      btn.innerText = "✓ En tu Pedido";
+    } else {
+      btn.className = "";
+      btn.innerText = "+ Añadir al Pedido";
+    }
+  }
+
+  function toggleCartDetail(){
+    var id = document.getElementById('detail').getAttribute('data-open-id');
+    if(!id) return;
+    if(cart.some(function(c){ return c._id === id; })){
+      removeFromCart(id);
+    } else {
+      addToCart(id);
+    }
+  }
+
+  function closeDetail(){
+    document.getElementById('detail').className = "";
+    document.getElementById('det-backdrop').style.backgroundImage = "none";
+  }
+
+  /* CONSULTA API EXTERNA (Trailers y Actores complementarios) */
+  function fetchExtendedMeta(item){
+    var url = item.URL_Externa || item.URL_TMDB || "";
+    var idMatch = url.match(/V\/(?:movie|tv)\/(\d+)/i) || url.match(/(?:movie|tv)\/(\d+)/i);
+    if(!idMatch) return;
+    
+    var tmdbId = idMatch[1];
+    var isMovie = url.toLowerCase().includes('movie') || item._category === 'peliculas';
+    var typePath = isMovie ? 'movie' : 'tv';
+    var apiKey = "4f298c2e1d1f48dca00140de0c493633"; // Clave pública genérica de respaldo
+
+    // Consultar Videos/Trailers
+    var vUrl = "https://api.themoviedb.org/3/" + typePath + "/" + tmdbId + "/videos?api_key=" + apiKey + "&language=es-MX";
+    fetch(vUrl).then(function(r){ return r.json(); }).then(function(res){
+      var video = (res.results || []).find(function(v){ return v.site==='YouTube' && (v.type==='Trailer' || v.type==='Teaser'); });
+      if(!video && res.results && res.results.length > 0) video = res.results[0];
+      if(video && video.key){
+        document.getElementById('det-trailer').innerHTML = '<iframe src="https://www.youtube.com/embed/'+video.key+'" allowfullscreen></iframe>';
+      }
+    }).catch(function(e){});
+
+    // Consultar Reparto (Créditos)
+    var cUrl = "https://api.themoviedb.org/3/" + typePath + "/" + tmdbId + "/credits?api_key=" + apiKey + "&language=es-MX";
+    fetch(cUrl).then(function(r){ return r.json(); }).then(function(res){
+      var cast = (res.cast || []).slice(0, 12);
+      if(cast.length === 0) return;
+      document.getElementById('det-cast-section').style.display = "block";
+      var html = '';
+      cast.forEach(function(c){
+        var imgUrl = c.profile_path ? 'https://image.tmdb.org/t/p/w185' + c.profile_path : '';
+        html += '<div class="cc">';
+        if(imgUrl){
+          html += '<img class="cc-img" src="'+imgUrl+'" alt="">';
+        } else {
+          html += '<div class="cc-ph"><svg viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="1.5"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2 M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg></div>';
         }
+        html += '<div class="cc-name">'+c.name+'</div>' +
+          '<div class="cc-char">'+(c.character || '')+'</div>' +
+          '</div>';
+      });
+      document.getElementById('det-cast').innerHTML = html;
+    }).catch(function(e){});
+  }
 
-        function filtrarCatalogo() {
-            const busqueda = document.getElementById('buscador').value.toLowerCase().trim();
+  /* ENVÍO FINAL A WHATSAPP */
+  function sendWhatsAppOrder(){
+    if(cart.length === 0) return;
+    var text = "¡Hola! Quisiera realizar un pedido de los siguientes títulos en Cloud Rider:\n\n";
+    
+    // Agrupar por categoría para un formato limpio
+    var groups = {};
+    cart.forEach(function(x){
+      if(!groups[x._category]) groups[x._category] = [];
+      groups[x._category].push(x);
+    });
 
-            const datosFiltrados = DB.filter(item => {
-                const coincideCategoria = (categoriaActual === 'todos' || item.category === categoriaActual);
-                const coincideTexto = !busqueda || 
-                    item.titulo.toLowerCase().includes(busqueda) || 
-                    item.tituloOriginal.toLowerCase().includes(busqueda) || 
-                    item.generos.toLowerCase().includes(busqueda) || 
-                    item.sinopsis.toLowerCase().includes(busqueda);
+    Object.keys(groups).forEach(function(cat){
+      text += "🎬 *" + cat.toUpperCase() + "*:\n";
+      groups[cat].forEach(function(item){
+        text += "  • " + item._title + (item._year ? " ("+item._year+")" : "") + "\n";
+      });
+      text += "\n";
+    });
 
-                return coincideCategoria && coincideTexto;
-            });
+    text += "Total de elementos: " + cart.length + "\n";
+    text += "Muchas gracias.";
 
-            renderizarTarjetas(datosFiltrados);
-        }
+    var enc = encodeURIComponent(text);
+    var wLink = "https://api.whatsapp.com/send?phone=" + WHATSAPP_NUMBER.replace(/[^0-9+]/g, '') + "&text=" + enc;
+    window.open(wLink, '_blank');
+  }
 
-        function cambiarCategoria(nuevaCategoria) {
-            categoriaActual = nuevaCategoria;
-            
-            const botones = document.querySelectorAll('.nav-btn');
-            botones.forEach(btn => {
-                if (btn.innerText.toLowerCase() === nuevaCategoria || (nuevaCategoria === 'todos' && btn.innerText.toLowerCase() === 'todos')) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
-            });
+  /* UTILERÍAS */
+  function showToast(msg){
+    var t = document.getElementById('toast');
+    t.innerText = msg;
+    t.className = "show";
+    setTimeout(function(){ t.className = ""; }, 2000);
+  }
 
-            document.getElementById('titulo-seccion').innerText = nuevaCategoria === 'todos' ? 'Todo el catálogo' : nuevaCategoria;
-            filtrarCatalogo();
-        }
+  function toggleMobileMenu(){
+    var m = document.getElementById('nav-menu');
+    m.className = (m.className === "open" ? "" : "open");
+  }
 
-        function abrirModal(item) {
-            document.getElementById('modal-hero-bg').style.backgroundImage = `url('${item.backdrop}')`;
-            document.getElementById('modal-poster-img').src = item.imagen;
-            document.getElementById('modal-poster-img').onerror = function() { this.src = 'https://via.placeholder.com/300x450?text=No+Image'; };
-            document.getElementById('modal-txt-titulo').innerText = item.titulo;
-            
-            const txtOrig = document.getElementById('modal-txt-original');
-            if (item.tituloOriginal && item.tituloOriginal !== item.titulo) {
-                txtOrig.innerText = `Título Original: ${item.tituloOriginal}`;
-                txtOrig.style.display = 'block';
-            } else {
-                txtOrig.style.display = 'none';
-            }
+  /* Observador básico de inicialización */
+  function waitAndBuild(){
+    var ready = true;
+    Object.keys(CSV_CAT_MAP).forEach(function(f){
+      if(!localStorage.getItem('csv_' + f)) ready = false;
+    });
+    // Se ejecuta al detectar los datos cargados en el localStorage
+    loadMasterList();
+  }
 
-            document.getElementById('modal-txt-anio').innerHTML = `<i class="fa-regular fa-calendar"></i> ${item.anio}`;
-            
-            let numPunt = item.puntuacion !== "N/A" ? parseFloat(item.puntuacion).toFixed(1) : "N/A";
-            document.getElementById('modal-txt-puntuacion').innerHTML = `<i class="fa-solid fa-star"></i> ${numPunt}`;
-            document.getElementById('modal-txt-generos').innerText = item.generos;
-            document.getElementById('modal-txt-sinopsis').innerText = item.sinopsis;
-
-            const contenedorExtras = document.getElementById('modal-contenedor-extras');
-            contenedorExtras.innerHTML = "";
-
-            if (item.temporadas) {
-                contenedorExtras.innerHTML += `<div class="info-group"><span>Temporadas</span><p>${item.temporadas}</p></div>`;
-            }
-            if (item.episodios) {
-                contenedorExtras.innerHTML += `<div class="info-group"><span>Episodios / Capítulos</span><p>${item.episodios}</p></div>`;
-            }
-            if (item.duracion) {
-                contenedorExtras.innerHTML += `<div class="info-group"><span>Duración</span><p>${item.duracion} min</p></div>`;
-            }
-            if (item.desarrollador || item.editor) {
-                let devInfo = [item.desarrollador, item.editor].filter(Boolean).join(' / ');
-                contenedorExtras.innerHTML += `<div class="info-group"><span>Desarrollador / Editor</span><p>${devInfo}</p></div>`;
-            }
-
-            const contenedorLink = document.getElementById('modal-contenedor-link');
-            if (item.url && item.url !== "#" && item.url.trim() !== "") {
-                contenedorLink.innerHTML = `
-                    <a href="${item.url}" target="_blank" class="modal-action-btn">
-                        <i class="fa-solid fa-arrow-up-right-from-square"></i> Ver enlace o plataforma
-                    </a>
-                `;
-            } else {
-                contenedorLink.innerHTML = "";
-            }
-
-            document.getElementById('modal-detalle').classList.add('active');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function cerrarModal() {
-            document.getElementById('modal-detalle').classList.remove('active');
-            document.body.style.overflow = 'auto';
-        }
-
-        function cerrarModalExterno(event) {
-            if (event.target.id === 'modal-detalle') {
-                cerrarModal();
-            }
-        }
-
-        function iniciarHeroRotativo() {
-            if (intervaloHero) clearInterval(intervaloHero);
-            
-            function actualizarHero() {
-                if (DB.length === 0) return;
-                const candidatos = DB.filter(i => i.sinopsis.length > 40);
-                const itemAleatorio = candidatos[Math.floor(Math.random() * candidatos.length)] || DB[0];
-
-                document.getElementById('hero-banner').style.backgroundImage = `url('${itemAleatorio.backdrop}')`;
-                document.getElementById('hero-tag').innerText = itemAleatorio.category;
-                document.getElementById('hero-title').innerText = itemAleatorio.titulo;
-                document.getElementById('hero-desc').innerText = itemAleatorio.sinopsis;
-            }
-
-            actualizarHero();
-            intervaloHero = setInterval(actualizarHero, 12000); // Rota el banner cada 12 segundos
-        }
-
-        document.addEventListener('DOMContentLoaded', cargarBaseDeDatosDesdeCSV);
-    </script>
+  window.onload = function(){
+    loadMasterList();
+    // Ejecutar un chequeo periódico en caso de actualizaciones externas
+    setInterval(loadMasterList, CHECK_INTERVAL);
+  };
+</script>
 </body>
 </html>
