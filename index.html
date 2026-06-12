@@ -743,11 +743,11 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
     <div class="nm-drop">
       <button class="nm">GÉNEROS ▾</button>
       <div class="dmenu">
-        <a href="#" data-g="28">Acción</a>
-        <a href="#" data-g="18">Drama</a>
-        <a href="#" data-g="35">Comedia</a>
-        <a href="#" data-g="27">Terror</a>
-        <a href="#" data-g="878">Ciencia ficción</a>
+        <a href="#" data-g="accion">⚔️ Acción</a>
+        <a href="#" data-g="comedia">😂 Comedia</a>
+        <a href="#" data-g="drama">🎭 Drama</a>
+        <a href="#" data-g="terror">👻 Terror</a>
+        <a href="#" data-g="fantasia">🚀 Ciencia Ficción</a>
       </div>
     </div>
     <div class="nm-drop">
@@ -1095,42 +1095,112 @@ function filtered(){
   }
   if(genreF){
     var gfName=genreF.toLowerCase().trim();
-    /* Alias map: filtro → palabras que también cuentan */
+    /*
+      MAPA DE ALIASES — 5 géneros grandes que cubren TODAS las categorías.
+
+      ACCIÓN  : accion/action + aventura/adventure + lucha/fighting +
+                shooter + beat em up + hack and slash + bélica/war +
+                artes marciales/martial + superhéroe/superhero + crimen/crime
+      COMEDIA : comedia/comedy + humor + sátira/satire + parodia/parody +
+                slice of life + musical + romance (comedia romántica)
+      DRAMA   : drama + romance + romántico/romantic + historia/history +
+                histórico/historical + documental/documentary + familiar/family +
+                deportes/sports + seinen + josei + melodrama
+      TERROR  : terror/horror + misterio/mystery + thriller + suspense +
+                psicológico/psychological + sobrenatural/supernatural +
+                gótico/gothic + slasher + gore + paranormal + oscuro/dark
+      FANTASÍA: fantasía/fantasy + ciencia ficción/sci-fi + science fiction +
+                aventura (fantástica) + magia/magic + isekai + shonen +
+                shounen + mecha + space opera + distopía/dystopia +
+                postapocalíptico + steampunk + superhéroe/superhero +
+                rpg + estrategia/strategy + simulación/simulation +
+                sandbox + open world + mundo abierto
+    */
     var gfAliases={
-      'terror':['terror','horror'],
-      'thriller':['thriller','suspense','suspense'],
-      'ciencia ficción':['ciencia ficción','ciencia ficcion','sci-fi','science fiction'],
-      'acción':['acción','accion','action'],
-      'animación':['animación','animacion','animation'],
-      'fantasía':['fantasía','fantasia','fantasy'],
-      'bélica':['bélica','belica','war'],
-      'crimen':['crimen','crime','criminal'],
-      'aventura':['aventura','adventure'],
-      'comedia':['comedia','comedy'],
-      'drama':['drama'],
-      'romance':['romance','romántico','romantico'],
-      'misterio':['misterio','mystery','misterioso'],
-      'musical':['musical','música','musica'],
-      'documental':['documental','documentary'],
-      'familiar':['familia','family','familiar'],
-      'deportes':['deportes','sports'],
-      'historia':['historia','history','histórico','historico'],
-      'western':['western'],
-      'rpg':['rpg'],
-      'shooter':['shooter']
+      'accion':[
+        'accion','acción','action',
+        'aventura','adventure',
+        'lucha','fight','fighting',
+        'shooter','fps','tps',
+        'beat em up','hack and slash','hack & slash',
+        'belica','bélica','war','guerra',
+        'artes marciales','martial','kung fu',
+        'superhero','superheroe','superhéroe',
+        'crimen','crime','criminal',
+        'policial','police',
+        'spy','espionaje',
+        'western'
+      ],
+      'comedia':[
+        'comedia','comedy','humor','humorístico',
+        'satira','sátira','satire',
+        'parodia','parody',
+        'slice of life','vida cotidiana',
+        'musical','musica','música',
+        'comedia romantica','romantic comedy','romcom',
+        'sitcom','sketch'
+      ],
+      'drama':[
+        'drama',
+        'romance','romantico','romántico','romantic',
+        'historia','history','historico','histórico','historical','period',
+        'documental','documentary','docu',
+        'familia','familiar','family',
+        'deportes','sports','sport','futbol','fútbol',
+        'social','politico','político','political',
+        'seinen','josei','melodrama',
+        'coming of age','crecimiento',
+        'biografia','biográfica','biopic','biographie',
+        'realidad','real life'
+      ],
+      'terror':[
+        'terror','horror',
+        'misterio','mystery','misterioso',
+        'thriller','suspense','suspense',
+        'psicologico','psicológico','psychological',
+        'sobrenatural','supernatural','paranormal',
+        'gotico','gótico','gothic',
+        'slasher','gore','gore',
+        'oscuro','dark','noir',
+        'survival','supervivencia',
+        'zombie','demonio','demon','fantasma','ghost',
+        'crimen oscuro','true crime',
+        'investigacion','investigación','detective'
+      ],
+      'fantasia':[
+        'fantasia','fantasía','fantasy',
+        'ciencia ficcion','ciencia ficción','sci-fi','science fiction','scifi','sf',
+        'magia','magic','magical',
+        'isekai','shonen','shounen','shojo','shoujo',
+        'mecha','mech','robot',
+        'space','espacial','space opera','galactic',
+        'distopia','distopía','dystopia','dystopian',
+        'postapocaliptico','post-apocalyptic','apocalipsis',
+        'steampunk','cyberpunk','futurista','futuristic',
+        'rpg','rol','role','strategy','estrategia',
+        'simulacion','simulación','simulation','sim',
+        'sandbox','open world','mundo abierto',
+        'superhero','superheroe','superhéroe',
+        'mitologia','mitología','mythology',
+        'aventura fantastica','epic'
+      ]
     };
     var terms = gfAliases[gfName] ? gfAliases[gfName] : [gfName];
     items=items.filter(function(m){
-      /* CORRECCIÓN: usar m.i (no m._idx) para obtener datos del override */
+      /* CORRECCIÓN CRÍTICA: usar m.i (no m._idx) para getData */
       var d=getData(m.i);
-      /* Combinar géneros del CSV/override (d.g) con géneros base del DB */
+      /* Combinar géneros del DB base (entry.g) + override/CSV (d.g) */
       var allG=[];
       var dbItem=DB[m.i];
       if(dbItem&&dbItem.g&&dbItem.g.length) allG=allG.concat(Array.isArray(dbItem.g)?dbItem.g:[dbItem.g]);
       if(d.g&&d.g.length) allG=allG.concat(Array.isArray(d.g)?d.g:[d.g]);
       if(!allG.length) return false;
-      var gs=allG.join(' ').toLowerCase();
-      return terms.some(function(t){ return gs.indexOf(t)!==-1; });
+      var gs=allG.join(' ').toLowerCase()
+               .normalize('NFD').replace(/[\u0300-\u036f]/g,''); /* quitar tildes para comparar */
+      return terms.some(function(t){
+        var tn=t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+        return gs.indexOf(tn)!==-1;
+      });
     });
   }
   if(yearF){
@@ -1244,7 +1314,9 @@ function renderActiveFilters(){
 
   /* Genre chip */
   if(genreF){
-    chips.push({label:'🏷 '+genreF, remove:function(){genreF=null;page=1;renderGrid();}});
+    var genreLabels={'accion':'⚔️ Acción','comedia':'😂 Comedia','drama':'🎭 Drama','terror':'👻 Terror','fantasia':'🚀 Ciencia Ficción'};
+    var gLabel=genreLabels[genreF]||('🏷 '+genreF);
+    chips.push({label:gLabel, remove:function(){genreF=null;page=1;renderGrid();}});
   }
 
   /* Year chip */
@@ -1524,8 +1596,9 @@ document.addEventListener('click',function(){
 document.querySelectorAll('[data-g]').forEach(function(a){
   a.addEventListener('click',function(e){
     e.preventDefault(); e.stopPropagation();
-    var gName=a.textContent.trim();
-    genreF=(genreF===gName)?null:gName;
+    /* Usar data-g como clave (ej: 'accion') en lugar del textContent */
+    var gKey=a.dataset.g;
+    genreF=(genreF===gKey)?null:gKey;
     document.querySelectorAll('[data-g]').forEach(function(x){ x.classList.remove('on'); x.style.color=''; });
     if(genreF){ a.classList.add('on'); a.style.color='var(--cyan)'; }
     document.querySelectorAll('.dmenu').forEach(function(m){ m.classList.remove('open'); });
