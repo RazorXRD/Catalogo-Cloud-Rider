@@ -63,6 +63,8 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
 .nm.on{color:var(--cyan)}
 .nm-drop{position:relative}
 .nm-drop:hover .dmenu{display:block}
+.nm-drop.disabled{opacity:.3;pointer-events:none;cursor:not-allowed}
+.nm-drop.disabled .nm{color:#333 !important}
 .dmenu.open{display:block !important}
 .dmenu{display:none;position:absolute;top:calc(100% + 2px);left:0;min-width:160px;
   background:#0a0a14;border:1px solid rgba(0,212,255,.15);border-radius:8px;
@@ -743,11 +745,22 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
     <div class="nm-drop">
       <button class="nm">GÉNEROS ▾</button>
       <div class="dmenu">
-        <a href="#" data-g="accion">⚔️ Acción</a>
-        <a href="#" data-g="comedia">😂 Comedia</a>
-        <a href="#" data-g="drama">🎭 Drama</a>
-        <a href="#" data-g="terror">👻 Terror</a>
-        <a href="#" data-g="fantasia">🚀 Ciencia Ficción</a>
+        <a href="#" data-g="28">Acción</a>
+        <a href="#" data-g="12">Aventura</a>
+        <a href="#" data-g="16">Animación</a>
+        <a href="#" data-g="35">Comedia</a>
+        <a href="#" data-g="80">Crimen</a>
+        <a href="#" data-g="99">Documental</a>
+        <a href="#" data-g="18">Drama</a>
+        <a href="#" data-g="14">Fantasía</a>
+        <a href="#" data-g="27">Terror</a>
+        <a href="#" data-g="9648">Misterio</a>
+        <a href="#" data-g="10749">Romance</a>
+        <a href="#" data-g="878">Ciencia ficción</a>
+        <a href="#" data-g="53">Thriller</a>
+        <a href="#" data-g="10752">Bélica</a>
+        <a href="#" data-g="37">Western</a>
+        <a href="#" data-g="36">Historia</a>
       </div>
     </div>
     <div class="nm-drop">
@@ -1095,112 +1108,40 @@ function filtered(){
   }
   if(genreF){
     var gfName=genreF.toLowerCase().trim();
-    /*
-      MAPA DE ALIASES — 5 géneros grandes que cubren TODAS las categorías.
-
-      ACCIÓN  : accion/action + aventura/adventure + lucha/fighting +
-                shooter + beat em up + hack and slash + bélica/war +
-                artes marciales/martial + superhéroe/superhero + crimen/crime
-      COMEDIA : comedia/comedy + humor + sátira/satire + parodia/parody +
-                slice of life + musical + romance (comedia romántica)
-      DRAMA   : drama + romance + romántico/romantic + historia/history +
-                histórico/historical + documental/documentary + familiar/family +
-                deportes/sports + seinen + josei + melodrama
-      TERROR  : terror/horror + misterio/mystery + thriller + suspense +
-                psicológico/psychological + sobrenatural/supernatural +
-                gótico/gothic + slasher + gore + paranormal + oscuro/dark
-      FANTASÍA: fantasía/fantasy + ciencia ficción/sci-fi + science fiction +
-                aventura (fantástica) + magia/magic + isekai + shonen +
-                shounen + mecha + space opera + distopía/dystopia +
-                postapocalíptico + steampunk + superhéroe/superhero +
-                rpg + estrategia/strategy + simulación/simulation +
-                sandbox + open world + mundo abierto
-    */
+    /* Alias map: filtro → palabras que también cuentan */
     var gfAliases={
-      'accion':[
-        'accion','acción','action',
-        'aventura','adventure',
-        'lucha','fight','fighting',
-        'shooter','fps','tps',
-        'beat em up','hack and slash','hack & slash',
-        'belica','bélica','war','guerra',
-        'artes marciales','martial','kung fu',
-        'superhero','superheroe','superhéroe',
-        'crimen','crime','criminal',
-        'policial','police',
-        'spy','espionaje',
-        'western'
-      ],
-      'comedia':[
-        'comedia','comedy','humor','humorístico',
-        'satira','sátira','satire',
-        'parodia','parody',
-        'slice of life','vida cotidiana',
-        'musical','musica','música',
-        'comedia romantica','romantic comedy','romcom',
-        'sitcom','sketch'
-      ],
-      'drama':[
-        'drama',
-        'romance','romantico','romántico','romantic',
-        'historia','history','historico','histórico','historical','period',
-        'documental','documentary','docu',
-        'familia','familiar','family',
-        'deportes','sports','sport','futbol','fútbol',
-        'social','politico','político','political',
-        'seinen','josei','melodrama',
-        'coming of age','crecimiento',
-        'biografia','biográfica','biopic','biographie',
-        'realidad','real life'
-      ],
-      'terror':[
-        'terror','horror',
-        'misterio','mystery','misterioso',
-        'thriller','suspense','suspense',
-        'psicologico','psicológico','psychological',
-        'sobrenatural','supernatural','paranormal',
-        'gotico','gótico','gothic',
-        'slasher','gore','gore',
-        'oscuro','dark','noir',
-        'survival','supervivencia',
-        'zombie','demonio','demon','fantasma','ghost',
-        'crimen oscuro','true crime',
-        'investigacion','investigación','detective'
-      ],
-      'fantasia':[
-        'fantasia','fantasía','fantasy',
-        'ciencia ficcion','ciencia ficción','sci-fi','science fiction','scifi','sf',
-        'magia','magic','magical',
-        'isekai','shonen','shounen','shojo','shoujo',
-        'mecha','mech','robot',
-        'space','espacial','space opera','galactic',
-        'distopia','distopía','dystopia','dystopian',
-        'postapocaliptico','post-apocalyptic','apocalipsis',
-        'steampunk','cyberpunk','futurista','futuristic',
-        'rpg','rol','role','strategy','estrategia',
-        'simulacion','simulación','simulation','sim',
-        'sandbox','open world','mundo abierto',
-        'superhero','superheroe','superhéroe',
-        'mitologia','mitología','mythology',
-        'aventura fantastica','epic'
-      ]
+      'terror':['terror','horror'],
+      'suspense':['suspense','thriller'],
+      'ciencia ficción':['ciencia ficción','ciencia ficcion','sci-fi'],
+      'acción':['acción','accion'],
+      'animación':['animación','animacion'],
+      'fantasía':['fantasía','fantasia'],
+      'bélica':['bélica','belica','war'],
+      'crimen':['crimen','crime'],
+      'aventura':['aventura'],
+      'comedia':['comedia'],
+      'drama':['drama'],
+      'romance':['romance'],
+      'misterio':['misterio','mystery'],
+      'musical':['musical','música','musica'],
+      'documental':['documental'],
+      'familiar':['familia','family'],
+      'deportes':['deportes','sports'],
+      'historia':['historia'],
+      'western':['western'],
+      'rpg':['rpg'],
+      'shooter':['shooter']
     };
     var terms = gfAliases[gfName] ? gfAliases[gfName] : [gfName];
     items=items.filter(function(m){
-      /* CORRECCIÓN CRÍTICA: usar m.i (no m._idx) para getData */
-      var d=getData(m.i);
-      /* Combinar géneros del DB base (entry.g) + override/CSV (d.g) */
+      var d=getData(m._idx);
+      /* Combinar géneros embebidos (m.g) + override CSV (d.g) */
       var allG=[];
-      var dbItem=DB[m.i];
-      if(dbItem&&dbItem.g&&dbItem.g.length) allG=allG.concat(Array.isArray(dbItem.g)?dbItem.g:[dbItem.g]);
+      if(m.g&&m.g.length) allG=allG.concat(Array.isArray(m.g)?m.g:[m.g]);
       if(d.g&&d.g.length) allG=allG.concat(Array.isArray(d.g)?d.g:[d.g]);
       if(!allG.length) return false;
-      var gs=allG.join(' ').toLowerCase()
-               .normalize('NFD').replace(/[\u0300-\u036f]/g,''); /* quitar tildes para comparar */
-      return terms.some(function(t){
-        var tn=t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-        return gs.indexOf(tn)!==-1;
-      });
+      var gs=allG.join(' ').toLowerCase();
+      return terms.some(function(t){ return gs.indexOf(t)!==-1; });
     });
   }
   if(yearF){
@@ -1314,9 +1255,7 @@ function renderActiveFilters(){
 
   /* Genre chip */
   if(genreF){
-    var genreLabels={'accion':'⚔️ Acción','comedia':'😂 Comedia','drama':'🎭 Drama','terror':'👻 Terror','fantasia':'🚀 Ciencia Ficción'};
-    var gLabel=genreLabels[genreF]||('🏷 '+genreF);
-    chips.push({label:gLabel, remove:function(){genreF=null;page=1;renderGrid();}});
+    chips.push({label:'🏷 '+genreF, remove:function(){genreF=null;page=1;renderGrid();}});
   }
 
   /* Year chip */
@@ -1574,6 +1513,17 @@ document.querySelectorAll('[data-f]').forEach(function(b){
     var statuses=['vista','favorita','pendiente','sin'];
     statusF=statuses.indexOf(b.dataset.f)>=0?b.dataset.f:'todas';
     if(statuses.indexOf(b.dataset.f)<0) catF=b.dataset.f;
+
+    /* Si es juegos: limpiar y bloquear géneros */
+    var genreDrop=document.querySelector('.nm-drop');
+    if(catF==='juegos'){
+      genreF=null;
+      document.querySelectorAll('[data-g]').forEach(function(x){ x.classList.remove('on'); x.style.color=''; });
+      if(genreDrop) genreDrop.classList.add('disabled');
+    } else {
+      if(genreDrop) genreDrop.classList.remove('disabled');
+    }
+
     page=1; renderGrid();
   });
 });
@@ -1596,9 +1546,8 @@ document.addEventListener('click',function(){
 document.querySelectorAll('[data-g]').forEach(function(a){
   a.addEventListener('click',function(e){
     e.preventDefault(); e.stopPropagation();
-    /* Usar data-g como clave (ej: 'accion') en lugar del textContent */
-    var gKey=a.dataset.g;
-    genreF=(genreF===gKey)?null:gKey;
+    var gName=a.textContent.trim();
+    genreF=(genreF===gName)?null:gName;
     document.querySelectorAll('[data-g]').forEach(function(x){ x.classList.remove('on'); x.style.color=''; });
     if(genreF){ a.classList.add('on'); a.style.color='var(--cyan)'; }
     document.querySelectorAll('.dmenu').forEach(function(m){ m.classList.remove('open'); });
