@@ -744,21 +744,10 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
       <button class="nm">GÉNEROS ▾</button>
       <div class="dmenu">
         <a href="#" data-g="28">Acción</a>
-        <a href="#" data-g="12">Aventura</a>
-        <a href="#" data-g="16">Animación</a>
-        <a href="#" data-g="35">Comedia</a>
-        <a href="#" data-g="80">Crimen</a>
-        <a href="#" data-g="99">Documental</a>
         <a href="#" data-g="18">Drama</a>
-        <a href="#" data-g="14">Fantasía</a>
+        <a href="#" data-g="35">Comedia</a>
         <a href="#" data-g="27">Terror</a>
-        <a href="#" data-g="9648">Misterio</a>
-        <a href="#" data-g="10749">Romance</a>
         <a href="#" data-g="878">Ciencia ficción</a>
-        <a href="#" data-g="53">Thriller</a>
-        <a href="#" data-g="10752">Bélica</a>
-        <a href="#" data-g="37">Western</a>
-        <a href="#" data-g="36">Historia</a>
       </div>
     </div>
     <div class="nm-drop">
@@ -1109,33 +1098,35 @@ function filtered(){
     /* Alias map: filtro → palabras que también cuentan */
     var gfAliases={
       'terror':['terror','horror'],
-      'suspense':['suspense','thriller'],
-      'ciencia ficción':['ciencia ficción','ciencia ficcion','sci-fi'],
-      'acción':['acción','accion'],
-      'animación':['animación','animacion'],
-      'fantasía':['fantasía','fantasia'],
+      'thriller':['thriller','suspense','suspense'],
+      'ciencia ficción':['ciencia ficción','ciencia ficcion','sci-fi','science fiction'],
+      'acción':['acción','accion','action'],
+      'animación':['animación','animacion','animation'],
+      'fantasía':['fantasía','fantasia','fantasy'],
       'bélica':['bélica','belica','war'],
-      'crimen':['crimen','crime'],
-      'aventura':['aventura'],
-      'comedia':['comedia'],
+      'crimen':['crimen','crime','criminal'],
+      'aventura':['aventura','adventure'],
+      'comedia':['comedia','comedy'],
       'drama':['drama'],
-      'romance':['romance'],
-      'misterio':['misterio','mystery'],
+      'romance':['romance','romántico','romantico'],
+      'misterio':['misterio','mystery','misterioso'],
       'musical':['musical','música','musica'],
-      'documental':['documental'],
-      'familiar':['familia','family'],
+      'documental':['documental','documentary'],
+      'familiar':['familia','family','familiar'],
       'deportes':['deportes','sports'],
-      'historia':['historia'],
+      'historia':['historia','history','histórico','historico'],
       'western':['western'],
       'rpg':['rpg'],
       'shooter':['shooter']
     };
     var terms = gfAliases[gfName] ? gfAliases[gfName] : [gfName];
     items=items.filter(function(m){
-      var d=getData(m._idx);
-      /* Combinar géneros embebidos (m.g) + override CSV (d.g) */
+      /* CORRECCIÓN: usar m.i (no m._idx) para obtener datos del override */
+      var d=getData(m.i);
+      /* Combinar géneros del CSV/override (d.g) con géneros base del DB */
       var allG=[];
-      if(m.g&&m.g.length) allG=allG.concat(Array.isArray(m.g)?m.g:[m.g]);
+      var dbItem=DB[m.i];
+      if(dbItem&&dbItem.g&&dbItem.g.length) allG=allG.concat(Array.isArray(dbItem.g)?dbItem.g:[dbItem.g]);
       if(d.g&&d.g.length) allG=allG.concat(Array.isArray(d.g)?d.g:[d.g]);
       if(!allG.length) return false;
       var gs=allG.join(' ').toLowerCase();
