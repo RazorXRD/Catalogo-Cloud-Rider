@@ -1075,15 +1075,33 @@ function updateStats(){
 }
 
 /* ── FILTER ── */
+/* Normaliza texto: minúsculas + sin tildes + sin puntuación especial
+   Permite buscar "101 dalmatas" y encontrar "101 dálmatas",
+   "espanol" → "español", "canibal" → "caníbal", etc. */
+function normSearch(s){
+  if(!s) return '';
+  return String(s)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g,'')
+    .replace(/[^a-z0-9 ]/g,' ')
+    .replace(/[ ]+/g,' ')
+    .trim();
+}
+
 function filtered(){
   if(!DB||!DB.length) return [];
   var items=DB.map(function(m,i){ return {t:m.t,y:m.y,c:m.c,i:i}; });
   if(q){
-    var lq=q.toLowerCase();
+    var lq=normSearch(q);
     items=items.filter(function(m){
-      if(m.t.toLowerCase().indexOf(lq)!==-1) return true;
+      /* Comparar versión normalizada del título */
+      if(normSearch(m.t).indexOf(lq)!==-1) return true;
+      /* También buscar en título original del DB si existe */
+      var dbItem=DB[m.i];
+      if(dbItem&&dbItem.a&&normSearch(dbItem.a).indexOf(lq)!==-1) return true;
       if(m.y&&m.y.indexOf(lq)!==-1) return true;
-      if(m.g&&m.g.length&&m.g.join(' ').toLowerCase().indexOf(lq)!==-1) return true;
+      if(m.g&&m.g.length&&normSearch(m.g.join(' ')).indexOf(lq)!==-1) return true;
       return false;
     });
   }
