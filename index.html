@@ -2419,15 +2419,26 @@ loadCSVsFromGitHub();
   function waitAndBuild(){
     attempts++;
     if(typeof DB !== 'undefined' && DB.length > 0){
-      /* Paso 1: render inmediato (desde caché o DB) — siempre funciona */
       var cached = loadRecent();
       if(cached.length > 0){
+        /* Tenemos caché de GitHub → mostrar inmediatamente */
         enrichAndRender(cached);
+        setTimeout(fetchGithubRecent, 1200);
       } else {
-        buildFromDB();
+        /* Sin caché: esperar a que overrides tengan datos (CSVs cargados) */
+        var ovKeys = typeof overrides !== 'undefined' ? Object.keys(overrides).length : 0;
+        if(ovKeys > 0){
+          buildFromDB();
+          setTimeout(fetchGithubRecent, 800);
+        } else if(attempts < 80){
+          /* CSVs aún cargando, reintentar en 600ms */
+          setTimeout(waitAndBuild, 600);
+        } else {
+          /* Timeout — intentar igual aunque no haya posters */
+          buildFromDB();
+          setTimeout(fetchGithubRecent, 800);
+        }
       }
-      /* Paso 2: en segundo plano, pedir a GitHub y actualizar */
-      setTimeout(fetchGithubRecent, 800);
     } else if(attempts < 80){
       setTimeout(waitAndBuild, 500);
     }
