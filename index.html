@@ -1018,7 +1018,7 @@ function LS(k,v){
   }catch(e){ return null; }
 }
 function load(){
-  var VER='cr_v8';
+  var VER='cr_v9';
   if(!LS(VER)){
     try{
       ['cr_s4','cr_c4','cr_c3','cr_c2','cr_s3','cr_cart','cr_overrides']
@@ -1922,13 +1922,26 @@ function applyCSVRows(rows, cat){
     if(orig)  byOrig [normCSV(orig)] =row;
   });
 
-  // Build DB entries for this category from CSV rows
+  // Build DB entries for this category from CSV rows (deduplicated by normalized title)
   var newEntries = [];
+  var seenTitles = {};
   rows.forEach(function(row){
     var clean=schema.keyClean?(row[schema.keyClean]||''):'';
     var orig =schema.keyOrig ?(row[schema.keyOrig] ||''):clean;
     var title = clean || orig;
     if(!title) return;
+
+    /* Skip duplicates within this category */
+    var nKey = normCSV(title);
+    if(seenTitles[nKey]) return;
+    seenTitles[nKey] = true;
+
+    /* Also skip if already in DB for this category */
+    var alreadyInDB = false;
+    for(var di = 0; di < DB.length; di++){
+      if(DB[di].c === cat && normCSV(DB[di].t) === nKey){ alreadyInDB = true; break; }
+    }
+    if(alreadyInDB) return;
 
     var anioRaw = schema.anio?(row[schema.anio]||''):'';
     var year = '';
