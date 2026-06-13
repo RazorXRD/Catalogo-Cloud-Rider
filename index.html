@@ -2119,7 +2119,6 @@ loadCSVsFromGitHub();
 (function(){
   var VISIBLE     = 5;
   var INTERVAL_MS = 1500;
-  var MAX_ITEMS   = 10;
 
   var track    = document.getElementById('carousel-track');
   var dotsWrap = document.getElementById('carousel-dots');
@@ -2127,32 +2126,68 @@ loadCSVsFromGitHub();
   var pos      = 0;
   var timer    = null;
   var dotEls   = [];
-  var built    = false; /* evitar doble render */
 
   var CAT_LABEL = {peliculas:'Película',series:'Serie',animes:'Anime',
                    animados:'Animado',doramas:'Dorama',novelas:'Novela',juegos:'Juego'};
   var CAT_ICON  = {peliculas:'🎬',series:'📺',animes:'⛩',animados:'🎨',
                    doramas:'🌸',novelas:'💋',juegos:'🎮'};
 
-  /* ─── Recorre DB de atrás hacia adelante y toma los últimos 10 con poster ─── */
-  function getRecentItems(){
-    var result = [];
-    if(typeof DB === 'undefined') return result;
-    for(var i = DB.length - 1; i >= 0 && result.length < MAX_ITEMS; i--){
-      if(typeof overrides === 'undefined') break;
-      var ov = overrides[i];
-      if(!ov || typeof ov !== 'object') continue;
-      var img = ov.p || '';
-      if(!img || img.indexOf('http') !== 0) continue;
-      result.push({ t: DB[i].t, c: DB[i].c, img: img, idx: i });
+  /* columnas de título y poster por categoría (igual que CSV_SCHEMA) */
+  var COLS = {
+    animados  : { t:'Titulo',           p:'Link_Imagen' },
+    animes    : { t:'Titulo_encontrado',p:'Poster_URL'  },
+    doramas   : { t:'Titulo_encontrado',p:'Poster_URL'  },
+    juegos    : { t:'Titulo_encontrado',p:'Poster_URL'  },
+    novelas   : { t:'Titulo_encontrado',p:'Poster_URL'  },
+    peliculas : { t:'Titulo_encontrado',p:'Poster_URL'  },
+    series    : { t:'Titulo',           p:'Link_Imagen' }
+  };
+
+  /* Parsea CSV texto → array de objetos */
+  function parseCSV(text){
+    text = text.replace(/^\uFEFF/,'');
+    var lines = text.split(/\r?\n/).filter(function(l){ return l.trim(); });
+    if(lines.length < 2) return [];
+    var h0  = lines[0];
+    var sep = h0.split(';').length > h0.split('\t').length ? ';' : '\t';
+    if(h0.split(',').length > h0.split(sep).length) sep = ',';
+    var headers = h0.split(sep).map(function(h){ return h.trim(); });
+    var rows = [];
+    for(var i = lines.length - 1; i >= 1 && rows.length < 5; i--){
+      var cells = lines[i].split(sep);
+      if(cells.length < 2) continue;
+      var row = {};
+      headers.forEach(function(h, idx){ row[h] = (cells[idx]||'').trim().replace(/^"|"$/g,''); });
+      rows.push(row);
     }
-    return result;
+    return rows;
   }
 
-  /* ─── Render ─── */
+  /* Fetch un CSV y devuelve hasta 5 items {t, c, img} de las últimas filas */
+  function fetchCSV(file, cat){
+    var url = 'https://raw.githubusercontent.com/RazorXRD/Catalogo-Cloud-Rider/main/' + file + '?t=' + Date.now();
+    var cols = COLS[cat] || { t:'Titulo', p:'Poster_URL' };
+    return fetch(url, { cache:'no-store' })
+      .then(function(r){ return r.ok ? r.text() : ''; })
+      .then(function(text){
+        if(!text) return [];
+        var rows = parseCSV(text);
+        var result = [];
+        rows.forEach(function(row){
+          var title = (row[cols.t] || '').trim();
+          var img   = (row[cols.p] || '').trim();
+          if(title && img && img.indexOf('http') === 0){
+            result.push({ t: title, c: cat, img: img });
+          }
+        });
+        return result;
+      })
+      .catch(function(){ return []; });
+  }
+
+  /* Render */
   function renderItems(list){
-    if(!list || !list.length || built) return;
-    built = true;
+    if(!list || !list.length) return;
     items = list;
     pos   = 0;
     if(timer) clearInterval(timer);
@@ -2175,9 +2210,7 @@ loadCSVsFromGitHub();
       card.className = 'cr-card';
 
       var cimg = document.createElement('img');
-      cimg.src = it.img;
-      cimg.alt = it.t;
-      cimg.loading = 'lazy';
+      cimg.src = it.img; cimg.alt = it.t; cimg.loading = 'lazy';
       cimg.onerror = function(){ if(this.parentNode) this.parentNode.style.display='none'; };
 
       var ccat = document.createElement('span');
@@ -2192,9 +2225,24 @@ loadCSVsFromGitHub();
       card.appendChild(ccat);
       card.appendChild(clbl);
 
-      card.addEventListener('click', (function(idx){ return function(){
-        if(typeof openDetail === 'function') openDetail(idx);
-      }; })(it.idx));
+      /* Click → buscar en DB y abrir detalle */
+      card.addEventListener('click', (function(title, cat){
+        return function(){
+          if(typeof DB === 'undefined' || typeof openDetail !== 'function') return;
+          var nt = title.toLowerCase().trim();
+          for(var i = 0; i < DB.length; i++){
+            if(DB[i].c === cat && DB[i].t.toLowerCase().trim() === nt){
+              openDetail(i); return;
+            }
+          }
+          /* fuzzy fallback */
+          for(var j = 0; j < DB.length; j++){
+            if(DB[j].t.toLowerCase().indexOf(nt.slice(0,10)) >= 0){
+              openDetail(j); return;
+            }
+          }
+        };
+      })(it.t, it.c));
 
       track.appendChild(card);
     });
@@ -2235,20 +2283,30 @@ loadCSVsFromGitHub();
     }, INTERVAL_MS);
   }
 
-  /* ─── Poll hasta que DB y overrides tengan datos con poster ─── */
-  var attempts = 0;
-  function tryBuild(){
-    if(built) return;
-    attempts++;
-    var list = getRecentItems();
-    if(list.length >= 3){
-      renderItems(list);
-    } else if(attempts < 150){
-      setTimeout(tryBuild, 400);
-    }
-  }
-  /* Iniciar tras 1s para dar tiempo a que los CSVs carguen */
-  setTimeout(tryBuild, 1000);
+  /* ── FETCH todos los CSVs y mostrar las últimas filas ── */
+  var FILES = {
+    'series_data.csv'             : 'series',
+    'peliculas_data_avanzado.csv' : 'peliculas',
+    'animes_data.csv'             : 'animes',
+    'animados_data.csv'           : 'animados',
+    'doramas_data.csv'            : 'doramas',
+    'novelas_data.csv'            : 'novelas',
+    'juegos_data.csv'             : 'juegos'
+  };
+
+  Promise.all(Object.keys(FILES).map(function(file){
+    return fetchCSV(file, FILES[file]);
+  })).then(function(results){
+    var all = [];
+    results.forEach(function(arr){ arr.forEach(function(x){ all.push(x); }); });
+    /* Eliminar duplicados por título */
+    var seen = {}, unique = [];
+    all.forEach(function(x){
+      var k = x.t.toLowerCase().trim();
+      if(!seen[k]){ seen[k]=true; unique.push(x); }
+    });
+    if(unique.length) renderItems(unique);
+  });
 
   window.addEventListener('resize', function(){
     if(items.length) goTo(Math.min(pos, Math.max(0, items.length - visibleCount())));
