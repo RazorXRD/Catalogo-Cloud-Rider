@@ -725,16 +725,6 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
 @media(max-width:480px){
   .cr-card{width:calc(50% - 5px)}
 }
-
-/* ── SKELETON carrusel ── */
-.cr-skeleton{ pointer-events:none; background:var(--s2) !important; border-color:transparent !important; }
-.cr-sk-img{ width:100%; aspect-ratio:2/3; background:linear-gradient(90deg,#111 25%,#1c1c2a 50%,#111 75%);
-  background-size:200% 100%; animation:cr-shimmer 1.4s infinite; border-radius:8px; }
-.cr-sk-bar{ height:10px; margin:8px 8px 0; border-radius:4px;
-  background:linear-gradient(90deg,#111 25%,#1c1c2a 50%,#111 75%);
-  background-size:200% 100%; animation:cr-shimmer 1.4s infinite; }
-.cr-sk-short{ width:55%; margin-top:5px; }
-@keyframes cr-shimmer{ to{ background-position:-200% 0; } }
 </style>
 </head>
 <body>
@@ -2128,26 +2118,8 @@ loadCSVsFromGitHub();
 /* ===== CAROUSEL RECIÉN ACTUALIZADOS ===== */
 (function(){
   var VISIBLE     = 5;
-  var INTERVAL_MS = 3500;
-  var MAX_ITEMS   = 3;
-  var TAIL_BYTES  = 4000; /* últimos 4 KB de cada CSV — suficiente para 1-3 filas */
-  var RAW_BASE    = 'https://raw.githubusercontent.com/RazorXRD/Catalogo-Cloud-Rider/main/';
-
-  /* CSVs en orden de prioridad (los que más frecuentemente actualizas, primero) */
-  var CSV_LIST = [
-    { file:'peliculas_data_avanzado.csv', cat:'peliculas', titleCol:'Titulo_encontrado', posterCol:'Poster_URL',  yearCol:'Anio' },
-    { file:'series_data.csv',             cat:'series',    titleCol:'Titulo',            posterCol:'Link_Imagen', yearCol:'Anio' },
-    { file:'animes_data.csv',             cat:'animes',    titleCol:'Titulo_encontrado', posterCol:'Poster_URL',  yearCol:null   },
-    { file:'animados_data.csv',           cat:'animados',  titleCol:'Titulo',            posterCol:'Link_Imagen', yearCol:'Anio' },
-    { file:'doramas_data.csv',            cat:'doramas',   titleCol:'Titulo_encontrado', posterCol:'Poster_URL',  yearCol:'Anio' },
-    { file:'novelas_data.csv',            cat:'novelas',   titleCol:'Titulo_encontrado', posterCol:'Poster_URL',  yearCol:'Anio' },
-    { file:'juegos_data.csv',             cat:'juegos',    titleCol:'Titulo_encontrado', posterCol:'Poster_URL',  yearCol:'Anio' }
-  ];
-
-  var CAT_LABEL = {peliculas:'Película',series:'Serie',animes:'Anime',
-                   animados:'Animado',doramas:'Dorama',novelas:'Novela',juegos:'Juego'};
-  var CAT_ICON  = {peliculas:'🎬',series:'📺',animes:'⛩',animados:'🎨',
-                   doramas:'🌸',novelas:'💋',juegos:'🎮'};
+  var INTERVAL_MS = 1500;
+  var MAX_ITEMS   = 10;
 
   var track    = document.getElementById('carousel-track');
   var dotsWrap = document.getElementById('carousel-dots');
@@ -2155,169 +2127,32 @@ loadCSVsFromGitHub();
   var pos      = 0;
   var timer    = null;
   var dotEls   = [];
+  var built    = false; /* evitar doble render */
 
-  /* ── Parsear el fragmento del final del CSV ── */
-  function parseTailFragment(text, cfg){
-    /* El fragmento puede empezar a mitad de una fila — descartamos la primera línea incompleta */
-    text = text.replace(/\r/g, '');
-    var lines = text.split('\n').filter(function(l){ return l.trim(); });
-    if(lines.length < 2) return null; /* necesitamos al menos 1 fila completa */
+  var CAT_LABEL = {peliculas:'Película',series:'Serie',animes:'Anime',
+                   animados:'Animado',doramas:'Dorama',novelas:'Novela',juegos:'Juego'};
+  var CAT_ICON  = {peliculas:'🎬',series:'📺',animes:'⛩',animados:'🎨',
+                   doramas:'🌸',novelas:'💋',juegos:'🎮'};
 
-    /* Detectar separador */
-    var sample = lines[0];
-    var sep = sample.split(';').length > sample.split('\t').length ? ';' : '\t';
-
-    /* Intentar detectar la fila de cabecera del CSV original haciendo fetch del inicio */
-    /* En vez de eso, usamos las columnas por nombre buscando la fila que las contiene */
-    /* Si la primera línea del fragmento contiene el nombre de columna esperado → es header */
-    var headerIdx = -1;
-    for(var i = 0; i < lines.length; i++){
-      if(lines[i].indexOf(cfg.titleCol) !== -1 || lines[i].indexOf(cfg.posterCol) !== -1){
-        headerIdx = i; break;
-      }
+  /* ─── Recorre DB de atrás hacia adelante y toma los últimos 10 con poster ─── */
+  function getRecentItems(){
+    var result = [];
+    if(typeof DB === 'undefined') return result;
+    for(var i = DB.length - 1; i >= 0 && result.length < MAX_ITEMS; i--){
+      if(typeof overrides === 'undefined') break;
+      var ov = overrides[i];
+      if(!ov || typeof ov !== 'object') continue;
+      var img = ov.p || '';
+      if(!img || img.indexOf('http') !== 0) continue;
+      result.push({ t: DB[i].t, c: DB[i].c, img: img, idx: i });
     }
-
-    /* Si hay header en el fragmento, usarlo; si no, necesitamos la cabecera del CSV */
-    if(headerIdx !== -1){
-      /* tenemos header y datos */
-      var headers = lines[headerIdx].split(sep).map(function(h){ return h.trim(); });
-      var dataLines = lines.slice(headerIdx + 1);
-      return extractFromLines(dataLines, headers, sep, cfg);
-    } else {
-      /* No hay header en el fragmento: las líneas son solo datos
-         Necesitamos bajar la cabecera del CSV por separado (solo 1 línea, ~200 bytes) */
-      return fetchHeader(cfg.file, sep).then(function(headers){
-        /* Descartar primera línea del fragmento si está incompleta (no tiene todos los campos) */
-        var startLine = 0;
-        if(lines[0].split(sep).length < headers.length / 2) startLine = 1;
-        return extractFromLines(lines.slice(startLine), headers, sep, cfg);
-      });
-    }
+    return result;
   }
 
-  /* Bajar solo la primera línea del CSV para obtener los headers */
-  var headerCache = {};
-  function fetchHeader(file, sep){
-    if(headerCache[file]) return Promise.resolve(headerCache[file]);
-    return fetch(RAW_BASE + file, {headers:{'Range':'bytes=0-300'}})
-      .then(function(r){ return r.text(); })
-      .then(function(text){
-        var firstLine = text.split(/\r?\n/)[0];
-        var headers = firstLine.split(sep).map(function(h){ return h.trim(); });
-        headerCache[file] = headers;
-        return headers;
-      });
-  }
-
-  function extractFromLines(lines, headers, sep, cfg){
-    var results = [];
-    /* Tomar las últimas líneas (más recientes) */
-    var tail = lines.slice(-5).reverse();
-    tail.forEach(function(line){
-      if(!line.trim()) return;
-      var cells = [], cur = '', inQ = false;
-      for(var j = 0; j < line.length; j++){
-        var ch = line[j];
-        if(ch === '"'){ inQ = !inQ; }
-        else if(ch === sep && !inQ){ cells.push(cur); cur = ''; }
-        else cur += ch;
-      }
-      cells.push(cur);
-      var row = {};
-      headers.forEach(function(h, idx){ row[h] = (cells[idx] || '').trim(); });
-
-      var title  = row[cfg.titleCol] || '';
-      var poster = row[cfg.posterCol] || '';
-      var year   = cfg.yearCol ? (row[cfg.yearCol] || '') : '';
-
-      /* Limpiar año */
-      var ym = year.match(/(\d{4})/);
-      year = ym ? ym[1] : '';
-
-      if(title && poster && poster.indexOf('http') === 0){
-        results.push({ t:title, c:cfg.cat, img:poster, year:year });
-      }
-    });
-    return results;
-  }
-
-  /* ── Fetch del final de un CSV (Range request) ── */
-  function fetchTail(csvCfg){
-    var url = RAW_BASE + csvCfg.file;
-    return fetch(url, { headers:{ 'Range': 'bytes=-' + TAIL_BYTES } })
-      .then(function(r){ return r.text(); })
-      .then(function(text){
-        var result = parseTailFragment(text, csvCfg);
-        /* parseTailFragment puede devolver una Promise (si necesita header) o un array */
-        return Promise.resolve(result).then(function(rows){
-          return rows || [];
-        });
-      })
-      .catch(function(){ return []; });
-  }
-
-  /* ── Buscar idx en DB para poder abrir detail ── */
-  function findInDB(item){
-    if(typeof DB === 'undefined' || !DB.length) return -1;
-    var lc = item.t.toLowerCase();
-    for(var i = 0; i < DB.length; i++){
-      if(DB[i].c === item.c && DB[i].t && DB[i].t.toLowerCase() === lc) return i;
-    }
-    /* Segundo intento: solo por título sin importar categoría */
-    for(var i = 0; i < DB.length; i++){
-      if(DB[i].t && DB[i].t.toLowerCase() === lc) return i;
-    }
-    return -1;
-  }
-
-  /* ── Card ── */
-  function makeCard(it){
-    var card = document.createElement('div');
-    card.className = 'cr-card';
-
-    var badge = document.createElement('span');
-    badge.className = 'cr-card-new';
-    badge.textContent = 'NUEVO';
-
-    var cimg = document.createElement('img');
-    cimg.src = it.img; cimg.alt = it.t; cimg.loading = 'eager';
-    cimg.onerror = function(){ this.parentNode.style.display='none'; };
-
-    var ccat = document.createElement('span');
-    ccat.className = 'cr-card-cat';
-    ccat.textContent = (CAT_ICON[it.c]||'⭐') + ' ' + (CAT_LABEL[it.c]||it.c);
-
-    var clbl = document.createElement('div');
-    clbl.className = 'cr-card-label';
-    clbl.textContent = it.t + (it.year ? ' (' + it.year + ')' : '');
-
-    card.appendChild(badge);
-    card.appendChild(cimg);
-    card.appendChild(ccat);
-    card.appendChild(clbl);
-
-    /* Clic: abrir detail. Buscar en DB en el momento del clic (puede que ya esté cargado) */
-    card.addEventListener('click', (function(item){
-      return function(){
-        if(typeof openDetail !== 'function') return;
-        var idx = findInDB(item);
-        if(idx >= 0){ openDetail(idx); return; }
-        /* DB aún no cargó: esperar hasta 5s */
-        var wait = 0;
-        var poll = setInterval(function(){
-          var found = findInDB(item);
-          if(found >= 0){ clearInterval(poll); openDetail(found); return; }
-          if(wait++ > 25) clearInterval(poll);
-        }, 200);
-      };
-    })(it));
-
-    return card;
-  }
-
-  /* ── Render ── */
+  /* ─── Render ─── */
   function renderItems(list){
-    if(!list || !list.length) return;
+    if(!list || !list.length || built) return;
+    built = true;
     items = list;
     pos   = 0;
     if(timer) clearInterval(timer);
@@ -2333,8 +2168,37 @@ loadCSVsFromGitHub();
       dotsWrap.appendChild(dot);
       dotEls.push(dot);
     }
+
     track.innerHTML = '';
-    items.forEach(function(it){ track.appendChild(makeCard(it)); });
+    items.forEach(function(it){
+      var card = document.createElement('div');
+      card.className = 'cr-card';
+
+      var cimg = document.createElement('img');
+      cimg.src = it.img;
+      cimg.alt = it.t;
+      cimg.loading = 'lazy';
+      cimg.onerror = function(){ if(this.parentNode) this.parentNode.style.display='none'; };
+
+      var ccat = document.createElement('span');
+      ccat.className = 'cr-card-cat';
+      ccat.textContent = (CAT_ICON[it.c]||'⭐') + ' ' + (CAT_LABEL[it.c]||it.c);
+
+      var clbl = document.createElement('div');
+      clbl.className = 'cr-card-label';
+      clbl.textContent = it.t;
+
+      card.appendChild(cimg);
+      card.appendChild(ccat);
+      card.appendChild(clbl);
+
+      card.addEventListener('click', (function(idx){ return function(){
+        if(typeof openDetail === 'function') openDetail(idx);
+      }; })(it.idx));
+
+      track.appendChild(card);
+    });
+
     updateDots();
     startAuto();
   }
@@ -2371,46 +2235,24 @@ loadCSVsFromGitHub();
     }, INTERVAL_MS);
   }
 
-  /* ── Esqueletos mientras carga ── */
-  function showSkeletons(){
-    var vc = visibleCount();
-    track.innerHTML = '';
-    dotsWrap.innerHTML = '';
-    for(var s = 0; s < vc; s++){
-      var sk = document.createElement('div');
-      sk.className = 'cr-card cr-skeleton';
-      sk.innerHTML = '<div class="cr-sk-img"></div><div class="cr-sk-bar"></div><div class="cr-sk-bar cr-sk-short"></div>';
-      track.appendChild(sk);
+  /* ─── Poll hasta que DB y overrides tengan datos con poster ─── */
+  var attempts = 0;
+  function tryBuild(){
+    if(built) return;
+    attempts++;
+    var list = getRecentItems();
+    if(list.length >= 3){
+      renderItems(list);
+    } else if(attempts < 150){
+      setTimeout(tryBuild, 400);
     }
   }
-  showSkeletons();
-
-  /* ── ARRANQUE: bajar solo el final de cada CSV en paralelo ── */
-  var fetches = CSV_LIST.map(function(cfg){ return fetchTail(cfg); });
-
-  Promise.all(fetches).then(function(results){
-    /* Aplanar y deduplicar, máximo MAX_ITEMS */
-    var final = [];
-    var seen  = {};
-    results.forEach(function(list){
-      (list || []).forEach(function(item){
-        var key = item.t.toLowerCase().replace(/\s+/g,'');
-        if(!seen[key] && final.length < MAX_ITEMS){
-          seen[key] = true;
-          final.push(item);
-        }
-      });
-    });
-    if(final.length) renderItems(final);
-    else track.innerHTML = ''; /* limpiar esqueletos si no hay nada */
-  }).catch(function(){
-    track.innerHTML = '';
-  });
+  /* Iniciar tras 1s para dar tiempo a que los CSVs carguen */
+  setTimeout(tryBuild, 1000);
 
   window.addEventListener('resize', function(){
     if(items.length) goTo(Math.min(pos, Math.max(0, items.length - visibleCount())));
   });
-
 })();
 
 </script>
