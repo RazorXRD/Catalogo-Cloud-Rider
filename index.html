@@ -660,65 +660,58 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
 }
 
 
-/* ===== CAROUSEL RECIENTES ===== */
+/* ===== RECIÉN ACTUALIZADOS ===== */
 #carousel-wrap{
   background:rgba(8,8,16,.95);
   border-bottom:1px solid rgba(0,212,255,.12);
-  padding:10px 18px 14px;
+  padding:12px 18px 18px;
 }
 #carousel-header{
-  display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:10px;
+  display:flex;align-items:center;
+  margin-bottom:12px;
 }
 #carousel-title{
   font-family:var(--fh);font-size:13px;letter-spacing:1.5px;
   color:var(--cyan);text-transform:uppercase;opacity:.85;
 }
-#carousel-dots{display:flex;gap:5px;align-items:center}
-.cr-dot{
-  width:6px;height:6px;border-radius:50%;
-  background:rgba(255,255,255,.25);transition:background .3s;cursor:pointer;
-}
-.cr-dot.active{background:var(--cyan);}
-#carousel-track-wrap{
-  overflow:hidden;
-  width:100%;
-}
+#carousel-dots{display:none}
+#carousel-track-wrap{width:100%}
 #carousel-track{
   display:flex;
+  flex-wrap:wrap;
   gap:10px;
-  transition:transform .5s ease;
+  justify-content:center;
 }
 .cr-card{
-  flex:0 0 180px;
+  flex:0 0 130px;
   position:relative;
   border-radius:8px;overflow:hidden;
   cursor:pointer;
   border:1px solid rgba(255,255,255,.07);
   transition:transform .2s,box-shadow .2s;
 }
-.cr-card:hover{transform:scale(1.04);box-shadow:0 0 18px rgba(0,212,255,.35)}
+.cr-card:hover{transform:scale(1.05);box-shadow:0 0 18px rgba(0,212,255,.4)}
 .cr-card img{
-  width:100%;height:270px;object-fit:cover;display:block;
+  width:100%;height:195px;object-fit:cover;display:block;
   background:#111;
 }
 .cr-card-label{
   position:absolute;bottom:0;left:0;right:0;
-  padding:20px 8px 6px;
-  background:linear-gradient(0deg,rgba(0,0,0,.85) 0%,transparent 100%);
-  font-size:11px;color:#fff;font-weight:600;
+  padding:22px 6px 5px;
+  background:linear-gradient(0deg,rgba(0,0,0,.88) 0%,transparent 100%);
+  font-size:10px;color:#fff;font-weight:600;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 .cr-card-cat{
-  position:absolute;top:6px;left:6px;
-  font-size:9px;padding:2px 6px;border-radius:10px;
-  background:rgba(0,212,255,.8);color:#000;font-weight:700;letter-spacing:.5px;
+  position:absolute;top:5px;left:5px;
+  font-size:8px;padding:2px 5px;border-radius:8px;
+  background:rgba(0,212,255,.85);color:#000;font-weight:700;letter-spacing:.4px;
 }
-@media(max-width:768px){
-  .cr-card{flex:0 0 140px}.cr-card img{height:210px}
+@media(max-width:600px){
+  .cr-card{flex:0 0 calc(33% - 8px)}.cr-card img{height:160px}
 }
-@media(max-width:480px){
-  .cr-card{flex:0 0 120px}.cr-card img{height:180px}
+@media(max-width:400px){
+  .cr-card{flex:0 0 calc(50% - 6px)}.cr-card img{height:140px}
 }
 </style>
 </head>
@@ -2112,12 +2105,10 @@ loadCSVsFromGitHub();
 
 })();
 
-/* ===== CAROUSEL RECIÉN ACTUALIZADOS ===== */
+/* ===== RECIÉN ACTUALIZADOS ===== */
 (function(){
-  var INTERVAL_MS = 1500;
   var RAW = 'https://raw.githubusercontent.com/RazorXRD/Catalogo-Cloud-Rider/main/';
 
-  /* Última fila de cada CSV + columnas de título y poster */
   var FILES = [
     { f:'peliculas_data_avanzado.csv', c:'peliculas', t:'Titulo_encontrado', p:'Poster_URL'  },
     { f:'series_data.csv',             c:'series',    t:'Titulo',            p:'Link_Imagen' },
@@ -2133,21 +2124,13 @@ loadCSVsFromGitHub();
   var CAT_ICON  = {peliculas:'🎬',series:'📺',animes:'⛩',animados:'🎨',
                    doramas:'🌸',novelas:'💋',juegos:'🎮'};
 
-  var track    = document.getElementById('carousel-track');
-  var dotsWrap = document.getElementById('carousel-dots');
-  var items    = [];
-  var pos      = 0;
-  var timer    = null;
+  var track = document.getElementById('carousel-track');
 
-  /* Detecta separador del CSV */
   function getSep(line){
-    var t=line.split('\t').length-1;
-    var s=line.split(';').length-1;
-    var c=line.split(',').length-1;
+    var t=line.split('\t').length-1, s=line.split(';').length-1, c=line.split(',').length-1;
     return t>=s&&t>=c?'\t':s>=c?';':',';
   }
 
-  /* Lee un CSV, devuelve {t, c, img} de la última fila no vacía */
   function fetchLast(cfg){
     return fetch(RAW + cfg.f + '?nc=' + Date.now())
       .then(function(r){ return r.ok ? r.text() : null; })
@@ -2158,37 +2141,21 @@ loadCSVsFromGitHub();
         if(lines.length < 2) return null;
         var sep     = getSep(lines[0]);
         var headers = lines[0].split(sep).map(function(h){ return h.trim(); });
-        /* Última línea */
         var lastLine = lines[lines.length - 1];
-        var cells    = lastLine.split(sep).map(function(c){ return c.trim().replace(/^"|"$/g,''); });
-        var row      = {};
-        headers.forEach(function(h, i){ row[h] = cells[i] || ''; });
-        var title = row[cfg.t] || '';
-        var img   = row[cfg.p] || '';
-        if(!title || !img || img.indexOf('http') !== 0) return null;
-        return { t: title, c: cfg.c, img: img };
+        var cells    = lastLine.split(sep).map(function(v){ return v.trim().replace(/^"|"$/g,''); });
+        var row = {};
+        headers.forEach(function(h,i){ row[h] = cells[i]||''; });
+        var title = row[cfg.t]||'';
+        var img   = row[cfg.p]||'';
+        if(!title || !img || img.indexOf('http')!==0) return null;
+        return { t:title, c:cfg.c, img:img };
       })
       .catch(function(){ return null; });
   }
 
-  /* Render */
   function render(list){
-    items = list;
-    pos   = 0;
-    if(timer) clearInterval(timer);
-
-    /* Dots */
-    dotsWrap.innerHTML = '';
-    list.forEach(function(_, di){
-      var dot = document.createElement('span');
-      dot.className = 'cr-dot' + (di === 0 ? ' active' : '');
-      (function(pi){ dot.addEventListener('click', function(){ moveTo(pi); }); })(di);
-      dotsWrap.appendChild(dot);
-    });
-
-    /* Cards */
+    if(!list||!list.length) return;
     track.innerHTML = '';
-    track.style.transform = 'translateX(0)';
     list.forEach(function(it){
       var card = document.createElement('div');
       card.className = 'cr-card';
@@ -2199,7 +2166,7 @@ loadCSVsFromGitHub();
 
       var cat = document.createElement('span');
       cat.className = 'cr-card-cat';
-      cat.textContent = (CAT_ICON[it.c]||'⭐') + ' ' + (CAT_LABEL[it.c]||it.c);
+      cat.textContent = (CAT_ICON[it.c]||'⭐')+' '+(CAT_LABEL[it.c]||it.c);
 
       var lbl = document.createElement('div');
       lbl.className = 'cr-card-label';
@@ -2209,52 +2176,27 @@ loadCSVsFromGitHub();
       card.appendChild(cat);
       card.appendChild(lbl);
 
-      /* Click → buscar en DB y abrir */
       card.addEventListener('click', (function(title, cat){
         return function(){
-          if(typeof DB === 'undefined' || typeof openDetail !== 'function') return;
-          var nt = title.toLowerCase().replace(/\s+/g,' ').trim();
-          for(var i = 0; i < DB.length; i++){
-            if(DB[i].c === cat && DB[i].t.toLowerCase().trim() === nt){
-              openDetail(i); return;
-            }
+          if(typeof DB==='undefined'||typeof openDetail!=='function') return;
+          var nt = title.toLowerCase().trim();
+          for(var i=0;i<DB.length;i++){
+            if(DB[i].c===cat && DB[i].t.toLowerCase().trim()===nt){ openDetail(i); return; }
           }
-          /* fallback: búsqueda parcial */
-          for(var j = 0; j < DB.length; j++){
-            if(DB[j].t.toLowerCase().indexOf(nt.slice(0,8)) >= 0){
-              openDetail(j); return;
-            }
+          for(var j=0;j<DB.length;j++){
+            if(DB[j].t.toLowerCase().indexOf(nt.slice(0,8))>=0){ openDetail(j); return; }
           }
         };
       })(it.t, it.c));
 
       track.appendChild(card);
     });
-
-    startAuto();
   }
 
-  function moveTo(newPos){
-    pos = Math.max(0, Math.min(newPos, items.length - 1));
-    track.style.transform = 'translateX(-' + (pos * 190) + 'px)';
-    var dots = dotsWrap.querySelectorAll('.cr-dot');
-    dots.forEach(function(d, i){ d.className = 'cr-dot' + (i === pos ? ' active' : ''); });
-  }
-
-  function startAuto(){
-    if(timer) clearInterval(timer);
-    timer = setInterval(function(){
-      if(!items.length) return;
-      moveTo(pos + 1 >= items.length ? 0 : pos + 1);
-    }, INTERVAL_MS);
-  }
-
-  /* Fetch todos en paralelo y mostrar */
   Promise.all(FILES.map(fetchLast)).then(function(results){
-    var list = results.filter(function(x){ return x !== null; });
+    var list = results.filter(function(x){ return x!==null; });
     if(list.length) render(list);
   });
-
 })();
 
 </script>
