@@ -2117,10 +2117,10 @@ loadCSVsFromGitHub();
 
 /* ===== CAROUSEL RECIÉN ACTUALIZADOS ===== */
 (function(){
-  var VISIBLE       = 5;     // visibles en desktop
-  var INTERVAL_MS   = 1500;  // avance automático cada 1.5s
-  var MAX_ITEMS     = 10;    // máximo items en el carrusel
-  var RECENT_STORE  = 'cr_recent_v3'; // clave localStorage
+  var VISIBLE      = 5;
+  var INTERVAL_MS  = 1500;
+  var MAX_ITEMS    = 10;
+  var SHA_STORE    = 'cr_sha_prev_v1'; /* SHAs anteriores para detectar cambios */
 
   var track    = document.getElementById('carousel-track');
   var dotsWrap = document.getElementById('carousel-dots');
@@ -2129,150 +2129,146 @@ loadCSVsFromGitHub();
   var timer    = null;
   var dotEls   = [];
 
-  /* ── Iconos por categoría ── */
   function catIcon(c){
     return {peliculas:'🎬',series:'📺',animes:'⛩',animados:'🎨',
             doramas:'🌸',novelas:'💋',juegos:'🎮'}[c]||'⭐';
   }
 
-  /* ── Normaliza título para comparar ── */
-  function norm(s){
+  function normT(s){
     if(!s) return '';
     return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
             .replace(/[^a-z0-9]/g,'').trim();
   }
 
-  /* ──────────────────────────────────────────
-     OBTIENE LOS TÍTULOS MODIFICADOS EN GITHUB
-     Usa la API de commits de GitHub para cada CSV,
-     trae el diff y extrae títulos de líneas añadidas/modificadas.
-  ────────────────────────────────────────── */
-  var GITHUB_API_COMMITS = 'https://api.github.com/repos/RazorXRD/Catalogo-Cloud-Rider/commits?per_page=5&path=';
-  var GITHUB_API_COMMIT  = 'https://api.github.com/repos/RazorXRD/Catalogo-Cloud-Rider/commits/';
+  /* ──────────────────────────────────────────────────────────────────
+     DETECCIÓN DE CAMBIOS: compara los SHAs actuales (ya guardados por
+     el sistema principal en localStorage como etag_<archivo>) con los
+     SHAs anteriores que guardamos nosotros.
+     Si un SHA cambió → ese CSV fue modificado → tomamos los últimos
+     items de esa categoría como "recientes".
+  ────────────────────────────────────────────────────────────────── */
+  function getChangedCats(){
+    if(typeof CSV_CAT_MAP === 'undefined') return [];
+    var prevSHAs = {};
+    try{ var s = localStorage.getItem(SHA_STORE); if(s) prevSHAs = JSON.parse(s); }catch(e){}
 
-  /* Extrae títulos de un patch diff de CSV (líneas que empiezan con +) */
-  function extractTitlesFromPatch(patch, cat){
-    if(!patch) return [];
-    var schema = (typeof CSV_SCHEMA !== 'undefined') ? CSV_SCHEMA[cat] : null;
-    var titles = [];
-    var lines = patch.split('\n');
-
-    /* Buscar encabezado en las líneas del diff */
-    var headerLine = '';
-    for(var i=0; i<lines.length; i++){
-      var l = lines[i];
-      if(l.charAt(0) !== '-' && l.charAt(0) !== '+' && l.charAt(0) !== '@'){
-        headerLine = l; break;
-      }
-      if(l.charAt(0) === '+' && l.indexOf(';') > 0 && !headerLine){
-        /* probablemente header en primera línea + */
-        headerLine = l.slice(1);
-        break;
-      }
-    }
-
-    /* Detectar separador y columna de título */
-    var sep = headerLine.indexOf(';') >= 0 ? ';'
-            : headerLine.indexOf('\t') >= 0 ? '\t' : ',';
-    var headers = headerLine.split(sep).map(function(h){ return h.trim(); });
-
-    /* Columnas candidatas de título según categoría */
-    var titleCols = schema
-      ? [schema.keyClean, schema.keyOrig].filter(Boolean)
-      : ['Titulo_encontrado','Titulo','Titulo_original','Title'];
-
-    var colIdx = -1;
-    titleCols.forEach(function(col){
-      if(colIdx < 0){
-        var idx = headers.indexOf(col);
-        if(idx >= 0) colIdx = idx;
+    var changed = []; /* [{file, cat, isNew}] */
+    Object.keys(CSV_CAT_MAP).forEach(function(file){
+      var cat    = CSV_CAT_MAP[file];
+      var curSHA = null;
+      try{ curSHA = localStorage.getItem('etag_' + file); }catch(e){}
+      var prevSHA = prevSHAs[file] || null;
+      if(curSHA && curSHA !== prevSHA){
+        changed.push({ file: file, cat: cat, isNew: !prevSHA });
       }
     });
-    if(colIdx < 0 && headers.length > 0) colIdx = 0; /* fallback primera col */
+    return changed;
+  }
 
-    lines.forEach(function(line){
-      if(line.charAt(0) !== '+') return;
-      var row = line.slice(1);
-      if(!row.trim()) return;
-      var cells = row.split(sep);
-      var title = (cells[colIdx] || '').trim().replace(/^"|"$/g,'');
-      if(title && title.length > 1) titles.push(title);
+  function saveCurrentSHAs(){
+    if(typeof CSV_CAT_MAP === 'undefined') return;
+    var cur = {};
+    Object.keys(CSV_CAT_MAP).forEach(function(file){
+      try{ var s = localStorage.getItem('etag_' + file); if(s) cur[file] = s; }catch(e){}
+    });
+    try{ localStorage.setItem(SHA_STORE, JSON.stringify(cur)); }catch(e){}
+  }
+
+  /* Toma los últimos N items con poster de una categoría del DB */
+  function getLastItemsOfCat(cat, maxN){
+    var result = [];
+    if(typeof DB === 'undefined') return result;
+    for(var i = DB.length - 1; i >= 0 && result.length < maxN; i--){
+      if(DB[i].c !== cat) continue;
+      var d = (typeof getData === 'function') ? getData(i) : null;
+      var img = d && d.p && d.p.indexOf('http') === 0 ? d.p : '';
+      if(!img) continue;
+      result.push({ t: DB[i].t, c: cat, img: img, idx: i });
+    }
+    return result;
+  }
+
+  /* Toma los últimos items de TODAS las categorías (fallback) */
+  function getLastItemsAll(){
+    var bycat = {};
+    if(typeof DB === 'undefined') return [];
+    for(var i = DB.length - 1; i >= 0; i--){
+      var cat = DB[i].c;
+      if(bycat[cat] && bycat[cat].length >= 2) continue;
+      var d = (typeof getData === 'function') ? getData(i) : null;
+      var img = d && d.p && d.p.indexOf('http') === 0 ? d.p : '';
+      if(!img) continue;
+      if(!bycat[cat]) bycat[cat] = [];
+      bycat[cat].push({ t: DB[i].t, c: cat, img: img, idx: i });
+    }
+    var pool = [];
+    Object.keys(bycat).forEach(function(c){ bycat[c].forEach(function(x){ pool.push(x); }); });
+    /* shuffle */
+    for(var k = pool.length - 1; k > 0; k--){
+      var j = Math.floor(Math.random()*(k+1));
+      var tmp = pool[k]; pool[k] = pool[j]; pool[j] = tmp;
+    }
+    return pool;
+  }
+
+  /* ── RENDER ── */
+  function renderItems(list){
+    if(!list || !list.length) return;
+    items = list.slice(0, MAX_ITEMS);
+    pos = 0;
+    if(timer) clearInterval(timer);
+
+    var vc = visibleCount();
+    var pages = Math.ceil(items.length / vc);
+    dotsWrap.innerHTML = '';
+    dotEls = [];
+    for(var d = 0; d < pages; d++){
+      var dot = document.createElement('span');
+      dot.className = 'cr-dot' + (d === 0 ? ' active' : '');
+      (function(idx){ dot.addEventListener('click', function(){ goTo(idx * visibleCount()); }); })(d);
+      dotsWrap.appendChild(dot);
+      dotEls.push(dot);
+    }
+
+    track.innerHTML = '';
+    items.forEach(function(it){
+      var card = document.createElement('div');
+      card.className = 'cr-card';
+
+      var cimg = document.createElement('img');
+      cimg.src = it.img; cimg.alt = it.t; cimg.loading = 'lazy';
+      cimg.onerror = function(){ this.parentNode && (this.parentNode.style.display='none'); };
+
+      /* Badge NUEVO si el CSV de esa cat cambió recientemente */
+      if(it.isRecent){
+        var badge = document.createElement('span');
+        badge.className = 'cr-card-new';
+        badge.textContent = 'NUEVO';
+        card.appendChild(badge);
+      }
+
+      var ccat = document.createElement('span');
+      ccat.className = 'cr-card-cat';
+      ccat.textContent = catIcon(it.c) + ' ' +
+        ({peliculas:'Película',series:'Serie',animes:'Anime',animados:'Animado',
+          doramas:'Dorama',novelas:'Novela',juegos:'Juego'}[it.c]||it.c);
+
+      var clbl = document.createElement('div');
+      clbl.className = 'cr-card-label'; clbl.textContent = it.t;
+
+      card.appendChild(cimg);
+      card.appendChild(ccat);
+      card.appendChild(clbl);
+
+      card.addEventListener('click', (function(idx){ return function(){
+        if(typeof openDetail === 'function') openDetail(idx);
+      }; })(it.idx));
+
+      track.appendChild(card);
     });
 
-    return titles;
-  }
-
-  /* Obtiene lista de títulos recientemente cambiados para un CSV */
-  function fetchRecentForFile(file, cat){
-    return fetch(GITHUB_API_COMMITS + file, { cache: 'no-store' })
-      .then(function(r){ return r.ok ? r.json() : []; })
-      .then(function(commits){
-        if(!commits || !commits.length) return [];
-        /* Tomar hasta 3 commits más recientes */
-        var shas = commits.slice(0, 3).map(function(c){ return c.sha; });
-        return Promise.all(shas.map(function(sha){
-          return fetch(GITHUB_API_COMMIT + sha, { cache: 'no-store' })
-            .then(function(r){ return r.ok ? r.json() : null; })
-            .then(function(data){
-              if(!data || !data.files) return [];
-              var found = null;
-              data.files.forEach(function(f){
-                if(f.filename === file || f.filename.indexOf(file) >= 0) found = f;
-              });
-              if(!found) return [];
-              /* fecha del commit */
-              var date = data.commit && data.commit.author ? data.commit.author.date : '';
-              var titles = extractTitlesFromPatch(found.patch||'', cat);
-              return titles.map(function(t){ return { t: t, c: cat, date: date }; });
-            })
-            .catch(function(){ return []; });
-        }));
-      })
-      .then(function(arrays){
-        var flat = [];
-        arrays.forEach(function(a){ if(a) a.forEach(function(x){ flat.push(x); }); });
-        return flat;
-      })
-      .catch(function(){ return []; });
-  }
-
-  /* Deduplica por título normalizado, manteniendo el más reciente */
-  function dedupe(arr){
-    var seen = {}, out = [];
-    arr.forEach(function(item){
-      var k = norm(item.t);
-      if(!seen[k]){ seen[k] = true; out.push(item); }
-    });
-    return out;
-  }
-
-  /* Guarda/lee la lista reciente en localStorage */
-  function saveRecent(list){
-    try{ localStorage.setItem(RECENT_STORE, JSON.stringify(list)); }catch(e){}
-  }
-  function loadRecent(){
-    try{
-      var s = localStorage.getItem(RECENT_STORE);
-      return s ? JSON.parse(s) : [];
-    }catch(e){ return []; }
-  }
-
-  /* Busca un item en DB por título normalizado */
-  function findInDB(title, cat){
-    if(typeof DB === 'undefined') return null;
-    var nTitle = norm(title);
-    for(var i=0; i<DB.length; i++){
-      if(DB[i].c === cat && norm(DB[i].t) === nTitle){
-        return { idx: i, entry: DB[i] };
-      }
-    }
-    /* Búsqueda más flexible si no hay match exacto */
-    for(var j=0; j<DB.length; j++){
-      if(DB[j].c === cat && norm(DB[j].t).indexOf(nTitle) >= 0 && nTitle.length > 4){
-        return { idx: j, entry: DB[j] };
-      }
-    }
-    return null;
+    updateDots();
+    startAuto();
   }
 
   function visibleCount(){
@@ -2297,163 +2293,60 @@ loadCSVsFromGitHub();
   function startAuto(){
     if(timer) clearInterval(timer);
     timer = setInterval(function(){
-      var vc      = visibleCount();
-      var nextPos = pos + 1;
-      if(nextPos > items.length - vc) nextPos = 0;
-      goTo(nextPos);
+      var vc = visibleCount();
+      if(!items.length) return;
+      var next = pos + 1;
+      if(next > items.length - vc) next = 0;
+      goTo(next);
     }, INTERVAL_MS);
   }
 
-  /* ── FALLBACK INMEDIATO: últimos items con poster de cada categoría ── */
-  function buildFromDB(){
+  /* ── LÓGICA PRINCIPAL ── */
+  function buildCarousel(){
     if(typeof DB === 'undefined' || !DB.length) return;
-    var bycat = {};
-    for(var i = DB.length - 1; i >= 0; i--){
-      var d = (typeof getData === 'function') ? getData(i) : {};
-      var img = (d && d.p) ? d.p : '';
-      if(!img) continue;
-      var cat = DB[i].c;
-      if(!bycat[cat]) bycat[cat] = [];
-      if(bycat[cat].length < 3) bycat[cat].push({ t: DB[i].t, c: cat, img: img, idx: i, date: '' });
-    }
+    if(typeof getData === 'undefined') return;
+
+    /* Verificar que overrides tengan datos */
+    var ovCount = typeof overrides !== 'undefined' ? Object.keys(overrides).length : 0;
+    if(ovCount === 0) return; /* CSVs aún cargando */
+
+    var changed = getChangedCats();
     var pool = [];
-    Object.keys(bycat).forEach(function(c){ bycat[c].forEach(function(x){ pool.push(x); }); });
-    for(var k = pool.length - 1; k > 0; k--){
-      var j2 = Math.floor(Math.random() * (k + 1));
-      var tmp = pool[k]; pool[k] = pool[j2]; pool[j2] = tmp;
-    }
-    renderItems(pool.slice(0, MAX_ITEMS));
-  }
 
-  /* ── RENDER de una lista ya enriquecida ── */
-  function renderItems(list){
-    if(!list || !list.length) return;
-    items = list;
-    pos   = 0;
-    if(timer) clearInterval(timer);
-
-    var vc    = visibleCount();
-    var pages = Math.ceil(items.length / vc);
-    dotsWrap.innerHTML = '';
-    dotEls = [];
-    for(var d = 0; d < pages; d++){
-      var dot = document.createElement('span');
-      dot.className = 'cr-dot' + (d === 0 ? ' active' : '');
-      (function(idx){ dot.addEventListener('click', function(){ goTo(idx * visibleCount()); }); })(d);
-      dotsWrap.appendChild(dot);
-      dotEls.push(dot);
+    if(changed.length > 0){
+      /* Hay CSVs modificados → mostrar últimos items de las cats cambiadas */
+      changed.forEach(function(ch){
+        var last = getLastItemsOfCat(ch.cat, 3);
+        last.forEach(function(x){ x.isRecent = true; pool.push(x); });
+      });
     }
 
-    track.innerHTML = '';
-    items.forEach(function(it){
-      var card = document.createElement('div');
-      card.className = 'cr-card';
-
-      var cimg = document.createElement('img');
-      cimg.src = it.img; cimg.alt = it.t; cimg.loading = 'lazy';
-      cimg.onerror = function(){ this.style.display = 'none'; };
-
-      if(it.date){
-        var age = Date.now() - new Date(it.date).getTime();
-        if(age > 0 && age < 72 * 3600 * 1000){
-          var newBadge = document.createElement('span');
-          newBadge.className = 'cr-card-new';
-          newBadge.textContent = 'NEW';
-          card.appendChild(newBadge);
-        }
-      }
-
-      var ccat = document.createElement('span');
-      ccat.className = 'cr-card-cat'; ccat.textContent = catIcon(it.c);
-
-      var clbl = document.createElement('div');
-      clbl.className = 'cr-card-label'; clbl.textContent = it.t;
-
-      card.appendChild(cimg);
-      card.appendChild(ccat);
-      card.appendChild(clbl);
-
-      card.addEventListener('click', (function(idx){ return function(){
-        if(typeof openDetail === 'function') openDetail(idx);
-      }; })(it.idx));
-
-      track.appendChild(card);
-    });
-
-    updateDots();
-    startAuto();
-  }
-
-  /* ── ENRIQUECER lista de recientes GitHub con poster de DB ── */
-  function enrichAndRender(unique){
-    var enriched = [];
-    unique.forEach(function(item){
-      var found = findInDB(item.t, item.c);
-      if(!found) return;
-      var d = (typeof getData === 'function') ? getData(found.idx) : {};
-      var img = (d && d.p) ? d.p : '';
-      if(!img) return;
-      enriched.push({ t: found.entry.t, c: found.entry.c, img: img, idx: found.idx, date: item.date });
-    });
-
-    /* Completar hasta MAX_ITEMS desde DB si hacen falta */
-    if(enriched.length < MAX_ITEMS){
-      var used = {};
-      enriched.forEach(function(e){ used[e.idx] = true; });
-      for(var i = DB.length - 1; i >= 0 && enriched.length < MAX_ITEMS; i--){
-        if(used[i]) continue;
-        var d2 = (typeof getData === 'function') ? getData(i) : {};
-        var img2 = (d2 && d2.p) ? d2.p : '';
-        if(img2) enriched.push({ t: DB[i].t, c: DB[i].c, img: img2, idx: i, date: '' });
-      }
+    /* Completar hasta MAX_ITEMS con items de otras categorías */
+    if(pool.length < MAX_ITEMS){
+      var usedIdxs = {};
+      pool.forEach(function(x){ usedIdxs[x.idx] = true; });
+      var rest = getLastItemsAll().filter(function(x){ return !usedIdxs[x.idx]; });
+      var needed = MAX_ITEMS - pool.length;
+      rest.slice(0, needed).forEach(function(x){ pool.push(x); });
     }
 
-    if(enriched.length) renderItems(enriched.slice(0, MAX_ITEMS));
+    if(pool.length){
+      renderItems(pool);
+      /* Guardar SHAs actuales DESPUÉS de mostrar el carrusel */
+      saveCurrentSHAs();
+    }
   }
 
-  /* ── CONSULTA GITHUB y actualiza el carrusel ── */
-  function fetchGithubRecent(){
-    if(typeof CSV_CAT_MAP === 'undefined') return;
-    Promise.all(Object.keys(CSV_CAT_MAP).map(function(file){
-      return fetchRecentForFile(file, CSV_CAT_MAP[file]);
-    })).then(function(results){
-      var all = [];
-      results.forEach(function(arr){ arr.forEach(function(x){ all.push(x); }); });
-      all.sort(function(a, b){ return new Date(b.date||0) - new Date(a.date||0); });
-      var unique = dedupe(all);
-      if(!unique.length) return;
-      saveRecent(unique.slice(0, MAX_ITEMS * 3));
-      enrichAndRender(unique);
-    }).catch(function(){});
-  }
-
-  /* ── ARRANQUE PRINCIPAL ── */
+  /* Esperar a que DB y overrides estén listos */
   var attempts = 0;
   function waitAndBuild(){
     attempts++;
-    if(typeof DB !== 'undefined' && DB.length > 0){
-      var cached = loadRecent();
-      if(cached.length > 0){
-        /* Tenemos caché de GitHub → mostrar inmediatamente */
-        enrichAndRender(cached);
-        setTimeout(fetchGithubRecent, 1200);
-      } else {
-        /* Sin caché: esperar a que overrides tengan datos (CSVs cargados) */
-        var ovKeys = typeof overrides !== 'undefined' ? Object.keys(overrides).length : 0;
-        if(ovKeys > 0){
-          buildFromDB();
-          setTimeout(fetchGithubRecent, 800);
-        } else if(attempts < 80){
-          /* CSVs aún cargando, reintentar en 600ms */
-          setTimeout(waitAndBuild, 600);
-        } else {
-          /* Timeout — intentar igual aunque no haya posters */
-          buildFromDB();
-          setTimeout(fetchGithubRecent, 800);
-        }
-      }
-    } else if(attempts < 80){
-      setTimeout(waitAndBuild, 500);
+    var dbOk  = typeof DB !== 'undefined' && DB.length > 0;
+    var ovOk  = typeof overrides !== 'undefined' && Object.keys(overrides).length > 0;
+    if(dbOk && ovOk){
+      buildCarousel();
+    } else if(attempts < 100){
+      setTimeout(waitAndBuild, 400);
     }
   }
   waitAndBuild();
@@ -2466,3 +2359,4 @@ loadCSVsFromGitHub();
 </script>
 
 </body>
+</html>
