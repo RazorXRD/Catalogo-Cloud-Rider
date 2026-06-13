@@ -2262,102 +2262,6 @@ loadCSVsFromGitHub();
     return null;
   }
 
-  /* ── CONSTRUYE EL CARRUSEL con la lista de recientes ── */
-  function buildCarousel(recentList){
-    /* Enriquecer con poster desde DB+overrides */
-    var enriched = [];
-    recentList.forEach(function(item){
-      var found = findInDB(item.t, item.c);
-      if(!found) return;
-      var d = (typeof getData === 'function') ? getData(found.idx) : {};
-      var img = (d && d.p) ? d.p : '';
-      if(!img) return; /* sin poster → skip */
-      enriched.push({
-        t   : found.entry.t,
-        c   : found.entry.c,
-        img : img,
-        idx : found.idx,
-        date: item.date
-      });
-    });
-
-    /* Si no hay suficientes con poster, completar con los más recientes de DB */
-    if(enriched.length < MAX_ITEMS && typeof DB !== 'undefined'){
-      var needed = MAX_ITEMS - enriched.length;
-      var enrichedIdxs = {};
-      enriched.forEach(function(e){ enrichedIdxs[e.idx] = true; });
-      var pool = [];
-      for(var i = DB.length - 1; i >= 0 && pool.length < needed * 3; i--){
-        if(enrichedIdxs[i]) continue;
-        var d2 = (typeof getData === 'function') ? getData(i) : {};
-        var img2 = (d2 && d2.p) ? d2.p : '';
-        if(img2) pool.push({ t: DB[i].t, c: DB[i].c, img: img2, idx: i, date: '' });
-      }
-      /* Shuffle pool and take needed */
-      for(var k = pool.length - 1; k > 0; k--){
-        var j2 = Math.floor(Math.random() * (k + 1));
-        var tmp = pool[k]; pool[k] = pool[j2]; pool[j2] = tmp;
-      }
-      pool.slice(0, needed).forEach(function(p){ enriched.push(p); });
-    }
-
-    items = enriched.slice(0, MAX_ITEMS);
-    if(!items.length) return;
-
-    /* ── Dots ── */
-    var vc = visibleCount();
-    var pages = Math.ceil(items.length / vc);
-    dotsWrap.innerHTML = '';
-    dotEls = [];
-    for(var d = 0; d < pages; d++){
-      var dot = document.createElement('span');
-      dot.className = 'cr-dot' + (d === 0 ? ' active' : '');
-      (function(idx){ dot.addEventListener('click', function(){ goTo(idx * visibleCount()); }); })(d);
-      dotsWrap.appendChild(dot);
-      dotEls.push(dot);
-    }
-
-    /* ── Cards ── */
-    track.innerHTML = '';
-    items.forEach(function(it){
-      var card = document.createElement('div');
-      card.className = 'cr-card';
-
-      var cimg = document.createElement('img');
-      cimg.src = it.img; cimg.alt = it.t; cimg.loading = 'lazy';
-      cimg.onerror = function(){ this.style.display = 'none'; };
-
-      /* Badge NEW si tiene fecha reciente (últimas 72h) */
-      var now = Date.now();
-      var isNew = it.date && (now - new Date(it.date).getTime()) < 72 * 3600 * 1000;
-      if(isNew){
-        var newBadge = document.createElement('span');
-        newBadge.className = 'cr-card-new';
-        newBadge.textContent = 'NEW';
-        card.appendChild(newBadge);
-      }
-
-      var ccat = document.createElement('span');
-      ccat.className = 'cr-card-cat'; ccat.textContent = catIcon(it.c);
-
-      var clbl = document.createElement('div');
-      clbl.className = 'cr-card-label'; clbl.textContent = it.t;
-
-      card.appendChild(cimg);
-      card.appendChild(ccat);
-      card.appendChild(clbl);
-
-      card.addEventListener('click', function(){
-        if(typeof openDetail === 'function'){ openDetail(it.idx); }
-      });
-      track.appendChild(card);
-    });
-
-    pos = 0;
-    updateDots();
-    startAuto();
-  }
-
   function visibleCount(){
     return window.innerWidth <= 480 ? 2 : window.innerWidth <= 768 ? 3 : VISIBLE;
   }
@@ -2387,44 +2291,143 @@ loadCSVsFromGitHub();
     }, INTERVAL_MS);
   }
 
-  /* ── CARGA RECIENTES DESDE GITHUB Y CONSTRUYE ── */
-  function loadAndBuild(){
-    if(typeof CSV_CAT_MAP === 'undefined' || typeof DB === 'undefined') return;
-
-    var files = Object.keys(CSV_CAT_MAP);
-
-    /* 1. Mostrar con caché mientras carga */
-    var cached = loadRecent();
-    if(cached.length){
-      buildCarousel(cached);
+  /* ── FALLBACK INMEDIATO: últimos items con poster de cada categoría ── */
+  function buildFromDB(){
+    if(typeof DB === 'undefined' || !DB.length) return;
+    var bycat = {};
+    for(var i = DB.length - 1; i >= 0; i--){
+      var d = (typeof getData === 'function') ? getData(i) : {};
+      var img = (d && d.p) ? d.p : '';
+      if(!img) continue;
+      var cat = DB[i].c;
+      if(!bycat[cat]) bycat[cat] = [];
+      if(bycat[cat].length < 3) bycat[cat].push({ t: DB[i].t, c: cat, img: img, idx: i, date: '' });
     }
-
-    /* 2. Pedir a GitHub los commits recientes de cada CSV en paralelo */
-    Promise.all(files.map(function(file){
-      return fetchRecentForFile(file, CSV_CAT_MAP[file]);
-    })).then(function(results){
-      /* Aplanar, ordenar por fecha desc, deduplicar */
-      var all = [];
-      results.forEach(function(arr){ arr.forEach(function(x){ all.push(x); }); });
-      all.sort(function(a, b){
-        return new Date(b.date || 0) - new Date(a.date || 0);
-      });
-      var unique = dedupe(all);
-
-      if(unique.length >= 3){
-        saveRecent(unique.slice(0, MAX_ITEMS * 2)); /* guardar más por si algunos no tienen poster */
-        buildCarousel(unique);
-      }
-      /* Si GitHub no devolvió nada útil, la caché ya está mostrándose */
-    }).catch(function(){ /* falla silenciosa, ya mostramos caché */ });
+    var pool = [];
+    Object.keys(bycat).forEach(function(c){ bycat[c].forEach(function(x){ pool.push(x); }); });
+    for(var k = pool.length - 1; k > 0; k--){
+      var j2 = Math.floor(Math.random() * (k + 1));
+      var tmp = pool[k]; pool[k] = pool[j2]; pool[j2] = tmp;
+    }
+    renderItems(pool.slice(0, MAX_ITEMS));
   }
 
-  /* Esperar a que DB esté lista */
+  /* ── RENDER de una lista ya enriquecida ── */
+  function renderItems(list){
+    if(!list || !list.length) return;
+    items = list;
+    pos   = 0;
+    if(timer) clearInterval(timer);
+
+    var vc    = visibleCount();
+    var pages = Math.ceil(items.length / vc);
+    dotsWrap.innerHTML = '';
+    dotEls = [];
+    for(var d = 0; d < pages; d++){
+      var dot = document.createElement('span');
+      dot.className = 'cr-dot' + (d === 0 ? ' active' : '');
+      (function(idx){ dot.addEventListener('click', function(){ goTo(idx * visibleCount()); }); })(d);
+      dotsWrap.appendChild(dot);
+      dotEls.push(dot);
+    }
+
+    track.innerHTML = '';
+    items.forEach(function(it){
+      var card = document.createElement('div');
+      card.className = 'cr-card';
+
+      var cimg = document.createElement('img');
+      cimg.src = it.img; cimg.alt = it.t; cimg.loading = 'lazy';
+      cimg.onerror = function(){ this.style.display = 'none'; };
+
+      if(it.date){
+        var age = Date.now() - new Date(it.date).getTime();
+        if(age > 0 && age < 72 * 3600 * 1000){
+          var newBadge = document.createElement('span');
+          newBadge.className = 'cr-card-new';
+          newBadge.textContent = 'NEW';
+          card.appendChild(newBadge);
+        }
+      }
+
+      var ccat = document.createElement('span');
+      ccat.className = 'cr-card-cat'; ccat.textContent = catIcon(it.c);
+
+      var clbl = document.createElement('div');
+      clbl.className = 'cr-card-label'; clbl.textContent = it.t;
+
+      card.appendChild(cimg);
+      card.appendChild(ccat);
+      card.appendChild(clbl);
+
+      card.addEventListener('click', (function(idx){ return function(){
+        if(typeof openDetail === 'function') openDetail(idx);
+      }; })(it.idx));
+
+      track.appendChild(card);
+    });
+
+    updateDots();
+    startAuto();
+  }
+
+  /* ── ENRIQUECER lista de recientes GitHub con poster de DB ── */
+  function enrichAndRender(unique){
+    var enriched = [];
+    unique.forEach(function(item){
+      var found = findInDB(item.t, item.c);
+      if(!found) return;
+      var d = (typeof getData === 'function') ? getData(found.idx) : {};
+      var img = (d && d.p) ? d.p : '';
+      if(!img) return;
+      enriched.push({ t: found.entry.t, c: found.entry.c, img: img, idx: found.idx, date: item.date });
+    });
+
+    /* Completar hasta MAX_ITEMS desde DB si hacen falta */
+    if(enriched.length < MAX_ITEMS){
+      var used = {};
+      enriched.forEach(function(e){ used[e.idx] = true; });
+      for(var i = DB.length - 1; i >= 0 && enriched.length < MAX_ITEMS; i--){
+        if(used[i]) continue;
+        var d2 = (typeof getData === 'function') ? getData(i) : {};
+        var img2 = (d2 && d2.p) ? d2.p : '';
+        if(img2) enriched.push({ t: DB[i].t, c: DB[i].c, img: img2, idx: i, date: '' });
+      }
+    }
+
+    if(enriched.length) renderItems(enriched.slice(0, MAX_ITEMS));
+  }
+
+  /* ── CONSULTA GITHUB y actualiza el carrusel ── */
+  function fetchGithubRecent(){
+    if(typeof CSV_CAT_MAP === 'undefined') return;
+    Promise.all(Object.keys(CSV_CAT_MAP).map(function(file){
+      return fetchRecentForFile(file, CSV_CAT_MAP[file]);
+    })).then(function(results){
+      var all = [];
+      results.forEach(function(arr){ arr.forEach(function(x){ all.push(x); }); });
+      all.sort(function(a, b){ return new Date(b.date||0) - new Date(a.date||0); });
+      var unique = dedupe(all);
+      if(!unique.length) return;
+      saveRecent(unique.slice(0, MAX_ITEMS * 3));
+      enrichAndRender(unique);
+    }).catch(function(){});
+  }
+
+  /* ── ARRANQUE PRINCIPAL ── */
   var attempts = 0;
   function waitAndBuild(){
     attempts++;
     if(typeof DB !== 'undefined' && DB.length > 0){
-      loadAndBuild();
+      /* Paso 1: render inmediato (desde caché o DB) — siempre funciona */
+      var cached = loadRecent();
+      if(cached.length > 0){
+        enrichAndRender(cached);
+      } else {
+        buildFromDB();
+      }
+      /* Paso 2: en segundo plano, pedir a GitHub y actualizar */
+      setTimeout(fetchGithubRecent, 800);
     } else if(attempts < 80){
       setTimeout(waitAndBuild, 500);
     }
