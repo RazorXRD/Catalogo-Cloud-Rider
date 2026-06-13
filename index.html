@@ -2114,125 +2114,147 @@ loadCSVsFromGitHub();
 
 /* ===== CAROUSEL RECIÉN ACTUALIZADOS ===== */
 (function(){
-  var CARD_W      = 190;   /* card width (180) + gap (10) */
   var INTERVAL_MS = 1500;
+  var RAW = 'https://raw.githubusercontent.com/RazorXRD/Catalogo-Cloud-Rider/main/';
 
-  var track    = document.getElementById('carousel-track');
-  var dotsWrap = document.getElementById('carousel-dots');
-  var items    = [];
-  var pos      = 0;       /* índice de la card actualmente al frente */
-  var timer    = null;
-  var built    = false;
+  /* Última fila de cada CSV + columnas de título y poster */
+  var FILES = [
+    { f:'peliculas_data_avanzado.csv', c:'peliculas', t:'Titulo_encontrado', p:'Poster_URL'  },
+    { f:'series_data.csv',             c:'series',    t:'Titulo',            p:'Link_Imagen' },
+    { f:'animes_data.csv',             c:'animes',    t:'Titulo_encontrado', p:'Poster_URL'  },
+    { f:'animados_data.csv',           c:'animados',  t:'Titulo',            p:'Link_Imagen' },
+    { f:'doramas_data.csv',            c:'doramas',   t:'Titulo_encontrado', p:'Poster_URL'  },
+    { f:'novelas_data.csv',            c:'novelas',   t:'Titulo_encontrado', p:'Poster_URL'  },
+    { f:'juegos_data.csv',             c:'juegos',    t:'Titulo_encontrado', p:'Poster_URL'  }
+  ];
 
   var CAT_LABEL = {peliculas:'Película',series:'Serie',animes:'Anime',
                    animados:'Animado',doramas:'Dorama',novelas:'Novela',juegos:'Juego'};
   var CAT_ICON  = {peliculas:'🎬',series:'📺',animes:'⛩',animados:'🎨',
                    doramas:'🌸',novelas:'💋',juegos:'🎮'};
-  var CAT_ORDER = ['peliculas','series','animes','animados','doramas','novelas','juegos'];
 
-  function getOnePerCat(){
-    if(typeof DB==='undefined'||typeof overrides==='undefined') return [];
-    var result=[];
-    CAT_ORDER.forEach(function(cat){
-      for(var i=DB.length-1;i>=0;i--){
-        if(DB[i].c!==cat) continue;
-        var ov=overrides[i];
-        if(!ov||!ov.p||ov.p.indexOf('http')!==0) continue;
-        result.push({t:DB[i].t,c:cat,img:ov.p,idx:i});
-        break;
-      }
-    });
-    return result;
+  var track    = document.getElementById('carousel-track');
+  var dotsWrap = document.getElementById('carousel-dots');
+  var items    = [];
+  var pos      = 0;
+  var timer    = null;
+
+  /* Detecta separador del CSV */
+  function getSep(line){
+    var t=line.split('\t').length-1;
+    var s=line.split(';').length-1;
+    var c=line.split(',').length-1;
+    return t>=s&&t>=c?'\t':s>=c?';':',';
   }
 
-  function renderItems(list){
-    if(!list||!list.length||built) return;
-    built=true;
-    items=list;
-    pos=0;
+  /* Lee un CSV, devuelve {t, c, img} de la última fila no vacía */
+  function fetchLast(cfg){
+    return fetch(RAW + cfg.f + '?nc=' + Date.now())
+      .then(function(r){ return r.ok ? r.text() : null; })
+      .then(function(text){
+        if(!text) return null;
+        text = text.replace(/^\uFEFF/,'');
+        var lines = text.split(/\r?\n/).filter(function(l){ return l.trim(); });
+        if(lines.length < 2) return null;
+        var sep     = getSep(lines[0]);
+        var headers = lines[0].split(sep).map(function(h){ return h.trim(); });
+        /* Última línea */
+        var lastLine = lines[lines.length - 1];
+        var cells    = lastLine.split(sep).map(function(c){ return c.trim().replace(/^"|"$/g,''); });
+        var row      = {};
+        headers.forEach(function(h, i){ row[h] = cells[i] || ''; });
+        var title = row[cfg.t] || '';
+        var img   = row[cfg.p] || '';
+        if(!title || !img || img.indexOf('http') !== 0) return null;
+        return { t: title, c: cfg.c, img: img };
+      })
+      .catch(function(){ return null; });
+  }
+
+  /* Render */
+  function render(list){
+    items = list;
+    pos   = 0;
     if(timer) clearInterval(timer);
 
-    /* dots: uno por card */
-    dotsWrap.innerHTML='';
-    list.forEach(function(_,di){
-      var dot=document.createElement('span');
-      dot.className='cr-dot'+(di===0?' active':'');
-      (function(pi){dot.addEventListener('click',function(){moveTo(pi);});})(di);
+    /* Dots */
+    dotsWrap.innerHTML = '';
+    list.forEach(function(_, di){
+      var dot = document.createElement('span');
+      dot.className = 'cr-dot' + (di === 0 ? ' active' : '');
+      (function(pi){ dot.addEventListener('click', function(){ moveTo(pi); }); })(di);
       dotsWrap.appendChild(dot);
     });
 
-    /* cards */
-    track.innerHTML='';
-    track.style.transform='translateX(0)';
+    /* Cards */
+    track.innerHTML = '';
+    track.style.transform = 'translateX(0)';
     list.forEach(function(it){
-      var card=document.createElement('div');
-      card.className='cr-card';
+      var card = document.createElement('div');
+      card.className = 'cr-card';
 
-      var img=document.createElement('img');
-      img.src=it.img; img.alt=it.t; img.loading='lazy';
-      img.onerror=function(){if(this.parentNode)this.parentNode.style.display='none';};
+      var img = document.createElement('img');
+      img.src = it.img; img.alt = it.t; img.loading = 'lazy';
+      img.onerror = function(){ if(this.parentNode) this.parentNode.style.display='none'; };
 
-      var cat=document.createElement('span');
-      cat.className='cr-card-cat';
-      cat.textContent=(CAT_ICON[it.c]||'⭐')+' '+(CAT_LABEL[it.c]||it.c);
+      var cat = document.createElement('span');
+      cat.className = 'cr-card-cat';
+      cat.textContent = (CAT_ICON[it.c]||'⭐') + ' ' + (CAT_LABEL[it.c]||it.c);
 
-      var lbl=document.createElement('div');
-      lbl.className='cr-card-label';
-      lbl.textContent=it.t;
+      var lbl = document.createElement('div');
+      lbl.className = 'cr-card-label';
+      lbl.textContent = it.t;
 
       card.appendChild(img);
       card.appendChild(cat);
       card.appendChild(lbl);
-      card.addEventListener('click',(function(idx){
-        return function(){if(typeof openDetail==='function')openDetail(idx);};
-      })(it.idx));
+
+      /* Click → buscar en DB y abrir */
+      card.addEventListener('click', (function(title, cat){
+        return function(){
+          if(typeof DB === 'undefined' || typeof openDetail !== 'function') return;
+          var nt = title.toLowerCase().replace(/\s+/g,' ').trim();
+          for(var i = 0; i < DB.length; i++){
+            if(DB[i].c === cat && DB[i].t.toLowerCase().trim() === nt){
+              openDetail(i); return;
+            }
+          }
+          /* fallback: búsqueda parcial */
+          for(var j = 0; j < DB.length; j++){
+            if(DB[j].t.toLowerCase().indexOf(nt.slice(0,8)) >= 0){
+              openDetail(j); return;
+            }
+          }
+        };
+      })(it.t, it.c));
+
       track.appendChild(card);
     });
 
     startAuto();
-    updateDots();
   }
 
   function moveTo(newPos){
-    if(!items.length) return;
-    pos=Math.max(0,Math.min(newPos,items.length-1));
-    track.style.transform='translateX(-'+(pos*CARD_W)+'px)';
-    updateDots();
-  }
-
-  function updateDots(){
-    var dots=dotsWrap.querySelectorAll('.cr-dot');
-    dots.forEach(function(d,i){
-      d.className='cr-dot'+(i===pos?' active':'');
-    });
+    pos = Math.max(0, Math.min(newPos, items.length - 1));
+    track.style.transform = 'translateX(-' + (pos * 190) + 'px)';
+    var dots = dotsWrap.querySelectorAll('.cr-dot');
+    dots.forEach(function(d, i){ d.className = 'cr-dot' + (i === pos ? ' active' : ''); });
   }
 
   function startAuto(){
     if(timer) clearInterval(timer);
-    timer=setInterval(function(){
+    timer = setInterval(function(){
       if(!items.length) return;
-      var next=pos+1>=items.length?0:pos+1;
-      moveTo(next);
-    },INTERVAL_MS);
+      moveTo(pos + 1 >= items.length ? 0 : pos + 1);
+    }, INTERVAL_MS);
   }
 
-  /* Poll hasta que overrides tenga datos */
-  var attempts=0;
-  function tryBuild(){
-    if(built) return;
-    attempts++;
-    if(typeof DB!=='undefined'&&typeof overrides!=='undefined'
-       &&DB.length>0&&Object.keys(overrides).length>100){
-      var list=getOnePerCat();
-      if(list.length>=2){renderItems(list);return;}
-    }
-    if(attempts<150) setTimeout(tryBuild,400);
-  }
-  setTimeout(tryBuild,500);
-
-  window.addEventListener('resize',function(){
-    if(built&&items.length) moveTo(pos);
+  /* Fetch todos en paralelo y mostrar */
+  Promise.all(FILES.map(fetchLast)).then(function(results){
+    var list = results.filter(function(x){ return x !== null; });
+    if(list.length) render(list);
   });
+
 })();
 
 </script>
