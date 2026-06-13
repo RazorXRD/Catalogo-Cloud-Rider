@@ -2126,68 +2126,36 @@ loadCSVsFromGitHub();
   var pos      = 0;
   var timer    = null;
   var dotEls   = [];
+  var built    = false;
 
   var CAT_LABEL = {peliculas:'Película',series:'Serie',animes:'Anime',
                    animados:'Animado',doramas:'Dorama',novelas:'Novela',juegos:'Juego'};
   var CAT_ICON  = {peliculas:'🎬',series:'📺',animes:'⛩',animados:'🎨',
                    doramas:'🌸',novelas:'💋',juegos:'🎮'};
 
-  /* columnas de título y poster por categoría (igual que CSV_SCHEMA) */
-  var COLS = {
-    animados  : { t:'Titulo',           p:'Link_Imagen' },
-    animes    : { t:'Titulo_encontrado',p:'Poster_URL'  },
-    doramas   : { t:'Titulo_encontrado',p:'Poster_URL'  },
-    juegos    : { t:'Titulo_encontrado',p:'Poster_URL'  },
-    novelas   : { t:'Titulo_encontrado',p:'Poster_URL'  },
-    peliculas : { t:'Titulo_encontrado',p:'Poster_URL'  },
-    series    : { t:'Titulo',           p:'Link_Imagen' }
-  };
+  var CAT_ORDER = ['peliculas','series','animes','animados','doramas','novelas','juegos'];
 
-  /* Parsea CSV texto → array de objetos */
-  function parseCSV(text){
-    text = text.replace(/^\uFEFF/,'');
-    var lines = text.split(/\r?\n/).filter(function(l){ return l.trim(); });
-    if(lines.length < 2) return [];
-    var h0  = lines[0];
-    var sep = h0.split(';').length > h0.split('\t').length ? ';' : '\t';
-    if(h0.split(',').length > h0.split(sep).length) sep = ',';
-    var headers = h0.split(sep).map(function(h){ return h.trim(); });
-    var rows = [];
-    for(var i = lines.length - 1; i >= 1 && rows.length < 5; i--){
-      var cells = lines[i].split(sep);
-      if(cells.length < 2) continue;
-      var row = {};
-      headers.forEach(function(h, idx){ row[h] = (cells[idx]||'').trim().replace(/^"|"$/g,''); });
-      rows.push(row);
-    }
-    return rows;
+  /* ── Toma el ÚLTIMO item con poster de cada categoría directamente de overrides+DB ── */
+  function getOnePerCat(){
+    if(typeof DB==='undefined' || typeof overrides==='undefined') return [];
+    var result = [];
+    CAT_ORDER.forEach(function(cat){
+      /* Recorre DB de atrás: último item de esta cat con poster */
+      for(var i = DB.length - 1; i >= 0; i--){
+        if(DB[i].c !== cat) continue;
+        var ov = overrides[i];
+        if(!ov || !ov.p || ov.p.indexOf('http') !== 0) continue;
+        result.push({ t: DB[i].t, c: cat, img: ov.p, idx: i });
+        break;
+      }
+    });
+    return result;
   }
 
-  /* Fetch un CSV y devuelve hasta 5 items {t, c, img} de las últimas filas */
-  function fetchCSV(file, cat){
-    var url = 'https://raw.githubusercontent.com/RazorXRD/Catalogo-Cloud-Rider/main/' + file + '?t=' + Date.now();
-    var cols = COLS[cat] || { t:'Titulo', p:'Poster_URL' };
-    return fetch(url, { cache:'no-store' })
-      .then(function(r){ return r.ok ? r.text() : ''; })
-      .then(function(text){
-        if(!text) return [];
-        var rows = parseCSV(text);
-        var result = [];
-        rows.forEach(function(row){
-          var title = (row[cols.t] || '').trim();
-          var img   = (row[cols.p] || '').trim();
-          if(title && img && img.indexOf('http') === 0){
-            result.push({ t: title, c: cat, img: img });
-          }
-        });
-        return result;
-      })
-      .catch(function(){ return []; });
-  }
-
-  /* Render */
+  /* ── Render ── */
   function renderItems(list){
-    if(!list || !list.length) return;
+    if(!list || !list.length || built) return;
+    built = true;
     items = list;
     pos   = 0;
     if(timer) clearInterval(timer);
@@ -2198,8 +2166,8 @@ loadCSVsFromGitHub();
     dotEls = [];
     for(var d = 0; d < pages; d++){
       var dot = document.createElement('span');
-      dot.className = 'cr-dot' + (d === 0 ? ' active' : '');
-      (function(pi){ dot.addEventListener('click', function(){ goTo(pi * visibleCount()); }); })(d);
+      dot.className = 'cr-dot'+(d===0?' active':'');
+      (function(pi){ dot.addEventListener('click',function(){ goTo(pi*visibleCount()); }); })(d);
       dotsWrap.appendChild(dot);
       dotEls.push(dot);
     }
@@ -2215,7 +2183,7 @@ loadCSVsFromGitHub();
 
       var ccat = document.createElement('span');
       ccat.className = 'cr-card-cat';
-      ccat.textContent = (CAT_ICON[it.c]||'⭐') + ' ' + (CAT_LABEL[it.c]||it.c);
+      ccat.textContent = (CAT_ICON[it.c]||'⭐')+' '+(CAT_LABEL[it.c]||it.c);
 
       var clbl = document.createElement('div');
       clbl.className = 'cr-card-label';
@@ -2224,26 +2192,9 @@ loadCSVsFromGitHub();
       card.appendChild(cimg);
       card.appendChild(ccat);
       card.appendChild(clbl);
-
-      /* Click → buscar en DB y abrir detalle */
-      card.addEventListener('click', (function(title, cat){
-        return function(){
-          if(typeof DB === 'undefined' || typeof openDetail !== 'function') return;
-          var nt = title.toLowerCase().trim();
-          for(var i = 0; i < DB.length; i++){
-            if(DB[i].c === cat && DB[i].t.toLowerCase().trim() === nt){
-              openDetail(i); return;
-            }
-          }
-          /* fuzzy fallback */
-          for(var j = 0; j < DB.length; j++){
-            if(DB[j].t.toLowerCase().indexOf(nt.slice(0,10)) >= 0){
-              openDetail(j); return;
-            }
-          }
-        };
-      })(it.t, it.c));
-
+      card.addEventListener('click',(function(idx){
+        return function(){ if(typeof openDetail==='function') openDetail(idx); };
+      })(it.idx));
       track.appendChild(card);
     });
 
@@ -2252,64 +2203,45 @@ loadCSVsFromGitHub();
   }
 
   function visibleCount(){
-    return window.innerWidth <= 480 ? 2 : window.innerWidth <= 768 ? 3 : VISIBLE;
+    return window.innerWidth<=480?2:window.innerWidth<=768?3:VISIBLE;
   }
-
   function goTo(newPos){
-    var vc  = visibleCount();
-    var max = Math.max(0, items.length - vc);
-    pos = Math.min(Math.max(0, newPos), max);
-    var cardW = track.children[0] ? track.children[0].offsetWidth + 10 : 0;
-    track.style.transform = 'translateX(-' + (pos * cardW) + 'px)';
+    var vc=visibleCount(), max=Math.max(0,items.length-vc);
+    pos=Math.min(Math.max(0,newPos),max);
+    var cardW=track.children[0]?track.children[0].offsetWidth+10:0;
+    track.style.transform='translateX(-'+(pos*cardW)+'px)';
     updateDots();
   }
-
   function updateDots(){
-    var vc   = visibleCount();
-    var page = Math.floor(pos / vc);
-    dotEls.forEach(function(d, i){
-      d.className = 'cr-dot' + (i === page ? ' active' : '');
-    });
+    var vc=visibleCount(), page=Math.floor(pos/vc);
+    dotEls.forEach(function(d,i){ d.className='cr-dot'+(i===page?' active':''); });
   }
-
   function startAuto(){
     if(timer) clearInterval(timer);
-    timer = setInterval(function(){
-      var vc = visibleCount();
+    timer=setInterval(function(){
       if(!items.length) return;
-      var next = pos + 1;
-      if(next > items.length - vc) next = 0;
+      var vc=visibleCount(), next=pos+1;
+      if(next>items.length-vc) next=0;
       goTo(next);
-    }, INTERVAL_MS);
+    },INTERVAL_MS);
   }
 
-  /* ── FETCH todos los CSVs y mostrar las últimas filas ── */
-  var FILES = {
-    'series_data.csv'             : 'series',
-    'peliculas_data_avanzado.csv' : 'peliculas',
-    'animes_data.csv'             : 'animes',
-    'animados_data.csv'           : 'animados',
-    'doramas_data.csv'            : 'doramas',
-    'novelas_data.csv'            : 'novelas',
-    'juegos_data.csv'             : 'juegos'
-  };
+  /* ── Poll hasta que overrides tenga datos (CSVs cargados) ── */
+  var attempts = 0;
+  function tryBuild(){
+    if(built) return;
+    attempts++;
+    if(typeof DB!=='undefined' && typeof overrides!=='undefined'
+       && DB.length > 0 && Object.keys(overrides).length > 100){
+      var list = getOnePerCat();
+      if(list.length >= 3){ renderItems(list); return; }
+    }
+    if(attempts < 150) setTimeout(tryBuild, 400);
+  }
+  setTimeout(tryBuild, 500);
 
-  Promise.all(Object.keys(FILES).map(function(file){
-    return fetchCSV(file, FILES[file]);
-  })).then(function(results){
-    var all = [];
-    results.forEach(function(arr){ arr.forEach(function(x){ all.push(x); }); });
-    /* Eliminar duplicados por título */
-    var seen = {}, unique = [];
-    all.forEach(function(x){
-      var k = x.t.toLowerCase().trim();
-      if(!seen[k]){ seen[k]=true; unique.push(x); }
-    });
-    if(unique.length) renderItems(unique);
-  });
-
-  window.addEventListener('resize', function(){
-    if(items.length) goTo(Math.min(pos, Math.max(0, items.length - visibleCount())));
+  window.addEventListener('resize',function(){
+    if(items.length) goTo(Math.min(pos,Math.max(0,items.length-visibleCount())));
   });
 })();
 
