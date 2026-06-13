@@ -2117,10 +2117,9 @@ loadCSVsFromGitHub();
 
 /* ===== CAROUSEL RECIÉN ACTUALIZADOS ===== */
 (function(){
-  var VISIBLE      = 5;
-  var INTERVAL_MS  = 1500;
-  var MAX_ITEMS    = 10;
-  var SHA_STORE    = 'cr_sha_prev_v1'; /* SHAs anteriores para detectar cambios */
+  var VISIBLE     = 5;
+  var INTERVAL_MS = 1500;
+  var MAX_ITEMS   = 10;
 
   var track    = document.getElementById('carousel-track');
   var dotsWrap = document.getElementById('carousel-dots');
@@ -2129,103 +2128,41 @@ loadCSVsFromGitHub();
   var timer    = null;
   var dotEls   = [];
 
-  function catIcon(c){
-    return {peliculas:'🎬',series:'📺',animes:'⛩',animados:'🎨',
-            doramas:'🌸',novelas:'💋',juegos:'🎮'}[c]||'⭐';
-  }
+  var CAT_LABEL = {peliculas:'Película',series:'Serie',animes:'Anime',
+                   animados:'Animado',doramas:'Dorama',novelas:'Novela',juegos:'Juego'};
+  var CAT_ICON  = {peliculas:'🎬',series:'📺',animes:'⛩',animados:'🎨',
+                   doramas:'🌸',novelas:'💋',juegos:'🎮'};
 
-  function normT(s){
-    if(!s) return '';
-    return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-            .replace(/[^a-z0-9]/g,'').trim();
-  }
-
-  /* ──────────────────────────────────────────────────────────────────
-     DETECCIÓN DE CAMBIOS: compara los SHAs actuales (ya guardados por
-     el sistema principal en localStorage como etag_<archivo>) con los
-     SHAs anteriores que guardamos nosotros.
-     Si un SHA cambió → ese CSV fue modificado → tomamos los últimos
-     items de esa categoría como "recientes".
-  ────────────────────────────────────────────────────────────────── */
-  function getChangedCats(){
-    if(typeof CSV_CAT_MAP === 'undefined') return [];
-    var prevSHAs = {};
-    try{ var s = localStorage.getItem(SHA_STORE); if(s) prevSHAs = JSON.parse(s); }catch(e){}
-
-    var changed = []; /* [{file, cat, isNew}] */
-    Object.keys(CSV_CAT_MAP).forEach(function(file){
-      var cat    = CSV_CAT_MAP[file];
-      var curSHA = null;
-      try{ curSHA = localStorage.getItem('etag_' + file); }catch(e){}
-      var prevSHA = prevSHAs[file] || null;
-      if(curSHA && curSHA !== prevSHA){
-        changed.push({ file: file, cat: cat, isNew: !prevSHA });
-      }
-    });
-    return changed;
-  }
-
-  function saveCurrentSHAs(){
-    if(typeof CSV_CAT_MAP === 'undefined') return;
-    var cur = {};
-    Object.keys(CSV_CAT_MAP).forEach(function(file){
-      try{ var s = localStorage.getItem('etag_' + file); if(s) cur[file] = s; }catch(e){}
-    });
-    try{ localStorage.setItem(SHA_STORE, JSON.stringify(cur)); }catch(e){}
-  }
-
-  /* Toma los últimos N items con poster de una categoría del DB */
-  function getLastItemsOfCat(cat, maxN){
+  /* ── Toma los últimos MAX_ITEMS con poster del DB (los últimos en el CSV) ── */
+  function getRecentItems(){
+    if(typeof DB === 'undefined' || !DB.length) return [];
     var result = [];
-    if(typeof DB === 'undefined') return result;
-    for(var i = DB.length - 1; i >= 0 && result.length < maxN; i--){
-      if(DB[i].c !== cat) continue;
+    /* Recorre el DB de atrás hacia adelante: los últimos = más recientes en el CSV */
+    for(var i = DB.length - 1; i >= 0 && result.length < MAX_ITEMS; i--){
       var d = (typeof getData === 'function') ? getData(i) : null;
-      var img = d && d.p && d.p.indexOf('http') === 0 ? d.p : '';
+      if(!d) continue;
+      var img = (d.p && d.p.indexOf('http') === 0) ? d.p : '';
       if(!img) continue;
-      result.push({ t: DB[i].t, c: cat, img: img, idx: i });
+      result.push({ t: DB[i].t, c: DB[i].c, img: img, idx: i });
     }
     return result;
   }
 
-  /* Toma los últimos items de TODAS las categorías (fallback) */
-  function getLastItemsAll(){
-    var bycat = {};
-    if(typeof DB === 'undefined') return [];
-    for(var i = DB.length - 1; i >= 0; i--){
-      var cat = DB[i].c;
-      if(bycat[cat] && bycat[cat].length >= 2) continue;
-      var d = (typeof getData === 'function') ? getData(i) : null;
-      var img = d && d.p && d.p.indexOf('http') === 0 ? d.p : '';
-      if(!img) continue;
-      if(!bycat[cat]) bycat[cat] = [];
-      bycat[cat].push({ t: DB[i].t, c: cat, img: img, idx: i });
-    }
-    var pool = [];
-    Object.keys(bycat).forEach(function(c){ bycat[c].forEach(function(x){ pool.push(x); }); });
-    /* shuffle */
-    for(var k = pool.length - 1; k > 0; k--){
-      var j = Math.floor(Math.random()*(k+1));
-      var tmp = pool[k]; pool[k] = pool[j]; pool[j] = tmp;
-    }
-    return pool;
-  }
-
-  /* ── RENDER ── */
+  /* ── Render ── */
   function renderItems(list){
     if(!list || !list.length) return;
-    items = list.slice(0, MAX_ITEMS);
-    pos = 0;
+    items = list;
+    pos   = 0;
     if(timer) clearInterval(timer);
 
-    var vc = visibleCount();
+    var vc    = visibleCount();
     var pages = Math.ceil(items.length / vc);
     dotsWrap.innerHTML = '';
     dotEls = [];
     for(var d = 0; d < pages; d++){
       var dot = document.createElement('span');
       dot.className = 'cr-dot' + (d === 0 ? ' active' : '');
-      (function(idx){ dot.addEventListener('click', function(){ goTo(idx * visibleCount()); }); })(d);
+      (function(pi){ dot.addEventListener('click', function(){ goTo(pi * visibleCount()); }); })(d);
       dotsWrap.appendChild(dot);
       dotEls.push(dot);
     }
@@ -2237,24 +2174,15 @@ loadCSVsFromGitHub();
 
       var cimg = document.createElement('img');
       cimg.src = it.img; cimg.alt = it.t; cimg.loading = 'lazy';
-      cimg.onerror = function(){ this.parentNode && (this.parentNode.style.display='none'); };
-
-      /* Badge NUEVO si el CSV de esa cat cambió recientemente */
-      if(it.isRecent){
-        var badge = document.createElement('span');
-        badge.className = 'cr-card-new';
-        badge.textContent = 'NUEVO';
-        card.appendChild(badge);
-      }
+      cimg.onerror = function(){ if(this.parentNode) this.parentNode.style.display='none'; };
 
       var ccat = document.createElement('span');
       ccat.className = 'cr-card-cat';
-      ccat.textContent = catIcon(it.c) + ' ' +
-        ({peliculas:'Película',series:'Serie',animes:'Anime',animados:'Animado',
-          doramas:'Dorama',novelas:'Novela',juegos:'Juego'}[it.c]||it.c);
+      ccat.textContent = (CAT_ICON[it.c]||'⭐') + ' ' + (CAT_LABEL[it.c]||it.c);
 
       var clbl = document.createElement('div');
-      clbl.className = 'cr-card-label'; clbl.textContent = it.t;
+      clbl.className = 'cr-card-label';
+      clbl.textContent = it.t;
 
       card.appendChild(cimg);
       card.appendChild(ccat);
@@ -2287,7 +2215,9 @@ loadCSVsFromGitHub();
   function updateDots(){
     var vc   = visibleCount();
     var page = Math.floor(pos / vc);
-    dotEls.forEach(function(d, i){ d.className = 'cr-dot' + (i === page ? ' active' : ''); });
+    dotEls.forEach(function(d, i){
+      d.className = 'cr-dot' + (i === page ? ' active' : '');
+    });
   }
 
   function startAuto(){
@@ -2301,51 +2231,16 @@ loadCSVsFromGitHub();
     }, INTERVAL_MS);
   }
 
-  /* ── LÓGICA PRINCIPAL ── */
-  function buildCarousel(){
-    if(typeof DB === 'undefined' || !DB.length) return;
-    if(typeof getData === 'undefined') return;
-
-    /* Verificar que overrides tengan datos */
-    var ovCount = typeof overrides !== 'undefined' ? Object.keys(overrides).length : 0;
-    if(ovCount === 0) return; /* CSVs aún cargando */
-
-    var changed = getChangedCats();
-    var pool = [];
-
-    if(changed.length > 0){
-      /* Hay CSVs modificados → mostrar últimos items de las cats cambiadas */
-      changed.forEach(function(ch){
-        var last = getLastItemsOfCat(ch.cat, 3);
-        last.forEach(function(x){ x.isRecent = true; pool.push(x); });
-      });
-    }
-
-    /* Completar hasta MAX_ITEMS con items de otras categorías */
-    if(pool.length < MAX_ITEMS){
-      var usedIdxs = {};
-      pool.forEach(function(x){ usedIdxs[x.idx] = true; });
-      var rest = getLastItemsAll().filter(function(x){ return !usedIdxs[x.idx]; });
-      var needed = MAX_ITEMS - pool.length;
-      rest.slice(0, needed).forEach(function(x){ pool.push(x); });
-    }
-
-    if(pool.length){
-      renderItems(pool);
-      /* Guardar SHAs actuales DESPUÉS de mostrar el carrusel */
-      saveCurrentSHAs();
-    }
-  }
-
-  /* Esperar a que DB y overrides estén listos */
+  /* ── Esperar DB + overrides y mostrar ── */
   var attempts = 0;
   function waitAndBuild(){
     attempts++;
-    var dbOk  = typeof DB !== 'undefined' && DB.length > 0;
-    var ovOk  = typeof overrides !== 'undefined' && Object.keys(overrides).length > 0;
+    var dbOk = typeof DB !== 'undefined' && DB.length > 0;
+    var ovOk = typeof overrides !== 'undefined' && Object.keys(overrides).length > 0;
     if(dbOk && ovOk){
-      buildCarousel();
-    } else if(attempts < 100){
+      var list = getRecentItems();
+      if(list.length) renderItems(list);
+    } else if(attempts < 120){
       setTimeout(waitAndBuild, 400);
     }
   }
@@ -2359,4 +2254,5 @@ loadCSVsFromGitHub();
 </script>
 
 </body>
+
 </html>
