@@ -2130,21 +2130,18 @@ loadCSVsFromGitHub();
   var VISIBLE     = 5;
   var INTERVAL_MS = 3500;
   var MAX_ITEMS   = 3;
-  var REPO        = 'RazorXRD/Catalogo-Cloud-Rider';
-  var BRANCH      = 'main';
-  var GH_API      = 'https://api.github.com/repos/' + REPO;
-  var CACHE_KEY   = 'cr_csv_order_v2';
-  var CACHE_TTL   = 3600000; /* 1 hora */
+  var TAIL_BYTES  = 4000; /* últimos 4 KB de cada CSV — suficiente para 1-3 filas */
+  var RAW_BASE    = 'https://raw.githubusercontent.com/RazorXRD/Catalogo-Cloud-Rider/main/';
 
-  /* Orden por defecto de CSVs (de más probable a menos probable de cambio reciente) */
-  var CSV_CATS_DEFAULT = [
-    { file:'peliculas_data_avanzado.csv', cat:'peliculas' },
-    { file:'series_data.csv',             cat:'series'    },
-    { file:'animes_data.csv',             cat:'animes'    },
-    { file:'animados_data.csv',           cat:'animados'  },
-    { file:'doramas_data.csv',            cat:'doramas'   },
-    { file:'novelas_data.csv',            cat:'novelas'   },
-    { file:'juegos_data.csv',             cat:'juegos'    }
+  /* CSVs en orden de prioridad (los que más frecuentemente actualizas, primero) */
+  var CSV_LIST = [
+    { file:'peliculas_data_avanzado.csv', cat:'peliculas', titleCol:'Titulo_encontrado', posterCol:'Poster_URL',  yearCol:'Anio' },
+    { file:'series_data.csv',             cat:'series',    titleCol:'Titulo',            posterCol:'Link_Imagen', yearCol:'Anio' },
+    { file:'animes_data.csv',             cat:'animes',    titleCol:'Titulo_encontrado', posterCol:'Poster_URL',  yearCol:null   },
+    { file:'animados_data.csv',           cat:'animados',  titleCol:'Titulo',            posterCol:'Link_Imagen', yearCol:'Anio' },
+    { file:'doramas_data.csv',            cat:'doramas',   titleCol:'Titulo_encontrado', posterCol:'Poster_URL',  yearCol:'Anio' },
+    { file:'novelas_data.csv',            cat:'novelas',   titleCol:'Titulo_encontrado', posterCol:'Poster_URL',  yearCol:'Anio' },
+    { file:'juegos_data.csv',             cat:'juegos',    titleCol:'Titulo_encontrado', posterCol:'Poster_URL',  yearCol:'Anio' }
   ];
 
   var CAT_LABEL = {peliculas:'Película',series:'Serie',animes:'Anime',
@@ -2159,126 +2156,118 @@ loadCSVsFromGitHub();
   var timer    = null;
   var dotEls   = [];
 
-  /* ─────────────────────────────────────────────
-     ESTRATEGIA: el DB ya lo baja la página para
-     el catálogo. Lo reutilizamos sin fetch extra.
-     Solo pedimos el orden de commits (1 sola
-     llamada, cacheada 1 hora).
-  ───────────────────────────────────────────── */
+  /* ── Parsear el fragmento del final del CSV ── */
+  function parseTailFragment(text, cfg){
+    /* El fragmento puede empezar a mitad de una fila — descartamos la primera línea incompleta */
+    text = text.replace(/\r/g, '');
+    var lines = text.split('\n').filter(function(l){ return l.trim(); });
+    if(lines.length < 2) return null; /* necesitamos al menos 1 fila completa */
 
-  /* Leer caché de localStorage */
-  function getCachedOrder(){
-    try{
-      var raw = localStorage.getItem(CACHE_KEY);
-      if(!raw) return null;
-      var obj = JSON.parse(raw);
-      if(Date.now() - obj.ts > CACHE_TTL) return null;
-      return obj.order; /* array de cats en orden más reciente primero */
-    }catch(e){ return null; }
-  }
+    /* Detectar separador */
+    var sample = lines[0];
+    var sep = sample.split(';').length > sample.split('\t').length ? ';' : '\t';
 
-  function setCachedOrder(order){
-    try{ localStorage.setItem(CACHE_KEY, JSON.stringify({ts: Date.now(), order: order})); }catch(e){}
-  }
-
-  /* Pedir el orden de CSVs modificados recientemente (1 llamada a la API) */
-  function fetchCsvOrder(){
-    var cached = getCachedOrder();
-    if(cached) return Promise.resolve(cached);
-
-    /* 1 sola llamada: últimos 30 commits, solo necesitamos los nombres de archivos
-       Usamos el endpoint de commits con ?path para cada CSV sería muchas llamadas,
-       así que pedimos los últimos commits y extraemos los file names del mensaje
-       o bien usamos el endpoint de trees para comparar con HEAD~1.
-       La forma más rápida sin auth: pedir commits y leer el campo "message" + "tree"
-       Pero lo más simple: pedir /commits?per_page=30 que incluye "files" en cada item
-       (NO los incluye — hay que pedir /commits/{sha} por separado).
-       
-       Alternativa real más rápida: comparar las fechas de los blobs vía /git/trees.
-       Pero sin auth el rate limit lo complica.
-       
-       SOLUCIÓN FINAL: 1 sola llamada /commits?per_page=1 para ver el commit más reciente,
-       luego fetch del diff de ese commit (1 llamada más). Total: 2 llamadas. */
-    return fetch(GH_API + '/commits?per_page=30&sha=' + BRANCH)
-      .then(function(r){
-        if(!r.ok) throw new Error('rate limit o error');
-        return r.json();
-      })
-      .then(function(commits){
-        if(!Array.isArray(commits) || !commits.length) throw new Error('empty');
-        /* Tomar solo el commit más reciente y pedir su detalle (1 llamada adicional) */
-        /* Para los demás, asumir orden por defecto */
-        return fetch(GH_API + '/commits/' + commits[0].sha)
-          .then(function(r){ return r.json(); })
-          .then(function(detail){
-            var changedFiles = (detail.files || []).map(function(f){ return f.filename; });
-            /* Construir orden: primero los CSVs del último commit, luego el resto */
-            var order = [];
-            var seenCats = {};
-            /* Primero los del commit reciente */
-            changedFiles.forEach(function(f){
-              CSV_CATS_DEFAULT.forEach(function(entry){
-                if(entry.file === f && !seenCats[entry.cat]){
-                  seenCats[entry.cat] = true;
-                  order.push(entry.cat);
-                }
-              });
-            });
-            /* Luego el resto en orden por defecto */
-            CSV_CATS_DEFAULT.forEach(function(entry){
-              if(!seenCats[entry.cat]){ order.push(entry.cat); }
-            });
-            setCachedOrder(order);
-            return order;
-          });
-      })
-      .catch(function(){
-        /* Si falla la API (rate limit etc.), usar orden por defecto */
-        return CSV_CATS_DEFAULT.map(function(e){ return e.cat; });
-      });
-  }
-
-  /* Sacar los últimos N items del DB ya cargado, por categoría y en orden */
-  function getLastNFromDB(catOrder){
-    if(typeof DB === 'undefined' || !DB.length) return [];
-
-    /* Agrupar índices del DB por categoría */
-    var byCat = {};
-    for(var i = 0; i < DB.length; i++){
-      var cat = DB[i].c;
-      if(!byCat[cat]) byCat[cat] = [];
-      byCat[cat].push(i);
+    /* Intentar detectar la fila de cabecera del CSV original haciendo fetch del inicio */
+    /* En vez de eso, usamos las columnas por nombre buscando la fila que las contiene */
+    /* Si la primera línea del fragmento contiene el nombre de columna esperado → es header */
+    var headerIdx = -1;
+    for(var i = 0; i < lines.length; i++){
+      if(lines[i].indexOf(cfg.titleCol) !== -1 || lines[i].indexOf(cfg.posterCol) !== -1){
+        headerIdx = i; break;
+      }
     }
 
-    /* Por cada categoría, los últimos índices = los últimos en llegar al CSV */
-    var result = [];
-    var seen   = {};
-    var perCat = Math.max(2, Math.ceil(MAX_ITEMS / catOrder.length));
-
-    catOrder.forEach(function(cat){
-      var indices = byCat[cat];
-      if(!indices || !indices.length) return;
-      /* Los últimos del array son los que estaban al final del CSV */
-      var tail = indices.slice(-perCat).reverse();
-      tail.forEach(function(idx){
-        if(result.length >= MAX_ITEMS) return;
-        /* Obtener poster del override */
-        var ov  = (typeof overrides !== 'undefined') ? overrides[idx] : null;
-        var img = ov && ov.p ? ov.p : '';
-        if(!img) return; /* sin poster → skip */
-        var key = DB[idx].t.toLowerCase().replace(/\s+/g,'');
-        if(seen[key]) return;
-        seen[key] = true;
-        result.push({
-          t:   DB[idx].t,
-          c:   cat,
-          img: img,
-          year: DB[idx].y || '',
-          idx: idx
-        });
+    /* Si hay header en el fragmento, usarlo; si no, necesitamos la cabecera del CSV */
+    if(headerIdx !== -1){
+      /* tenemos header y datos */
+      var headers = lines[headerIdx].split(sep).map(function(h){ return h.trim(); });
+      var dataLines = lines.slice(headerIdx + 1);
+      return extractFromLines(dataLines, headers, sep, cfg);
+    } else {
+      /* No hay header en el fragmento: las líneas son solo datos
+         Necesitamos bajar la cabecera del CSV por separado (solo 1 línea, ~200 bytes) */
+      return fetchHeader(cfg.file, sep).then(function(headers){
+        /* Descartar primera línea del fragmento si está incompleta (no tiene todos los campos) */
+        var startLine = 0;
+        if(lines[0].split(sep).length < headers.length / 2) startLine = 1;
+        return extractFromLines(lines.slice(startLine), headers, sep, cfg);
       });
+    }
+  }
+
+  /* Bajar solo la primera línea del CSV para obtener los headers */
+  var headerCache = {};
+  function fetchHeader(file, sep){
+    if(headerCache[file]) return Promise.resolve(headerCache[file]);
+    return fetch(RAW_BASE + file, {headers:{'Range':'bytes=0-300'}})
+      .then(function(r){ return r.text(); })
+      .then(function(text){
+        var firstLine = text.split(/\r?\n/)[0];
+        var headers = firstLine.split(sep).map(function(h){ return h.trim(); });
+        headerCache[file] = headers;
+        return headers;
+      });
+  }
+
+  function extractFromLines(lines, headers, sep, cfg){
+    var results = [];
+    /* Tomar las últimas líneas (más recientes) */
+    var tail = lines.slice(-5).reverse();
+    tail.forEach(function(line){
+      if(!line.trim()) return;
+      var cells = [], cur = '', inQ = false;
+      for(var j = 0; j < line.length; j++){
+        var ch = line[j];
+        if(ch === '"'){ inQ = !inQ; }
+        else if(ch === sep && !inQ){ cells.push(cur); cur = ''; }
+        else cur += ch;
+      }
+      cells.push(cur);
+      var row = {};
+      headers.forEach(function(h, idx){ row[h] = (cells[idx] || '').trim(); });
+
+      var title  = row[cfg.titleCol] || '';
+      var poster = row[cfg.posterCol] || '';
+      var year   = cfg.yearCol ? (row[cfg.yearCol] || '') : '';
+
+      /* Limpiar año */
+      var ym = year.match(/(\d{4})/);
+      year = ym ? ym[1] : '';
+
+      if(title && poster && poster.indexOf('http') === 0){
+        results.push({ t:title, c:cfg.cat, img:poster, year:year });
+      }
     });
-    return result;
+    return results;
+  }
+
+  /* ── Fetch del final de un CSV (Range request) ── */
+  function fetchTail(csvCfg){
+    var url = RAW_BASE + csvCfg.file;
+    return fetch(url, { headers:{ 'Range': 'bytes=-' + TAIL_BYTES } })
+      .then(function(r){ return r.text(); })
+      .then(function(text){
+        var result = parseTailFragment(text, csvCfg);
+        /* parseTailFragment puede devolver una Promise (si necesita header) o un array */
+        return Promise.resolve(result).then(function(rows){
+          return rows || [];
+        });
+      })
+      .catch(function(){ return []; });
+  }
+
+  /* ── Buscar idx en DB para poder abrir detail ── */
+  function findInDB(item){
+    if(typeof DB === 'undefined' || !DB.length) return -1;
+    var lc = item.t.toLowerCase();
+    for(var i = 0; i < DB.length; i++){
+      if(DB[i].c === item.c && DB[i].t && DB[i].t.toLowerCase() === lc) return i;
+    }
+    /* Segundo intento: solo por título sin importar categoría */
+    for(var i = 0; i < DB.length; i++){
+      if(DB[i].t && DB[i].t.toLowerCase() === lc) return i;
+    }
+    return -1;
   }
 
   /* ── Card ── */
@@ -2291,8 +2280,8 @@ loadCSVsFromGitHub();
     badge.textContent = 'NUEVO';
 
     var cimg = document.createElement('img');
-    cimg.src = it.img; cimg.alt = it.t; cimg.loading = 'lazy';
-    cimg.onerror = function(){ this.style.opacity = '0'; };
+    cimg.src = it.img; cimg.alt = it.t; cimg.loading = 'eager';
+    cimg.onerror = function(){ this.parentNode.style.display='none'; };
 
     var ccat = document.createElement('span');
     ccat.className = 'cr-card-cat';
@@ -2307,18 +2296,21 @@ loadCSVsFromGitHub();
     card.appendChild(ccat);
     card.appendChild(clbl);
 
-    card.addEventListener('click', (function(idx, title){
+    /* Clic: abrir detail. Buscar en DB en el momento del clic (puede que ya esté cargado) */
+    card.addEventListener('click', (function(item){
       return function(){
         if(typeof openDetail !== 'function') return;
-        if(typeof idx !== 'undefined'){ openDetail(idx); return; }
-        if(typeof DB !== 'undefined'){
-          var lc = title.toLowerCase();
-          for(var i = 0; i < DB.length; i++){
-            if(DB[i].t && DB[i].t.toLowerCase() === lc){ openDetail(i); return; }
-          }
-        }
+        var idx = findInDB(item);
+        if(idx >= 0){ openDetail(idx); return; }
+        /* DB aún no cargó: esperar hasta 5s */
+        var wait = 0;
+        var poll = setInterval(function(){
+          var found = findInDB(item);
+          if(found >= 0){ clearInterval(poll); openDetail(found); return; }
+          if(wait++ > 25) clearInterval(poll);
+        }, 200);
       };
-    })(it.idx, it.t));
+    })(it));
 
     return card;
   }
@@ -2379,7 +2371,7 @@ loadCSVsFromGitHub();
     }, INTERVAL_MS);
   }
 
-  /* ── ESQUELETOS inmediatos mientras carga ── */
+  /* ── Esqueletos mientras carga ── */
   function showSkeletons(){
     var vc = visibleCount();
     track.innerHTML = '';
@@ -2393,25 +2385,26 @@ loadCSVsFromGitHub();
   }
   showSkeletons();
 
-  /* ── ARRANQUE ──
-     Paso 1: pedir el orden de CSVs (1-2 llamadas, cacheado 1h)
-     Paso 2: esperar el DB (que la página ya descarga)
-     Paso 3: renderizar. Sin fetches de CSVs extra. */
-  fetchCsvOrder().then(function(catOrder){
-    var tries = 0;
-    function tryBuild(){
-      var dbOk = typeof DB !== 'undefined' && DB.length > 0
-              && typeof overrides !== 'undefined';
-      if(dbOk){
-        var list = getLastNFromDB(catOrder);
-        if(list.length) renderItems(list);
-        /* Si no hay nada con poster todavía, reintentar un poco más */
-        else if(tries < 30) setTimeout(tryBuild, 500);
-      } else if(tries++ < 150){
-        setTimeout(tryBuild, 300);
-      }
-    }
-    tryBuild();
+  /* ── ARRANQUE: bajar solo el final de cada CSV en paralelo ── */
+  var fetches = CSV_LIST.map(function(cfg){ return fetchTail(cfg); });
+
+  Promise.all(fetches).then(function(results){
+    /* Aplanar y deduplicar, máximo MAX_ITEMS */
+    var final = [];
+    var seen  = {};
+    results.forEach(function(list){
+      (list || []).forEach(function(item){
+        var key = item.t.toLowerCase().replace(/\s+/g,'');
+        if(!seen[key] && final.length < MAX_ITEMS){
+          seen[key] = true;
+          final.push(item);
+        }
+      });
+    });
+    if(final.length) renderItems(final);
+    else track.innerHTML = ''; /* limpiar esqueletos si no hay nada */
+  }).catch(function(){
+    track.innerHTML = '';
   });
 
   window.addEventListener('resize', function(){
@@ -2419,7 +2412,6 @@ loadCSVsFromGitHub();
   });
 
 })();
-
 
 </script>
 
