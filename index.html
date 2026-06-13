@@ -2097,6 +2097,8 @@ function loadCSVsFromGitHub(){
     renderGrid();
     progDone();
     console.log('[CSV] ✓ DB:', DB.length, ' overrides:', Object.keys(overrides).length);
+    /* Disparar carrusel ahora que todo está listo */
+    if(typeof window._buildCarousel === 'function') window._buildCarousel();
   });
 }
 
@@ -2126,21 +2128,16 @@ loadCSVsFromGitHub();
   var pos      = 0;
   var timer    = null;
   var dotEls   = [];
-  var built    = false;
 
   var CAT_LABEL = {peliculas:'Película',series:'Serie',animes:'Anime',
                    animados:'Animado',doramas:'Dorama',novelas:'Novela',juegos:'Juego'};
   var CAT_ICON  = {peliculas:'🎬',series:'📺',animes:'⛩',animados:'🎨',
                    doramas:'🌸',novelas:'💋',juegos:'🎮'};
-
   var CAT_ORDER = ['peliculas','series','animes','animados','doramas','novelas','juegos'];
 
-  /* ── Toma el ÚLTIMO item con poster de cada categoría directamente de overrides+DB ── */
   function getOnePerCat(){
-    if(typeof DB==='undefined' || typeof overrides==='undefined') return [];
     var result = [];
     CAT_ORDER.forEach(function(cat){
-      /* Recorre DB de atrás: último item de esta cat con poster */
       for(var i = DB.length - 1; i >= 0; i--){
         if(DB[i].c !== cat) continue;
         var ov = overrides[i];
@@ -2152,10 +2149,8 @@ loadCSVsFromGitHub();
     return result;
   }
 
-  /* ── Render ── */
   function renderItems(list){
-    if(!list || !list.length || built) return;
-    built = true;
+    if(!list || !list.length) return;
     items = list;
     pos   = 0;
     if(timer) clearInterval(timer);
@@ -2226,19 +2221,11 @@ loadCSVsFromGitHub();
     },INTERVAL_MS);
   }
 
-  /* ── Poll hasta que overrides tenga datos (CSVs cargados) ── */
-  var attempts = 0;
-  function tryBuild(){
-    if(built) return;
-    attempts++;
-    if(typeof DB!=='undefined' && typeof overrides!=='undefined'
-       && DB.length > 0 && Object.keys(overrides).length > 100){
-      var list = getOnePerCat();
-      if(list.length >= 3){ renderItems(list); return; }
-    }
-    if(attempts < 150) setTimeout(tryBuild, 400);
-  }
-  setTimeout(tryBuild, 500);
+  /* Expuesto globalmente para ser llamado cuando CSVs terminan de cargar */
+  window._buildCarousel = function(){
+    var list = getOnePerCat();
+    if(list.length) renderItems(list);
+  };
 
   window.addEventListener('resize',function(){
     if(items.length) goTo(Math.min(pos,Math.max(0,items.length-visibleCount())));
