@@ -2176,26 +2176,72 @@ loadCSVsFromGitHub();
       card.appendChild(cat);
       card.appendChild(lbl);
 
-      card.addEventListener('click', (function(title, cat){
+      /* idx se resuelve cuando DB esté lista */
+      it.idx = -1;
+      card.addEventListener('click', (function(item){
         return function(){
-          if(typeof DB==='undefined'||typeof openDetail!=='function') return;
-          var nt = title.toLowerCase().trim();
-          for(var i=0;i<DB.length;i++){
-            if(DB[i].c===cat && DB[i].t.toLowerCase().trim()===nt){ openDetail(i); return; }
-          }
-          for(var j=0;j<DB.length;j++){
-            if(DB[j].t.toLowerCase().indexOf(nt.slice(0,8))>=0){ openDetail(j); return; }
-          }
+          if(typeof openDetail!=='function') return;
+          if(item.idx >= 0){ openDetail(item.idx); return; }
+          /* DB aún no cargó: esperar */
+          var tries=0;
+          var poll=setInterval(function(){
+            tries++;
+            if(typeof DB!=='undefined' && DB.length>0){
+              clearInterval(poll);
+              item.idx = findIdx(item.t, item.c, item.img);
+              if(item.idx >= 0) openDetail(item.idx);
+            } else if(tries>40) clearInterval(poll);
+          }, 250);
         };
-      })(it.t, it.c));
+      })(it));
 
       track.appendChild(card);
     });
   }
 
+  function norm(s){
+    return (s||'').toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g,'')
+      .replace(/[^a-z0-9]/g,'').trim();
+  }
+
+  /* Busca idx en DB: 1) titulo+cat exacto, 2) titulo exacto, 3) poster URL, 4) titulo alternativo */
+  function findIdx(title, cat, img){
+    if(typeof DB==='undefined') return -1;
+    var nt = norm(title);
+    for(var i=0;i<DB.length;i++){
+      if(DB[i].c===cat && norm(DB[i].t)===nt) return i;
+    }
+    for(var j=0;j<DB.length;j++){
+      if(norm(DB[j].t)===nt) return j;
+    }
+    /* Por poster URL (más fiable que el título) */
+    if(img && typeof overrides!=='undefined'){
+      var keys=Object.keys(overrides);
+      for(var k=0;k<keys.length;k++){
+        if(overrides[keys[k]] && overrides[keys[k]].p===img) return parseInt(keys[k]);
+      }
+    }
+    /* Titulo alternativo (campo 'a') */
+    for(var m=0;m<DB.length;m++){
+      if(DB[m].a && norm(DB[m].a)===nt) return m;
+    }
+    return -1;
+  }
+
   Promise.all(FILES.map(fetchLast)).then(function(results){
     var list = results.filter(function(x){ return x!==null; });
-    if(list.length) render(list);
+    if(!list.length) return;
+    render(list);
+    /* Pre-resolver índices cuando DB esté lista */
+    var att=0;
+    var pre=setInterval(function(){
+      att++;
+      if(typeof DB!=='undefined' && DB.length>0 && typeof overrides!=='undefined'){
+        clearInterval(pre);
+        list.forEach(function(it){ if(it.idx<0) it.idx=findIdx(it.t,it.c,it.img); });
+      } else if(att>60) clearInterval(pre);
+    },300);
   });
 })();
 
