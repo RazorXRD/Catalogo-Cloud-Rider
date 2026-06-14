@@ -368,10 +368,13 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
   /* MOBILE MENU DROPDOWN */
   #mobile-menu{
     display:none;
+    position:sticky;top:52px;z-index:299;
     background:#080810;
     border-top:1px solid rgba(0,212,255,.1);
+    border-bottom:1px solid rgba(0,212,255,.1);
     padding:8px 0;
     max-height:60vh;overflow-y:auto;
+    box-shadow:0 4px 20px rgba(0,0,0,.6);
   }
   #mobile-menu.open{display:block}
   #mobile-menu .mm-item{
@@ -415,6 +418,31 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
   .ca{gap:3px}
   .ca{font-size:12px;padding:4px 2px}
   .cat-badge{font-size:8px;padding:1px 5px}
+
+  /* CAROUSEL MÓVIL: scroll horizontal, 2 tarjetas visibles */
+  #carousel-wrap{padding:10px 12px 14px}
+  #carousel-track-wrap{
+    overflow-x:auto;overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  #carousel-track-wrap::-webkit-scrollbar{display:none}
+  #carousel-track{
+    flex-wrap:nowrap;
+    justify-content:flex-start;
+    gap:8px;
+  }
+  .cr-card{
+    flex:0 0 calc(50vw - 20px);
+    max-width:160px;
+  }
+  .cr-card img{height:calc((50vw - 20px) * 1.5);max-height:240px}
+  #carousel-dots{display:flex;gap:5px;margin-left:auto}
+  .cr-dot{
+    width:6px;height:6px;border-radius:50%;
+    background:rgba(0,212,255,.25);cursor:pointer;transition:.2s;
+  }
+  .cr-dot.on{background:var(--cyan)}
 
   /* CART PANEL */
   #cart-panel{width:100vw;border-left:none}
@@ -675,7 +703,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
   color:var(--cyan);text-transform:uppercase;opacity:.85;
 }
 #carousel-dots{display:none}
-#carousel-track-wrap{width:100%}
+#carousel-track-wrap{width:100%;overflow:hidden}
 #carousel-track{
   display:flex;
   flex-wrap:wrap;
@@ -767,6 +795,30 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
     <button id="cart-btn">🛒 PEDIDO <span id="cart-count">0</span></button>
   </div>
 </nav>
+
+<!-- MOBILE MENU DROPDOWN -->
+<div id="mobile-menu">
+  <div class="mm-sub">Categorías</div>
+  <button class="mm-item on" data-f="todas">🏠 INICIO</button>
+  <button class="mm-item" data-f="peliculas">🎬 PELÍCULAS</button>
+  <button class="mm-item" data-f="series">📺 SERIES</button>
+  <button class="mm-item" data-f="animes">⛩ ANIMES</button>
+  <button class="mm-item" data-f="animados">🎨 ANIMADOS</button>
+  <button class="mm-item" data-f="doramas">🌸 DORAMAS</button>
+  <button class="mm-item" data-f="novelas">💋 NOVELAS</button>
+  <button class="mm-item" data-f="juegos">🎮 JUEGOS PC</button>
+  <div class="mm-sep"></div>
+  <div class="mm-sub">Géneros</div>
+  <button class="mm-item" data-g="accion">⚔️ Acción</button>
+  <button class="mm-item" data-g="comedia">😂 Comedia</button>
+  <button class="mm-item" data-g="drama">🎭 Drama</button>
+  <button class="mm-item" data-g="terror">👻 Terror</button>
+  <button class="mm-item" data-g="fantasia">🔮 Ciencia Ficción</button>
+  <div class="mm-sep"></div>
+  <button class="mm-item" data-f="vista">✓ VISTAS</button>
+  <button class="mm-item" data-f="favorita">♥ FAVORITAS</button>
+  <button class="mm-item" data-f="pendiente">⏳ PENDIENTES</button>
+</div>
 
 <!-- CAROUSEL RECIENTES -->
 <div id="carousel-wrap">
@@ -1820,7 +1872,41 @@ if(hamburger){
 }
 if(mobileMenu){
   mobileMenu.querySelectorAll('.mm-item').forEach(function(b){
-    b.addEventListener('click',function(){ hamburger.classList.remove('open'); mobileMenu.classList.remove('open'); });
+    b.addEventListener('click',function(){
+      /* Cerrar menú */
+      hamburger.classList.remove('open');
+      mobileMenu.classList.remove('open');
+
+      /* Actualizar estado activo en mobile-menu */
+      mobileMenu.querySelectorAll('.mm-item').forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on');
+
+      /* Disparar el filtro correspondiente */
+      var f = b.getAttribute('data-f');
+      var g = b.getAttribute('data-g');
+
+      if(f){
+        /* Simular click en el botón .nm del nav-menu */
+        var target = document.querySelector('.nm[data-f="'+f+'"]');
+        if(target){ target.click(); }
+        else {
+          /* fallback: actualizar filtro directamente */
+          if(typeof filterCat !== 'undefined'){ filterCat = f; }
+          if(typeof renderGrid === 'function'){ renderGrid(); }
+        }
+      } else if(g){
+        /* Simular click en el enlace de género */
+        var gTarget = document.querySelector('[data-g="'+g+'"]');
+        if(gTarget && gTarget !== b){ gTarget.click(); }
+        else {
+          if(typeof filterGenre !== 'undefined'){ filterGenre = g; }
+          if(typeof renderGrid === 'function'){ renderGrid(); }
+        }
+      }
+
+      /* Scroll al top */
+      window.scrollTo({top:0, behavior:'smooth'});
+    });
   });
 }
 
