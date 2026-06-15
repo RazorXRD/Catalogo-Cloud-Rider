@@ -27,6 +27,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
 }
 #logo-wrap{display:flex;align-items:center;gap:10px;margin-right:20px;flex-shrink:0;text-decoration:none}
 #hamburger{display:none}
+#mobile-menu{display:none}
 #logo-img{width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid var(--cyan)}
 #logo-text{font-family:var(--fh);font-size:22px;letter-spacing:2px;
   background:linear-gradient(135deg,var(--cyan),var(--pink));
@@ -373,7 +374,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
     border-top:1px solid rgba(0,212,255,.1);
     border-bottom:1px solid rgba(0,212,255,.1);
     padding:8px 0;
-    max-height:60vh;overflow-y:auto;
+    max-height:65vh;overflow-y:auto;
     box-shadow:0 4px 20px rgba(0,0,0,.6);
   }
   #mobile-menu.open{display:block}
@@ -806,6 +807,29 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
 </div>
 
 <!-- MOBILE MENU -->
+<div id="mobile-menu">
+  <div class="mm-sub">Categorías</div>
+  <button class="mm-item on" data-f="todas">🏠 INICIO</button>
+  <button class="mm-item" data-f="peliculas">🎬 PELÍCULAS</button>
+  <button class="mm-item" data-f="series">📺 SERIES</button>
+  <button class="mm-item" data-f="animes">⛩ ANIMES</button>
+  <button class="mm-item" data-f="animados">🎨 ANIMADOS</button>
+  <button class="mm-item" data-f="doramas">🌸 DORAMAS</button>
+  <button class="mm-item" data-f="novelas">💋 NOVELAS</button>
+  <button class="mm-item" data-f="juegos">🎮 JUEGOS PC</button>
+  <div class="mm-sep"></div>
+  <div class="mm-sub">Géneros</div>
+  <button class="mm-item" data-g="accion">⚔️ Acción</button>
+  <button class="mm-item" data-g="comedia">😂 Comedia</button>
+  <button class="mm-item" data-g="drama">🎭 Drama</button>
+  <button class="mm-item" data-g="terror">👻 Terror</button>
+  <button class="mm-item" data-g="fantasia">🔮 Ciencia Ficción</button>
+  <div class="mm-sep"></div>
+  <div class="mm-sub">Mis listas</div>
+  <button class="mm-item" data-f="vista">✓ VISTAS</button>
+  <button class="mm-item" data-f="favorita">♥ FAVORITAS</button>
+  <button class="mm-item" data-f="pendiente">⏳ PENDIENTES</button>
+</div>
 
 
 
