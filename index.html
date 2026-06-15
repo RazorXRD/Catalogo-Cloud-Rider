@@ -1404,6 +1404,12 @@ function renderActiveFilters(){
 
 function renderGrid(){
   renderActiveFilters();
+  /* Mostrar carrusel solo en inicio sin búsqueda ni filtros */
+  var carouselWrap = document.getElementById('carousel-wrap');
+  if(carouselWrap){
+    var isHome = (catF==='todas') && !genreF && !yearF && (!q || q==='');
+    carouselWrap.style.display = isHome ? '' : 'none';
+  }
   var all=filtered(), total=all.length;
   var maxPg=Math.max(1,Math.ceil(total/PER));
   if(page>maxPg) page=1;
@@ -2349,38 +2355,6 @@ loadCSVsFromGitHub();
   if(tw){
     tw.addEventListener('touchstart', stopAutoplay, {passive:true});
     tw.addEventListener('touchend', function(){ setTimeout(startAutoplay, 3000); }, {passive:true});
-  }
-
-  /* ── Ocultar carrusel si no estamos en "inicio/todas" ── */
-  function syncCarouselVisibility(){
-    var wrap = document.getElementById('carousel-wrap');
-    if(!wrap) return;
-    /* catF es la variable global del catálogo */
-    var isHome = (typeof catF==='undefined' || catF==='todas') &&
-                 (typeof q==='undefined' || q==='' || !q);
-    wrap.style.display = isHome ? '' : 'none';
-  }
-
-  /* Parchear renderGrid para que sincronice el carrusel */
-  var _origRenderGrid = window.renderGrid;
-  if(typeof _origRenderGrid === 'function'){
-    window.renderGrid = function(){
-      _origRenderGrid.apply(this, arguments);
-      syncCarouselVisibility();
-    };
-  } else {
-    /* renderGrid aún no existe, esperar */
-    var _rg_wait = setInterval(function(){
-      if(typeof window.renderGrid==='function' && window.renderGrid !== arguments.callee._wrapped){
-        clearInterval(_rg_wait);
-        var orig = window.renderGrid;
-        window.renderGrid = function(){
-          orig.apply(this, arguments);
-          syncCarouselVisibility();
-        };
-        window.renderGrid._wrapped = true;
-      }
-    },200);
   }
 
   Promise.all(FILES.map(fetchLast)).then(function(results){
