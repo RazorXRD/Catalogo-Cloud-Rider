@@ -95,7 +95,9 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
 }
 #cart-count.show{display:flex}
 
-/* ── STATUS BAR ── */
+/* ── NAV ROW 3 (VISTAS/FAVORITAS/PENDIENTES) ── */
+.nav-row-3{display:none} /* oculto en desktop; en móvil se muestra vía media query */
+
 #sbar{padding:7px 18px;display:flex;justify-content:space-between;align-items:center;
   gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--border);}
 .sc{font-size:11px;color:#444}.sc b{color:var(--txt);font-weight:600}
@@ -408,8 +410,23 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
   #active-filters::-webkit-scrollbar{display:none}
   #active-filters:empty{display:none;padding:0}
 
+  /* Ocultar botones de status duplicados en desktop — solo se muestran en nav-row-3 en móvil */
+  .nm-status-desktop{display:none !important}
+
   /* nav-menu visible (override del global display:none) */
   #nav-menu{display:flex}
+
+  /* NAV ROW 3 — VISTAS / FAVORITAS / PENDIENTES en móvil */
+  .nav-row-3{
+    display:flex;flex-wrap:nowrap;
+    overflow-x:auto;overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+    gap:2px;padding:3px 6px;
+    align-items:center;
+    border-top:1px solid rgba(255,255,255,.06);
+  }
+  .nav-row-3::-webkit-scrollbar{display:none}
 
   /* STATUS BAR — oculto en móvil */
   #sbar{
@@ -787,11 +804,16 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
         <a href="#" data-y="">Todos</a>
       </div>
     </div>
-    <button class="nm" data-f="vista">✓ VISTAS</button>
-    <button class="nm" data-f="favorita">♥ FAVORITAS</button>
-      <button class="nm" data-f="pendiente">⏳ PENDIENTES</button>
       <div id="active-filters"></div>
+      <button class="nm nm-status-desktop" data-f="vista">✓ VISTAS</button>
+      <button class="nm nm-status-desktop" data-f="favorita">♥ FAVORITAS</button>
+      <button class="nm nm-status-desktop" data-f="pendiente">⏳ PENDIENTES</button>
     </div><!-- /nav-row-2 -->
+    <div class="nav-row nav-row-3">
+      <button class="nm" data-f="vista">✓ VISTAS</button>
+      <button class="nm" data-f="favorita">♥ FAVORITAS</button>
+      <button class="nm" data-f="pendiente">⏳ PENDIENTES</button>
+    </div><!-- /nav-row-3 -->
   </div>
   <!-- hamburger only shown on mobile via CSS -->
   <div id="nav-right">
