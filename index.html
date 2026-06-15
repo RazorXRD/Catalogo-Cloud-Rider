@@ -2253,28 +2253,22 @@ loadCSVsFromGitHub();
       card.appendChild(cat);
       card.appendChild(lbl);
 
-      /* idx se resuelve al hacer click */
+      /* idx se resuelve cuando DB esté lista */
       it.idx = -1;
       card.addEventListener('click', (function(item){
         return function(){
           if(typeof openDetail!=='function') return;
-          /* Intentar resolver idx si aún no está */
-          if(item.idx < 0 && typeof DB!=='undefined' && DB.length>0){
-            item.idx = findIdx(item.t, item.c, item.img);
-          }
           if(item.idx >= 0){ openDetail(item.idx); return; }
-          /* DB aún no cargó: mostrar spinner y esperar */
-          card.style.opacity = '0.5';
+          /* DB aún no cargó: esperar */
           var tries=0;
           var poll=setInterval(function(){
             tries++;
             if(typeof DB!=='undefined' && DB.length>0){
               clearInterval(poll);
-              card.style.opacity = '';
               item.idx = findIdx(item.t, item.c, item.img);
               if(item.idx >= 0) openDetail(item.idx);
-            } else if(tries>60){ clearInterval(poll); card.style.opacity=''; }
-          }, 200);
+            } else if(tries>40) clearInterval(poll);
+          }, 250);
         };
       })(it));
 
@@ -2372,23 +2366,15 @@ loadCSVsFromGitHub();
       buildDots(totalCards);
       startAutoplay();
     }
-    /* Pre-resolver indices cuando DB este lista */
-    function resolveIndices(){
-      list.forEach(function(it){
-        if(it.idx<0) it.idx=findIdx(it.t,it.c,it.img);
-      });
-    }
-    if(typeof DB!=='undefined' && DB.length>0){
-      resolveIndices();
-    } else {
-      var att=0;
-      var pre=setInterval(function(){
-        att++;
-        if(typeof DB!=='undefined' && DB.length>0 && typeof overrides!=='undefined'){
-          clearInterval(pre); resolveIndices();
-        } else if(att>80) clearInterval(pre);
-      },200);
-    }
+    /* Pre-resolver índices cuando DB esté lista */
+    var att=0;
+    var pre=setInterval(function(){
+      att++;
+      if(typeof DB!=='undefined' && DB.length>0 && typeof overrides!=='undefined'){
+        clearInterval(pre);
+        list.forEach(function(it){ if(it.idx<0) it.idx=findIdx(it.t,it.c,it.img); });
+      } else if(att>60) clearInterval(pre);
+    },300);
   });
 })();
 
