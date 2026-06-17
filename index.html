@@ -334,10 +334,6 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
   #nav-menu .nm-drop:hover .dmenu{display:none !important}
 }
 
-/* ── Móvil: permitir abrir dmenu con clase .open (supera especificidad del tablet) ── */
-@media(max-width:600px){
-  #nav-menu .dmenu.open{display:flex !important}
-}
 
 /* ── Móvil (≤600px) ── */
 @media(max-width:600px){
@@ -407,49 +403,13 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
     letter-spacing:.3px;border-radius:5px;
   }
 
-  /* Dropdowns GÉNEROS y AÑO en móvil → botón tap abre panel inferior */
+  /* Dropdowns GÉNEROS y AÑO en móvil — lista vertical simple */
   .nm-drop{display:inline-block;position:relative}
   .nm-drop > .nm{display:inline-flex}
-  .dmenu{
-    display:none !important;
-    position:fixed !important;
-    left:0 !important;right:0 !important;bottom:0 !important;
-    top:auto !important;
-    background:#111 !important;
-    border-top:2px solid var(--cyan) !important;
-    padding:12px 12px 28px !important;
-    flex-wrap:wrap !important;gap:8px !important;
-    z-index:9999 !important;
-    max-height:60vh !important;overflow-y:auto !important;
-    min-width:unset !important;
-    box-shadow:0 -4px 30px rgba(0,0,0,.9) !important;
-    border-radius:0 !important;
-    border-left:none !important;border-right:none !important;border-bottom:none !important;
-  }
-  .dmenu.open{display:flex !important}
-  .dmenu.scrollable{max-height:55vh;overflow-y:auto}
-  .dmenu a{
-    display:inline-flex !important;align-items:center;
-    padding:7px 11px !important;font-size:11px !important;
-    white-space:nowrap;
-    font-family:var(--fb);font-weight:600;letter-spacing:.3px;
-    color:#aaa;text-decoration:none;border-radius:6px;
-    border:1px solid rgba(255,255,255,.08);
-    background:rgba(255,255,255,.03);transition:all .12s;
-  }
-  .dmenu a:active,.dmenu a.on{
-    color:var(--cyan);background:rgba(0,212,255,.12);
-    border-color:rgba(0,212,255,.3);
-  }
-  #mob-overlay{
-    display:none;position:fixed;inset:0;
-    background:rgba(0,0,0,.5);z-index:9998;
-  }
-  #mob-overlay.on{display:block}
-  /* Indicador botón abierto */
+  /* Anular regla tablet que oculta con !important */
+  #nav-menu .dmenu.open{display:block !important}
   .nm-drop > .nm.open-active{
     color:var(--cyan) !important;
-    border-color:rgba(0,212,255,.4) !important;
     background:rgba(0,212,255,.08) !important;
   }
 
@@ -876,8 +836,6 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
       <div id="active-filters-mobile"></div>
     </div><!-- /nav-row-3 -->
   </div>
-  <!-- Mobile overlay for dropdowns -->
-  <div id="mob-overlay"></div>
   <!-- hamburger only shown on mobile via CSS -->
   <div id="nav-right">
     <button id="hamburger" aria-label="Menu">
@@ -1772,19 +1730,12 @@ document.querySelectorAll('[data-f]').forEach(function(b){
   });
 });
 
-/* Dropdowns géneros y año — desktop hover/click + mobile bottom-sheet */
+/* Dropdowns géneros y año — click/tap toggle, cierre al tocar fuera */
 (function(){
-  var overlay = document.getElementById('mob-overlay');
-
-  function isMob(){ return window.innerWidth <= 600; }
-
   function closeAll(){
     document.querySelectorAll('.dmenu').forEach(function(m){ m.classList.remove('open'); });
     document.querySelectorAll('.nm-drop>.nm').forEach(function(b){ b.classList.remove('open-active'); });
-    if(overlay) overlay.classList.remove('on');
   }
-
-  if(overlay) overlay.addEventListener('click', closeAll);
 
   document.querySelectorAll('.nm-drop').forEach(function(wrap){
     var btn  = wrap.querySelector(':scope>.nm');
@@ -1798,13 +1749,18 @@ document.querySelectorAll('[data-f]').forEach(function(b){
       if(!wasOpen){
         menu.classList.add('open');
         btn.classList.add('open-active');
-        if(isMob() && overlay) overlay.classList.add('on');
       }
     });
+
+    /* Evitar cierre al tocar dentro del menú */
+    menu.addEventListener('click', function(e){ e.stopPropagation(); });
   });
 
-  /* Close desktop dropdown on outside click */
-  document.addEventListener('click', function(){ if(!isMob()) closeAll(); });
+  /* Cerrar al tocar/click fuera */
+  document.addEventListener('click', closeAll);
+  document.addEventListener('touchstart', function(e){
+    if(!e.target.closest('.nm-drop')) closeAll();
+  }, {passive:true});
 })();
 
 document.querySelectorAll('[data-g]').forEach(function(a){
