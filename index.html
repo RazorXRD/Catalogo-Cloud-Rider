@@ -60,6 +60,11 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
 .nm{font-family:var(--fb);font-size:11px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;
   color:#666;padding:6px 11px;border-radius:5px;border:none;background:transparent;
   cursor:pointer;white-space:nowrap;transition:all .15s;}
+.nm-drop-btn{font-family:var(--fb);font-size:11px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;
+  color:#666;padding:6px 11px;border-radius:5px;border:none;background:transparent;
+  cursor:pointer;white-space:nowrap;transition:all .15s;}
+.nm-drop-btn:hover,.nm-drop-btn.open-active{color:var(--cyan);background:rgba(0,212,255,.08)}
+
 .nm:hover{color:#fff;background:rgba(255,255,255,.06)}
 .nm.on{color:var(--cyan)}
 .nm-drop{position:relative}
@@ -405,10 +410,10 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
 
   /* Dropdowns GÉNEROS y AÑO en móvil — lista vertical simple */
   .nm-drop{display:inline-block;position:relative}
-  .nm-drop > .nm{display:inline-flex}
+  .nm-drop > .nm-drop-btn{display:inline-flex}
   /* Anular regla tablet que oculta con !important */
   #nav-menu .dmenu.open{display:block !important}
-  .nm-drop > .nm.open-active{
+  .nm-drop > .nm-drop-btn.open-active{
     color:var(--cyan) !important;
     background:rgba(0,212,255,.08) !important;
   }
@@ -808,7 +813,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
       <button class="nm nm-mobile-only" data-f="novelas">💋 NOVELAS</button>
       <button class="nm nm-mobile-only" data-f="juegos">🎮 JUEGOS PC</button>
     <div class="nm-drop">
-      <button class="nm">GÉNEROS ▾</button>
+      <button class="nm-drop-btn">GÉNEROS ▾</button>
       <div class="dmenu">
         <a href="#" data-g="accion">⚔️ Acción</a>
         <a href="#" data-g="comedia">😂 Comedia</a>
@@ -818,7 +823,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
       </div>
     </div>
     <div class="nm-drop">
-      <button class="nm">AÑO ▾</button>
+      <button class="nm-drop-btn">AÑO ▾</button>
       <div class="dmenu scrollable" id="year-drop">
         <a href="#" data-y="">Todos</a>
       </div>
@@ -1730,19 +1735,20 @@ document.querySelectorAll('[data-f]').forEach(function(b){
   });
 });
 
-/* Dropdowns géneros y año — click/tap toggle, cierre al tocar fuera */
+/* Dropdowns géneros y año */
 (function(){
   function closeAll(){
-    document.querySelectorAll('.dmenu').forEach(function(m){ m.classList.remove('open'); });
-    document.querySelectorAll('.nm-drop>.nm').forEach(function(b){ b.classList.remove('open-active'); });
+    document.querySelectorAll('.dmenu.open').forEach(function(m){ m.classList.remove('open'); });
+    document.querySelectorAll('.nm-drop-btn.open-active').forEach(function(b){ b.classList.remove('open-active'); });
   }
 
   document.querySelectorAll('.nm-drop').forEach(function(wrap){
-    var btn  = wrap.querySelector(':scope>.nm');
-    var menu = wrap.querySelector(':scope>.dmenu');
+    var btn  = wrap.querySelector('.nm-drop-btn');
+    var menu = wrap.querySelector('.dmenu');
     if(!btn || !menu) return;
 
     btn.addEventListener('click', function(e){
+      e.preventDefault();
       e.stopPropagation();
       var wasOpen = menu.classList.contains('open');
       closeAll();
@@ -1752,14 +1758,13 @@ document.querySelectorAll('[data-f]').forEach(function(b){
       }
     });
 
-    /* Evitar cierre al tocar dentro del menú */
     menu.addEventListener('click', function(e){ e.stopPropagation(); });
+    menu.addEventListener('touchstart', function(e){ e.stopPropagation(); }, {passive:true});
   });
 
-  /* Cerrar al tocar/click fuera */
-  document.addEventListener('click', closeAll);
+  document.addEventListener('click', function(){ closeAll(); });
   document.addEventListener('touchstart', function(e){
-    if(!e.target.closest('.nm-drop')) closeAll();
+    if(!e.target.closest('.nm-drop')){ closeAll(); }
   }, {passive:true});
 })();
 
