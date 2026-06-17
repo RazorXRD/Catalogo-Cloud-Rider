@@ -66,7 +66,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
 .nm-drop:hover .dmenu{display:block}
 .nm-drop.disabled{opacity:.3;pointer-events:none;cursor:not-allowed}
 .nm-drop.disabled .nm{color:#333 !important}
-.dmenu.open{display:block !important}
+.dmenu.open{display:block !important} /* overridden to flex on mobile */
 .dmenu{display:none;position:absolute;top:calc(100% + 2px);left:0;min-width:160px;
   background:#0a0a14;border:1px solid rgba(0,212,255,.15);border-radius:8px;
   padding:5px 0;z-index:400;box-shadow:0 10px 30px rgba(0,0,0,.8);}
@@ -334,6 +334,11 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
   #nav-menu .nm-drop:hover .dmenu{display:none !important}
 }
 
+/* ── Móvil: permitir abrir dmenu con clase .open (supera especificidad del tablet) ── */
+@media(max-width:600px){
+  #nav-menu .dmenu.open{display:flex !important}
+}
+
 /* ── Móvil (≤600px) ── */
 @media(max-width:600px){
 
@@ -406,15 +411,20 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
   .nm-drop{display:inline-block;position:relative}
   .nm-drop > .nm{display:inline-flex}
   .dmenu{
-    display:none;
-    position:fixed;
-    left:0;right:0;bottom:0;
-    background:#111;
-    border-top:2px solid var(--cyan);
-    padding:10px 10px 24px;
-    flex-wrap:wrap;gap:6px;
-    z-index:9999;
-    max-height:55vh;overflow-y:auto;
+    display:none !important;
+    position:fixed !important;
+    left:0 !important;right:0 !important;bottom:0 !important;
+    top:auto !important;
+    background:#111 !important;
+    border-top:2px solid var(--cyan) !important;
+    padding:12px 12px 28px !important;
+    flex-wrap:wrap !important;gap:8px !important;
+    z-index:9999 !important;
+    max-height:60vh !important;overflow-y:auto !important;
+    min-width:unset !important;
+    box-shadow:0 -4px 30px rgba(0,0,0,.9) !important;
+    border-radius:0 !important;
+    border-left:none !important;border-right:none !important;border-bottom:none !important;
   }
   .dmenu.open{display:flex !important}
   .dmenu.scrollable{max-height:55vh;overflow-y:auto}
@@ -1762,20 +1772,40 @@ document.querySelectorAll('[data-f]').forEach(function(b){
   });
 });
 
-/* Dropdowns géneros y año */
-document.querySelectorAll('.nm-drop').forEach(function(wrap){
-  var btn=wrap.querySelector('.nm'), menu=wrap.querySelector('.dmenu');
-  if(!btn||!menu) return;
-  btn.addEventListener('click',function(e){
-    e.stopPropagation();
-    var isOpen=menu.classList.contains('open');
+/* Dropdowns géneros y año — desktop hover/click + mobile bottom-sheet */
+(function(){
+  var overlay = document.getElementById('mob-overlay');
+
+  function isMob(){ return window.innerWidth <= 600; }
+
+  function closeAll(){
     document.querySelectorAll('.dmenu').forEach(function(m){ m.classList.remove('open'); });
-    if(!isOpen) menu.classList.add('open');
+    document.querySelectorAll('.nm-drop>.nm').forEach(function(b){ b.classList.remove('open-active'); });
+    if(overlay) overlay.classList.remove('on');
+  }
+
+  if(overlay) overlay.addEventListener('click', closeAll);
+
+  document.querySelectorAll('.nm-drop').forEach(function(wrap){
+    var btn  = wrap.querySelector(':scope>.nm');
+    var menu = wrap.querySelector(':scope>.dmenu');
+    if(!btn || !menu) return;
+
+    btn.addEventListener('click', function(e){
+      e.stopPropagation();
+      var wasOpen = menu.classList.contains('open');
+      closeAll();
+      if(!wasOpen){
+        menu.classList.add('open');
+        btn.classList.add('open-active');
+        if(isMob() && overlay) overlay.classList.add('on');
+      }
+    });
   });
-});
-document.addEventListener('click',function(){
-  document.querySelectorAll('.dmenu').forEach(function(m){ m.classList.remove('open'); });
-});
+
+  /* Close desktop dropdown on outside click */
+  document.addEventListener('click', function(){ if(!isMob()) closeAll(); });
+})();
 
 document.querySelectorAll('[data-g]').forEach(function(a){
   a.addEventListener('click',function(e){
@@ -1814,38 +1844,6 @@ document.getElementById('srt').addEventListener('change',function(e){
   }
 })();
 
-/* ── Mobile tap dropdowns (GÉNEROS / AÑO) ── */
-(function(){
-  var overlay=document.getElementById('mob-overlay');
-  function isMobile(){return window.innerWidth<=600;}
-  function closeAll(){
-    document.querySelectorAll('.dmenu.open').forEach(function(m){m.classList.remove('open');});
-    if(overlay) overlay.classList.remove('on');
-    document.querySelectorAll('.nm-drop > .nm').forEach(function(b){b.classList.remove('open-active');});
-  }
-  if(overlay) overlay.addEventListener('click',closeAll);
-  document.querySelectorAll('.nm-drop').forEach(function(drop){
-    var btn=drop.querySelector(':scope > .nm');
-    var menu=drop.querySelector(':scope > .dmenu');
-    if(!btn||!menu) return;
-    btn.addEventListener('click',function(e){
-      if(!isMobile()) return;
-      e.stopPropagation();
-      var isOpen=menu.classList.contains('open');
-      closeAll();
-      if(!isOpen){
-        menu.classList.add('open');
-        if(overlay) overlay.classList.add('on');
-        btn.classList.add('open-active');
-      }
-    });
-    menu.querySelectorAll('a').forEach(function(a){
-      a.addEventListener('click',function(){
-        if(isMobile()) setTimeout(closeAll,150);
-      });
-    });
-  });
-})();
 
 window.addEventListener('scroll',function(){
   document.getElementById('bktop').classList.toggle('show',window.scrollY>500);
