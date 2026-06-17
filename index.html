@@ -402,22 +402,45 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
     letter-spacing:.3px;border-radius:5px;
   }
 
-  /* Dropdowns GÉNEROS y AÑO → ítems inline en la fila */
-  .nm-drop{display:contents}
-  .nm-drop > .nm{display:none}
-  .dmenu{display:contents !important}
-  .dmenu.scrollable{max-height:none;overflow-y:visible}
+  /* Dropdowns GÉNEROS y AÑO en móvil → botón tap abre panel inferior */
+  .nm-drop{display:inline-block;position:relative}
+  .nm-drop > .nm{display:inline-flex}
+  .dmenu{
+    display:none;
+    position:fixed;
+    left:0;right:0;bottom:0;
+    background:#111;
+    border-top:2px solid var(--cyan);
+    padding:10px 10px 24px;
+    flex-wrap:wrap;gap:6px;
+    z-index:9999;
+    max-height:55vh;overflow-y:auto;
+  }
+  .dmenu.open{display:flex !important}
+  .dmenu.scrollable{max-height:55vh;overflow-y:auto}
   .dmenu a{
     display:inline-flex !important;align-items:center;
-    padding:5px 7px !important;font-size:10px !important;
+    padding:7px 11px !important;font-size:11px !important;
     white-space:nowrap;
     font-family:var(--fb);font-weight:600;letter-spacing:.3px;
-    color:#666;text-decoration:none;border-radius:5px;
-    border:none;background:transparent;transition:all .12s;
+    color:#aaa;text-decoration:none;border-radius:6px;
+    border:1px solid rgba(255,255,255,.08);
+    background:rgba(255,255,255,.03);transition:all .12s;
   }
-  .dmenu a:hover,.dmenu a.on{
-    color:var(--cyan);background:rgba(0,212,255,.08);
-    padding-left:7px !important;
+  .dmenu a:active,.dmenu a.on{
+    color:var(--cyan);background:rgba(0,212,255,.12);
+    border-color:rgba(0,212,255,.3);
+  }
+  #mob-overlay{
+    display:none;position:fixed;inset:0;
+    background:rgba(0,0,0,.5);z-index:9998;
+  }
+  #mob-overlay.on{display:block}
+  /* Indicador botón abierto */
+  .nm-drop > .nm.open-active{
+    color:var(--cyan) !important;
+    border-color:rgba(0,212,255,.4) !important;
+    background:rgba(0,212,255,.08) !important;
   }
 
   /* Filtros activos en fila 3 */
@@ -843,6 +866,8 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
       <div id="active-filters-mobile"></div>
     </div><!-- /nav-row-3 -->
   </div>
+  <!-- Mobile overlay for dropdowns -->
+  <div id="mob-overlay"></div>
   <!-- hamburger only shown on mobile via CSS -->
   <div id="nav-right">
     <button id="hamburger" aria-label="Menu">
@@ -1788,6 +1813,40 @@ document.getElementById('srt').addEventListener('change',function(e){
     });
   }
 })();
+
+/* ── Mobile tap dropdowns (GÉNEROS / AÑO) ── */
+(function(){
+  var overlay=document.getElementById('mob-overlay');
+  function isMobile(){return window.innerWidth<=600;}
+  function closeAll(){
+    document.querySelectorAll('.dmenu.open').forEach(function(m){m.classList.remove('open');});
+    if(overlay) overlay.classList.remove('on');
+    document.querySelectorAll('.nm-drop > .nm').forEach(function(b){b.classList.remove('open-active');});
+  }
+  if(overlay) overlay.addEventListener('click',closeAll);
+  document.querySelectorAll('.nm-drop').forEach(function(drop){
+    var btn=drop.querySelector(':scope > .nm');
+    var menu=drop.querySelector(':scope > .dmenu');
+    if(!btn||!menu) return;
+    btn.addEventListener('click',function(e){
+      if(!isMobile()) return;
+      e.stopPropagation();
+      var isOpen=menu.classList.contains('open');
+      closeAll();
+      if(!isOpen){
+        menu.classList.add('open');
+        if(overlay) overlay.classList.add('on');
+        btn.classList.add('open-active');
+      }
+    });
+    menu.querySelectorAll('a').forEach(function(a){
+      a.addEventListener('click',function(){
+        if(isMobile()) setTimeout(closeAll,150);
+      });
+    });
+  });
+})();
+
 window.addEventListener('scroll',function(){
   document.getElementById('bktop').classList.toggle('show',window.scrollY>500);
 });
