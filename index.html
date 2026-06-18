@@ -755,18 +755,38 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
   gap:10px;
   justify-content:center;
 }
+/* ── Flip Card ── */
 .cr-card{
   flex:0 0 130px;
+  height:195px;
   position:relative;
-  border-radius:8px;overflow:hidden;
   cursor:pointer;
-  border:1px solid rgba(255,255,255,.07);
-  transition:transform .2s,box-shadow .2s;
+  perspective:700px;
 }
-.cr-card:hover{transform:scale(1.05);box-shadow:0 0 18px rgba(0,212,255,.4)}
-.cr-card img{
-  width:100%;height:195px;object-fit:cover;display:block;
-  background:#111;
+.cr-card-inner{
+  width:100%;height:100%;
+  position:relative;
+  transform-style:preserve-3d;
+  transition:transform .55s cubic-bezier(.4,0,.2,1);
+  border-radius:8px;
+}
+.cr-card.flipped .cr-card-inner{
+  transform:rotateY(180deg);
+}
+.cr-card-front,
+.cr-card-back{
+  position:absolute;inset:0;
+  border-radius:8px;
+  backface-visibility:hidden;
+  -webkit-backface-visibility:hidden;
+  overflow:hidden;
+}
+/* FRONT */
+.cr-card-front{
+  border:1px solid rgba(255,255,255,.07);
+}
+.cr-card-front img{
+  width:100%;height:100%;object-fit:cover;display:block;background:#111;
 }
 .cr-card-label{
   position:absolute;bottom:0;left:0;right:0;
@@ -780,7 +800,51 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
   font-size:8px;padding:2px 5px;border-radius:8px;
   background:rgba(0,212,255,.85);color:#000;font-weight:700;letter-spacing:.4px;
 }
-/* cr-card mobile overrides handled in @media(max-width:768px) above */
+/* BACK */
+.cr-card-back{
+  transform:rotateY(180deg);
+  background:#0a0a18;
+  border:1px solid rgba(0,212,255,.25);
+  display:flex;flex-direction:column;
+  padding:8px 7px 6px;
+  justify-content:space-between;
+}
+.cr-back-title{
+  font-size:10px;font-weight:700;color:#fff;
+  line-height:1.3;margin-bottom:4px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+.cr-back-meta{
+  font-size:9px;color:var(--cyan);margin-bottom:4px;letter-spacing:.3px;
+}
+.cr-back-synopsis{
+  font-size:9px;color:#999;line-height:1.4;flex:1;
+  overflow:hidden;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;
+  margin-bottom:5px;
+}
+.cr-back-acts{
+  display:flex;gap:3px;flex-wrap:wrap;
+}
+.cr-back-btn{
+  flex:1;min-width:0;
+  font-size:9px;font-weight:700;padding:4px 2px;
+  border-radius:4px;border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.04);color:#888;
+  cursor:pointer;text-align:center;transition:all .15s;white-space:nowrap;
+}
+.cr-back-btn:active{transform:scale(.94)}
+.cr-back-btn.bv{color:#4ade80;border-color:#4ade80;background:rgba(74,222,128,.1)}
+.cr-back-btn.bf{color:#f472b6;border-color:#f472b6;background:rgba(244,114,182,.1)}
+.cr-back-btn.bp{color:#fb923c;border-color:#fb923c;background:rgba(251,146,60,.1)}
+.cr-back-btn.bc{color:var(--cyan);border-color:var(--cyan);background:rgba(0,212,255,.1)}
+.cr-back-close{
+  position:absolute;top:5px;right:5px;
+  width:16px;height:16px;border-radius:50%;
+  background:rgba(255,255,255,.1);border:none;
+  color:#888;font-size:10px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  line-height:1;
+}
 </style>
 </head>
 <body>
@@ -2441,47 +2505,123 @@ loadCSVsFromGitHub();
       .catch(function(){ return null; });
   }
 
+  function getItemData(item){
+    if(typeof DB==='undefined'||!DB.length) return {};
+    if(item.idx<0) item.idx = findIdx(item.t, item.c, item.img);
+    if(item.idx<0) return {};
+    var dbItem = DB[item.idx];
+    var cd = (typeof getData==='function') ? getData(item.idx) : {};
+    return {
+      synopsis: (cd&&cd.ov)  || '',
+      rating:   (cd&&cd.r)   || '',
+      year:     dbItem.y     || '',
+      seasons:  (cd&&cd.seas)|| '',
+      episodes: (cd&&cd.eps) || '',
+      idx:      item.idx
+    };
+  }
+
+  function getStatus(idx){
+    if(typeof uState==='undefined'||idx<0) return 'none';
+    return uState[idx]||'none';
+  }
+
+  function renderBack(back, item){
+    var d = getItemData(item);
+    var meta = '';
+    if(d.rating) meta += '⭐ '+d.rating+'  ';
+    if(d.year)   meta += '📅 '+d.year+'  ';
+    if(d.seasons) meta += '📺 '+d.seasons+' temp  ';
+    if(d.episodes) meta += '🎬 '+d.episodes+' ep';
+    var s = d.idx>=0 ? getStatus(d.idx) : 'none';
+    var inCart = d.idx>=0 && typeof cart!=='undefined' && cart.some(function(x){return x.i===d.idx;});
+    back.innerHTML =
+      '<button class="cr-back-close">✕</button>'+
+      '<div class="cr-back-title">'+esc2(item.t)+'</div>'+
+      (meta?'<div class="cr-back-meta">'+meta+'</div>':'')+
+      '<div class="cr-back-synopsis">'+(d.synopsis?esc2(d.synopsis):'Sin sinopsis disponible.')+'</div>'+
+      '<div class="cr-back-acts">'+
+        '<button class="cr-back-btn'+(s==='vista'?' bv':'')+'" data-back-act="vista">✓ Vista</button>'+
+        '<button class="cr-back-btn'+(s==='favorita'?' bf':'')+'" data-back-act="favorita">♥ Fav</button>'+
+        '<button class="cr-back-btn'+(s==='pendiente'?' bp':'')+'" data-back-act="pendiente">⏳ Pend</button>'+
+        '<button class="cr-back-btn'+(inCart?' bc':'')+'" data-back-act="cart">'+(inCart?'✔ En pedido':'🛒 Pedir')+'</button>'+
+      '</div>';
+  }
+
+  function esc2(s){ var d=document.createElement('div');d.textContent=s||'';return d.innerHTML; }
+
   function render(list){
     if(!list||!list.length) return;
     track.innerHTML = '';
     list.forEach(function(it){
-      var card = document.createElement('div');
-      card.className = 'cr-card';
-
-      var img = document.createElement('img');
-      img.src = it.img; img.alt = it.t; img.loading = 'lazy';
-      img.onerror = function(){ if(this.parentNode) this.parentNode.style.display='none'; };
-
-      var cat = document.createElement('span');
-      cat.className = 'cr-card-cat';
-      cat.textContent = (CAT_ICON[it.c]||'⭐')+' '+(CAT_LABEL[it.c]||it.c);
-
-      var lbl = document.createElement('div');
-      lbl.className = 'cr-card-label';
-      lbl.textContent = it.t;
-
-      card.appendChild(img);
-      card.appendChild(cat);
-      card.appendChild(lbl);
-
-      /* idx se resuelve cuando DB esté lista */
       it.idx = -1;
-      card.addEventListener('click', (function(item){
-        return function(){
-          if(typeof openDetail!=='function') return;
-          if(item.idx >= 0){ openDetail(item.idx); return; }
-          /* DB aún no cargó: esperar */
-          var tries=0;
-          var poll=setInterval(function(){
-            tries++;
-            if(typeof DB!=='undefined' && DB.length>0){
-              clearInterval(poll);
-              item.idx = findIdx(item.t, item.c, item.img);
-              if(item.idx >= 0) openDetail(item.idx);
-            } else if(tries>40) clearInterval(poll);
-          }, 250);
-        };
-      })(it));
+
+      var card  = document.createElement('div'); card.className='cr-card';
+      var inner = document.createElement('div'); inner.className='cr-card-inner';
+
+      /* FRONT */
+      var front = document.createElement('div'); front.className='cr-card-front';
+      var img   = document.createElement('img');
+      img.src=it.img; img.alt=it.t; img.loading='lazy';
+      img.onerror=function(){ card.style.display='none'; };
+      var cat = document.createElement('span'); cat.className='cr-card-cat';
+      cat.textContent=(CAT_ICON[it.c]||'⭐')+' '+(CAT_LABEL[it.c]||it.c);
+      var lbl = document.createElement('div'); lbl.className='cr-card-label';
+      lbl.textContent=it.t;
+      front.appendChild(img); front.appendChild(cat); front.appendChild(lbl);
+
+      /* BACK */
+      var back = document.createElement('div'); back.className='cr-card-back';
+      /* back content rendered on first flip for performance */
+
+      inner.appendChild(front); inner.appendChild(back);
+      card.appendChild(inner);
+
+      var backReady = false;
+
+      function ensureIdx(cb){
+        if(it.idx>=0){ cb(); return; }
+        if(typeof DB!=='undefined'&&DB.length>0){
+          it.idx=findIdx(it.t,it.c,it.img); cb(); return;
+        }
+        var tries=0;
+        var poll=setInterval(function(){
+          if(typeof DB!=='undefined'&&DB.length>0){
+            clearInterval(poll); it.idx=findIdx(it.t,it.c,it.img); cb();
+          } else if(++tries>40) clearInterval(poll);
+        },250);
+      }
+
+      card.addEventListener('click', function(e){
+        /* Close button on back */
+        if(e.target.classList.contains('cr-back-close')){
+          card.classList.remove('flipped'); return;
+        }
+        /* Action buttons on back */
+        var act = e.target.dataset.backAct;
+        if(act){
+          e.stopPropagation();
+          ensureIdx(function(){
+            if(act==='cart'){
+              if(typeof toggleCart==='function') toggleCart(it.idx);
+            } else {
+              if(typeof setS==='function') setS(it.idx, act);
+            }
+            renderBack(back, it); /* refresh button states */
+          });
+          return;
+        }
+        /* Flip */
+        if(!card.classList.contains('flipped')){
+          ensureIdx(function(){
+            if(!backReady){ renderBack(back,it); backReady=true; }
+            else renderBack(back,it); /* refresh states */
+            card.classList.add('flipped');
+          });
+        } else {
+          card.classList.remove('flipped');
+        }
+      });
 
       track.appendChild(card);
     });
