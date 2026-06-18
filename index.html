@@ -1140,9 +1140,22 @@ Hacemos Domicilio ☑️
    CLOUD RIDER — CATÁLOGO (modo CSV-only, sin TMDB)
 ══════════════════════════════════════════════════ */
 
+/* ── OPTIMIZACIÓN DE IMÁGENES TMDB ──
+   Las URLs del CSV vienen como .../t/p/original/xxxx.jpg (resolución completa,
+   pesan cientos de KB e incluso varios MB). Para celular/conexiones lentas,
+   pedimos un tamaño mucho más liviano sin tocar el resto de la URL.
+   w342 es nítido de sobra para tarjetas/pósters; w780 alcanza para los
+   backdrops grandes de la ficha de detalle. */
+function tmdbResize(url, size){
+  if(!url) return url;
+  return url.replace('/t/p/original/', '/t/p/'+size+'/');
+}
+function posterUrl(url){ return tmdbResize(url,'w342'); }
+function backdropUrl(url){ return tmdbResize(url,'w780'); }
+
 var DB = JSON.parse(atob(document.getElementById('D').textContent));
 var WA = '5355213690';
-var PER = 50;
+var PER = (typeof window!=='undefined' && window.innerWidth<=600) ? 24 : 50;
 
 /* Exponer al scope global para que el carrusel "Recién Actualizados"
    (que vive en su propio IIFE más abajo) pueda acceder siempre al
@@ -2271,8 +2284,8 @@ function applyCSVRows(rows, cat){
     var urlExt     = schema.url        ?(row[schema.url]        ||''):'';
 
     if(sinopsis)   ov.ov=sinopsis;
-    if(poster   && poster.indexOf('http')===0)   ov.p=poster;
-    if(backdrop && backdrop.indexOf('http')===0) ov.b=backdrop;
+    if(poster   && poster.indexOf('http')===0)   ov.p=posterUrl(poster);
+    if(backdrop && backdrop.indexOf('http')===0) ov.b=backdropUrl(backdrop);
     if(entry.g && entry.g.length) ov.g=entry.g;
     if(puntuacion){ try{ ov.r=String(Math.round(parseFloat(puntuacion)*10)/10); }catch(e){} }
     if(temporadas){ try{ var t=parseInt(temporadas); if(!isNaN(t)&&t>0) ov.seas=t; }catch(e){} }
@@ -2434,6 +2447,12 @@ loadCSVsFromGitHub();
     return t>=s&&t>=c?'\t':s>=c?';':',';
   }
 
+  /* Mismo ahorro de peso que en el catálogo principal: pedir w342 en vez
+     de la imagen 'original' de TMDB (mucho más pesada). */
+  function lightImg(url){
+    return url ? url.replace('/t/p/original/', '/t/p/w342/') : url;
+  }
+
   function fetchLast(cfg){
     return fetch(RAW + cfg.f + '?nc=' + Date.now())
       .then(function(r){ return r.ok ? r.text() : null; })
@@ -2451,7 +2470,7 @@ loadCSVsFromGitHub();
         var title = row[cfg.t]||'';
         var img   = row[cfg.p]||'';
         if(!title || !img || img.indexOf('http')!==0) return null;
-        return { t:title, c:cfg.c, img:img };
+        return { t:title, c:cfg.c, img:lightImg(img) };
       })
       .catch(function(){ return null; });
   }
@@ -2464,7 +2483,7 @@ loadCSVsFromGitHub();
       card.className = 'cr-card';
 
       var img = document.createElement('img');
-      img.src = it.img; img.alt = it.t; img.loading = 'lazy';
+      img.src = it.img; img.alt = it.t; img.loading = 'lazy'; img.decoding = 'async';
       img.onerror = function(){ if(this.parentNode) this.parentNode.style.display='none'; };
 
       var cat = document.createElement('span');
