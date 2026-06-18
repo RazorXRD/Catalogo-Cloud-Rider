@@ -1144,6 +1144,13 @@ var DB = JSON.parse(atob(document.getElementById('D').textContent));
 var WA = '5355213690';
 var PER = 50;
 
+/* Exponer al scope global para que el carrusel "Recién Actualizados"
+   (que vive en su propio IIFE más abajo) pueda acceder siempre al
+   valor más actual, sin importar si se reasignan luego. */
+Object.defineProperty(window,'DB',{get:function(){ return DB; },configurable:true});
+Object.defineProperty(window,'overrides',{get:function(){ return overrides; },configurable:true});
+window.openDetail = function(i){ openDetail(i); };
+
 var page=1, catF='todas', genreF=null, yearF=null, q='', sort='az', statusF='todas';
 var uState={}, cart=[];
 var detIdx=-1;
