@@ -808,14 +808,6 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
 }
 /* cr-card mobile overrides handled in @media(max-width:768px) above */
 </style>
-<script>
-/* ── SERVICE WORKER: caché offline para carga instantánea en revisitas ── */
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('sw.js').catch(function(){
-    /* Si falla (ej. archivo no existe) no rompe nada */
-  });
-}
-</script>
 </head>
 <body>
 
@@ -1617,20 +1609,9 @@ function renderGrid(){
     e.innerHTML='<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#1a1a2a" stroke-width="1"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><p>Sin resultados. Prueba otro filtro.</p>';
     grid.appendChild(e); document.getElementById('pager').innerHTML=''; return;
   }
-  /* Pintar en dos tandas: primeras tarjetas visibles ya (sin esperar),
-     el resto en el siguiente frame para no bloquear el hilo principal */
-  var FIRST = Math.min(12, slice.length);
   var f=document.createDocumentFragment();
-  slice.slice(0, FIRST).forEach(function(m){ f.appendChild(makeCard(m)); });
-  grid.appendChild(f);
-  renderPager(maxPg);
-  if(slice.length > FIRST){
-    requestAnimationFrame(function(){
-      var f2=document.createDocumentFragment();
-      slice.slice(FIRST).forEach(function(m){ f2.appendChild(makeCard(m)); });
-      grid.appendChild(f2);
-    });
-  }
+  slice.forEach(function(m){ f.appendChild(makeCard(m)); });
+  grid.appendChild(f); renderPager(maxPg);
 }
 
 function renderPager(max){
@@ -2380,49 +2361,32 @@ function loadCSVsFromGitHub(){
       }
     }
 
-    /* ESTRATEGIA RÁPIDA:
-       Si hay datos en caché → mostrarlos YA (instantáneo).
-       Luego verificar SHA en background; si cambió, actualizar silenciosamente.
-       Así el catálogo aparece de inmediato en visitas siguientes. */
-
-    if(savedData && !usedSession){
-      /* Mostrar caché al instante sin esperar red */
-      applyCSVRows(parseCSV(savedData), cat);
-      console.log('[CSV] '+file+' → caché instantáneo');
-
-      /* Verificar cambios en background (no bloquea el renderizado) */
-      getGithubSHA(file).then(function(sha){
-        if(sha && sha === savedEtag) return; /* sin cambios, ignorar */
-        /* Hay cambio → descargar CSV silenciosamente y actualizar */
-        return fetch(url + '?t=' + Date.now())
-          .then(function(r){ if(!r.ok) throw new Error(r.status); return r.text(); })
-          .then(function(text){
-            saveCache(sha, text);
-            /* Limpiar entradas viejas de este archivo antes de reaplicar */
-            for(var di=DB.length-1; di>=0; di--){
-              if(DB[di].c === cat) DB.splice(di,1);
-            }
-            var n = applyCSVRows(parseCSV(text), cat);
-            console.log('[CSV] '+file+' → '+n+' actualizado en background');
-            /* Si el catálogo ya está visible, refrescarlo con los nuevos datos */
-            if(typeof renderGrid==='function') renderGrid();
-          })
-          .catch(function(e){ console.warn('[CSV] Error actualizando '+file+':', e); });
-      });
-      return Promise.resolve(); /* resolver inmediato → no bloquear Promise.all */
-    }
-
-    /* Sin caché → pedir SHA y descargar CSV normalmente (primera visita) */
+    /* 1. Pedir SHA via GitHub API (CORS OK, ~1kb) para detectar cambios */
     return getGithubSHA(file).then(function(sha){
+
+      /* 2. SHA coincide y tenemos datos → caché instantánea, sin descargar CSV */
+      if(sha && sha === savedEtag && savedData && !usedSession){
+        var n = applyCSVRows(parseCSV(savedData), cat);
+        console.log('[CSV] '+file+' → '+n+' ('+cat+') [caché OK]');
+        return;
+      }
+
+      /* 3. SHA cambió, no hay caché, o API de SHA falló → descargar CSV directo */
       return fetch(url + '?t=' + Date.now())
         .then(function(r){ if(!r.ok) throw new Error(r.status); return r.text(); })
         .then(function(text){
           saveCache(sha, text);
           var n = applyCSVRows(parseCSV(text), cat);
-          console.log('[CSV] '+file+' → '+n+' ('+cat+') [primera carga]');
+          console.log('[CSV] '+file+' → '+n+' ('+cat+') [actualizado]');
         })
         .catch(function(e){
-          console.warn('[CSV] Sin datos para '+file+':', e);
+          /* Descarga falló pero tenemos datos guardados → usarlos */
+          if(savedData){
+            var n = applyCSVRows(parseCSV(savedData), cat);
+            console.log('[CSV] '+file+' → '+n+' ('+cat+') [offline fallback]');
+          } else {
+            console.warn('[CSV] Sin datos para '+file+':', e);
+          }
         });
     });
   }
@@ -2446,26 +2410,12 @@ function loadCSVsFromGitHub(){
 load();
 loadOverrides();
 updateCartUI();
-
-/* Si hay datos en caché del localStorage, renderizar inmediatamente
-   sin mostrar spinner. loadCSVsFromGitHub() aplicará encima y actualizará. */
+// DB se construye desde los CSVs; mostrar loading
 (function(){
   var grid = document.getElementById('grid');
-  if(!grid) return;
-  /* Detectar si existe al menos un CSV en caché */
-  var hasCached = false;
-  try {
-    var keys = Object.keys(localStorage);
-    for(var i=0; i<keys.length; i++){
-      if(keys[i].indexOf('csvdata_') === 0){ hasCached = true; break; }
-    }
-  } catch(e){}
-  if(!hasCached){
-    /* Primera visita: mostrar spinner mientras descarga */
+  if(grid){
     grid.innerHTML = '<div id="empty" style="opacity:0.5"><div class="spin"></div><p>Cargando catálogo...</p></div>';
   }
-  /* Si hay caché, loadCSVsFromGitHub aplicará los datos y llamará renderGrid()
-     directamente — el catálogo aparecerá en milisegundos */
 })();
 loadCSVsFromGitHub();
 
