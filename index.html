@@ -335,9 +335,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
 /* ── Tablet (≤768px) ── */
 @media(max-width:768px){
   #nav-menu{display:flex}
-  #nav-menu .dmenu{display:none !important}
-  #nav-menu .nm-drop:hover .dmenu{display:none !important}
-  #nav-menu .dmenu.open{display:block !important}
+  #nav-menu .nm-drop:hover .dmenu{display:block}
 }
 
 
@@ -1736,11 +1734,16 @@ document.querySelectorAll('[data-f]').forEach(function(b){
   });
 });
 
-/* Dropdowns géneros y año */
+/* Dropdowns géneros y año — inline style bypasses all CSS conflicts */
 (function(){
   function closeAll(){
-    document.querySelectorAll('.dmenu.open').forEach(function(m){ m.classList.remove('open'); });
-    document.querySelectorAll('.nm-drop-btn.open-active').forEach(function(b){ b.classList.remove('open-active'); });
+    document.querySelectorAll('.dmenu').forEach(function(m){
+      m.style.display = 'none';
+      m.classList.remove('open');
+    });
+    document.querySelectorAll('.nm-drop-btn').forEach(function(b){
+      b.classList.remove('open-active');
+    });
   }
 
   document.querySelectorAll('.nm-drop').forEach(function(wrap){
@@ -1748,25 +1751,29 @@ document.querySelectorAll('[data-f]').forEach(function(b){
     var menu = wrap.querySelector('.dmenu');
     if(!btn || !menu) return;
 
+    // hide on init
+    menu.style.display = 'none';
+
     btn.addEventListener('click', function(e){
       e.preventDefault();
       e.stopPropagation();
-      var wasOpen = menu.classList.contains('open');
+      var isOpen = menu.style.display === 'block';
       closeAll();
-      if(!wasOpen){
+      if(!isOpen){
+        menu.style.display = 'block';
         menu.classList.add('open');
         btn.classList.add('open-active');
       }
     });
 
     menu.addEventListener('click', function(e){ e.stopPropagation(); });
-    menu.addEventListener('touchstart', function(e){ e.stopPropagation(); }, {passive:true});
+    menu.addEventListener('touchstart', function(e){ e.stopPropagation(); },{passive:true});
   });
 
-  document.addEventListener('click', function(){ closeAll(); });
+  document.addEventListener('click', closeAll);
   document.addEventListener('touchstart', function(e){
-    if(!e.target.closest('.nm-drop')){ closeAll(); }
-  }, {passive:true});
+    if(!e.target.closest('.nm-drop')) closeAll();
+  },{passive:true});
 })();
 
 document.querySelectorAll('[data-g]').forEach(function(a){
