@@ -1226,6 +1226,7 @@ function buildYears(){
   DB.forEach(function(m){ if(m.y) years[m.y]=1; });
   var sorted=Object.keys(years).sort(function(a,b){ return parseInt(b)-parseInt(a); });
   var drop=document.getElementById('year-drop');
+  drop.innerHTML=''; /* evita duplicar años si buildYears() se llama más de una vez */
   sorted.forEach(function(y){
     var a=document.createElement('a'); a.href='#'; a.dataset.y=y; a.textContent=y;
     drop.appendChild(a);
@@ -1277,7 +1278,7 @@ function normSearch(s){
 
 function filtered(){
   if(!DB||!DB.length) return [];
-  var items=DB.map(function(m,i){ return {t:m.t,y:m.y,c:m.c,i:i}; });
+  var items=DB.map(function(m,i){ return {t:m.t,y:m.y,c:m.c,i:i,sk:m.sk||''}; });
   if(q){
     var lq=normSearch(q);
     items=items.filter(function(m){
@@ -1410,8 +1411,8 @@ function filtered(){
       return y.indexOf(yearF)!==-1;
     });
   }
-  if(sort==='az')  items.sort(function(a,b){ return a.t.localeCompare(b.t,'es',{sensitivity:'base'}); });
-  else if(sort==='za') items.sort(function(a,b){ return b.t.localeCompare(a.t,'es',{sensitivity:'base'}); });
+  if(sort==='az')  items.sort(function(a,b){ return a.sk<b.sk?-1:a.sk>b.sk?1:0; });
+  else if(sort==='za') items.sort(function(a,b){ return b.sk<a.sk?-1:b.sk>a.sk?1:0; });
   else if(sort==='new') items.sort(function(a,b){ return (b.y||'0')>(a.y||'0')?1:-1; });
   else items.sort(function(a,b){ return (a.y||'9999')>(b.y||'9999')?1:-1; });
   return items;
@@ -1955,12 +1956,12 @@ function tryLogin(){
 }
 
 function getAdminFiltered(){
-  var items=DB.map(function(m,i){ return {t:m.t,y:m.y,c:m.c,i:i}; });
+  var items=DB.map(function(m,i){ return {t:m.t,y:m.y,c:m.c,i:i,sk:m.sk||''}; });
   if(adminQ){ var lq=adminQ.toLowerCase(); items=items.filter(function(m){ return m.t.toLowerCase().indexOf(lq)!==-1; }); }
   if(adminCat) items=items.filter(function(m){ return m.c===adminCat; });
   if(adminStatusF==='missing') items=items.filter(function(m){ var d=getData(m._idx); return !d.p&&!d.ov; });
   else if(adminStatusF==='ok') items=items.filter(function(m){ var d=getData(m._idx); return d.p||d.ov; });
-  items.sort(function(a,b){ return a.t.localeCompare(b.t,'es',{sensitivity:'base'}); });
+  items.sort(function(a,b){ return a.sk<b.sk?-1:a.sk>b.sk?1:0; });
   return items;
 }
 
@@ -2213,6 +2214,16 @@ function normCSV(s){
     .trim();
 }
 
+/* Clave de orden: minúsculas + sin tildes, PERO conservando espacios/orden de
+   palabras (a diferencia de normCSV, que es para detectar duplicados).
+   Se calcula una sola vez por título al construir el DB, así el ordenamiento
+   alfabético no tiene que llamar a localeCompare (lento) en cada comparación
+   — esto es lo que causaba la traba al cambiar a la categoría de Películas
+   (la más grande) en celulares con CPU más lenta que una PC. */
+function sortKey(s){
+  return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
+
 function applyCSVRows(rows, cat){
   var schema=CSV_SCHEMA[cat];
   if(!schema||!rows.length) return 0;
@@ -2258,7 +2269,7 @@ function applyCSVRows(rows, cat){
     var generos = schema.generos?(row[schema.generos]||''):'';
     var gArr = generos?generos.split(/[,|;]|\. |\s\/\s/).map(function(g){ return g.trim(); }).filter(Boolean):[];
 
-    var entry = { t: title, y: year, c: cat, g: gArr, a: orig!==title?orig:undefined };
+    var entry = { t: title, y: year, c: cat, g: gArr, a: orig!==title?orig:undefined, sk: sortKey(title) };
     newEntries.push(entry);
   });
 
@@ -2299,110 +2310,83 @@ function applyCSVRows(rows, cat){
   return mapped;
 }
 
+/* Reconstruye el DB completo (y los overrides) a partir de un mapa
+   { 'archivo.csv': textoCSV } — se usa tanto para el render instantáneo
+   desde caché como para el render con datos frescos. */
+function rebuildDB(textsByFile){
+  DB.length = 0;
+  Object.keys(overrides).forEach(function(k){ delete overrides[k]; });
+  Object.keys(CSV_CAT_MAP).forEach(function(file){
+    var text = textsByFile[file];
+    if(!text) return;
+    var cat = CSV_CAT_MAP[file];
+    var n = applyCSVRows(parseCSV(text), cat);
+    console.log('[CSV] '+file+' → '+n+' ('+cat+')');
+  });
+}
+
 function loadCSVsFromGitHub(){
   if(!GITHUB_RAW_BASE) return Promise.resolve();
 
   /*
-    Estrategia SHA + ETag:
-    1. Pedimos el SHA del último commit de cada archivo via GitHub API
-       (funciona con CORS, es un JSON pequeño ~1kb por archivo).
-    2. Comparamos con el SHA guardado en localStorage.
-    3. Si coincide y tenemos datos → carga instantánea desde caché.
-    4. Si cambió o no hay caché → descargamos el CSV y guardamos el nuevo SHA.
-    5. Si la API de GitHub falla (rate limit / sin red) → fallback a ETag
-       del HEAD request, y si eso también falla, usamos datos guardados.
-    Resultado: detecta cambios en GitHub con 100% fiabilidad,
-    sin descargar el CSV salvo cuando realmente cambió.
+    Estrategia stale-while-revalidate:
+    1. Si hay datos guardados en localStorage de una visita anterior,
+       se pinta el catálogo CON ESO de inmediato (cero espera de red).
+    2. En paralelo (sin bloquear lo anterior) se piden los CSV reales,
+       sin cache-buster, para que el navegador pueda aprovechar su
+       caché HTTP normal (ETag / 304) cuando el archivo no cambió.
+    3. Si el contenido descargado es distinto al que ya se mostró,
+       se reconstruye el catálogo con los datos frescos y se guardan
+       en caché para la próxima visita.
+    Ya no se usa la API de commits de GitHub (evita el límite de 60
+    peticiones/hora y la ronda de red extra que eso costaba).
   */
-  var GITHUB_API_BASE = 'https://api.github.com/repos/RazorXRD/Catalogo-Cloud-Rider/commits?per_page=1&path=';
+  var files = Object.keys(CSV_CAT_MAP);
+  var cachedTexts = {};
+  var haveAnyCache = false;
 
-  /* Obtiene el SHA del último commit que tocó un archivo */
-  function getGithubSHA(file){
-    return fetch(GITHUB_API_BASE + file, { cache: 'no-store' })
-      .then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); })
-      .then(function(data){ return (data && data[0]) ? data[0].sha : null; })
-      .catch(function(){ return null; }); /* falla silenciosa → usará ETag */
+  files.forEach(function(file){
+    var t = null;
+    try { t = localStorage.getItem('csvdata_'+file) || sessionStorage.getItem('csvdata_'+file); } catch(e){}
+    if(t){ cachedTexts[file] = t; haveAnyCache = true; }
+  });
+
+  if(haveAnyCache){
+    rebuildDB(cachedTexts);
+    saveOverrides(); buildYears(); updateStats(); renderGrid(); progDone();
+    if(typeof window._buildCarousel === 'function') window._buildCarousel(cachedTexts);
+    console.log('[CSV] Render instantáneo desde caché. Verificando actualizaciones…');
   }
 
-  function fetchWithEtag(file){
-    var cat      = CSV_CAT_MAP[file];
-    var keyEtag  = 'etag_'    + file;
-    var keyData  = 'csvdata_' + file;
-    var url      = GITHUB_RAW_BASE + file;
+  var freshTexts = {};
+  var changed = false;
 
-    /* Leer caché: primero localStorage, luego sessionStorage como fallback */
-    var savedEtag = null;
-    var savedData = null;
-    var usedSession = false;
-    try {
-      savedEtag = localStorage.getItem(keyEtag);
-      savedData = localStorage.getItem(keyData);
-    } catch(e){}
-    if(!savedData){
-      try {
-        savedData = sessionStorage.getItem(keyData);
-        if(savedData) usedSession = true;
-      } catch(e){}
-    }
-
-    /* Guardar en el storage correcto según disponibilidad */
-    function saveCache(etag, text){
-      try {
-        if(etag) localStorage.setItem(keyEtag, etag);
-        localStorage.setItem(keyData, text);
-      } catch(e){
-        /* localStorage lleno → sessionStorage (dura solo esta sesión) */
-        try {
-          sessionStorage.setItem(keyData, text);
-          console.warn('[CSV] localStorage lleno, usando sessionStorage para '+file);
-        } catch(e2){
-          console.warn('[CSV] Sin espacio de caché para '+file);
-        }
-      }
-    }
-
-    /* 1. Pedir SHA via GitHub API (CORS OK, ~1kb) para detectar cambios */
-    return getGithubSHA(file).then(function(sha){
-
-      /* 2. SHA coincide y tenemos datos → caché instantánea, sin descargar CSV */
-      if(sha && sha === savedEtag && savedData && !usedSession){
-        var n = applyCSVRows(parseCSV(savedData), cat);
-        console.log('[CSV] '+file+' → '+n+' ('+cat+') [caché OK]');
-        return;
-      }
-
-      /* 3. SHA cambió, no hay caché, o API de SHA falló → descargar CSV directo */
-      return fetch(url + '?t=' + Date.now())
-        .then(function(r){ if(!r.ok) throw new Error(r.status); return r.text(); })
-        .then(function(text){
-          saveCache(sha, text);
-          var n = applyCSVRows(parseCSV(text), cat);
-          console.log('[CSV] '+file+' → '+n+' ('+cat+') [actualizado]');
-        })
-        .catch(function(e){
-          /* Descarga falló pero tenemos datos guardados → usarlos */
-          if(savedData){
-            var n = applyCSVRows(parseCSV(savedData), cat);
-            console.log('[CSV] '+file+' → '+n+' ('+cat+') [offline fallback]');
-          } else {
-            console.warn('[CSV] Sin datos para '+file+':', e);
-          }
-        });
-    });
-  }
-
-  var files    = Object.keys(CSV_CAT_MAP);
-  var promises = files.map(fetchWithEtag);
+  var promises = files.map(function(file){
+    var url = GITHUB_RAW_BASE + file; /* sin '?t=' — deja que el navegador use su caché HTTP */
+    return fetch(url)
+      .then(function(r){ if(!r.ok) throw new Error(r.status); return r.text(); })
+      .then(function(text){
+        freshTexts[file] = text;
+        if(text !== cachedTexts[file]) changed = true;
+        try { localStorage.setItem('csvdata_'+file, text); }
+        catch(e){ try { sessionStorage.setItem('csvdata_'+file, text); } catch(e2){} }
+      })
+      .catch(function(e){
+        /* Sin red o falló la descarga → usar lo que ya teníamos en caché, si hay */
+        if(cachedTexts[file]) freshTexts[file] = cachedTexts[file];
+        console.warn('[CSV] Sin datos frescos para '+file+':', e);
+      });
+  });
 
   return Promise.all(promises).then(function(){
-    saveOverrides();
-    buildYears();
-    updateStats();
-    renderGrid();
-    progDone();
-    console.log('[CSV] ✓ DB:', DB.length, ' overrides:', Object.keys(overrides).length);
-    /* Disparar carrusel ahora que todo está listo */
-    if(typeof window._buildCarousel === 'function') window._buildCarousel();
+    if(!haveAnyCache || changed){
+      rebuildDB(freshTexts);
+      saveOverrides(); buildYears(); updateStats(); renderGrid(); progDone();
+      console.log('[CSV] ✓ DB:', DB.length, ' overrides:', Object.keys(overrides).length, changed?'[actualizado]':'[primera carga]');
+      if(typeof window._buildCarousel === 'function') window._buildCarousel(freshTexts);
+    } else {
+      console.log('[CSV] Sin cambios en GitHub, se mantiene la versión en caché.');
+    }
   });
 }
 
@@ -2421,9 +2405,12 @@ loadCSVsFromGitHub();
 
 })();
 
-/* ===== RECIÉN ACTUALIZADOS ===== */
+/* ===== RECIÉN ACTUALIZADOS =====
+   Ya NO descarga los CSV por su cuenta — antes pedía los 7 archivos
+   completos otra vez (duplicando, entre otras cosas, los ~2MB de
+   peliculas_data_avanzado.csv en cada carga de página). Ahora reutiliza
+   el texto que ya descargó loadCSVsFromGitHub() vía window._buildCarousel(). */
 (function(){
-  var RAW = 'https://raw.githubusercontent.com/RazorXRD/Catalogo-Cloud-Rider/main/';
 
   var FILES = [
     { f:'peliculas_data_avanzado.csv', c:'peliculas', t:'Titulo_encontrado', p:'Poster_URL'  },
@@ -2453,26 +2440,27 @@ loadCSVsFromGitHub();
     return url ? url.replace('/t/p/original/', '/t/p/w342/') : url;
   }
 
-  function fetchLast(cfg){
-    return fetch(RAW + cfg.f + '?nc=' + Date.now())
-      .then(function(r){ return r.ok ? r.text() : null; })
-      .then(function(text){
-        if(!text) return null;
-        text = text.replace(/^\uFEFF/,'');
-        var lines = text.split(/\r?\n/).filter(function(l){ return l.trim(); });
-        if(lines.length < 2) return null;
-        var sep     = getSep(lines[0]);
-        var headers = lines[0].split(sep).map(function(h){ return h.trim(); });
-        var lastLine = lines[lines.length - 1];
-        var cells    = lastLine.split(sep).map(function(v){ return v.trim().replace(/^"|"$/g,''); });
-        var row = {};
-        headers.forEach(function(h,i){ row[h] = cells[i]||''; });
-        var title = row[cfg.t]||'';
-        var img   = row[cfg.p]||'';
-        if(!title || !img || img.indexOf('http')!==0) return null;
-        return { t:title, c:cfg.c, img:lightImg(img) };
-      })
-      .catch(function(){ return null; });
+  /* Devuelve hasta N filas finales del CSV (las más recientes primero).
+     Sigue trabajando 100% sobre texto ya descargado, sin red. */
+  function parseLastN(text, cfg, n){
+    if(!text) return [];
+    text = text.replace(/^\uFEFF/,'');
+    var lines = text.split(/\r?\n/).filter(function(l){ return l.trim(); });
+    if(lines.length < 2) return [];
+    var sep     = getSep(lines[0]);
+    var headers = lines[0].split(sep).map(function(h){ return h.trim(); });
+    var dataLines = lines.slice(1).slice(-n).reverse(); /* últimas n, más nueva primero */
+    var out = [];
+    dataLines.forEach(function(lastLine){
+      var cells = lastLine.split(sep).map(function(v){ return v.trim().replace(/^"|"$/g,''); });
+      var row = {};
+      headers.forEach(function(h,i){ row[h] = cells[i]||''; });
+      var title = row[cfg.t]||'';
+      var img   = row[cfg.p]||'';
+      if(!title || !img || img.indexOf('http')!==0) return;
+      out.push({ t:title, c:cfg.c, img:lightImg(img) });
+    });
+    return out;
   }
 
   function render(list){
@@ -2602,8 +2590,17 @@ loadCSVsFromGitHub();
     tw.addEventListener('touchend', function(){ setTimeout(startAutoplay, 3000); }, {passive:true});
   }
 
-  Promise.all(FILES.map(fetchLast)).then(function(results){
-    var list = results.filter(function(x){ return x!==null; });
+  /* Se llama desde loadCSVsFromGitHub() con el texto de los CSV que YA se
+     descargó ahí — así no se vuelve a pedir nada por la red. Se puede
+     llamar más de una vez (con caché, luego con datos frescos); todo
+     adentro ya es idempotente (limpia track/dots, resetea el autoplay). */
+  window._buildCarousel = function(textsByFile){
+    var PER_FILE = 3; /* cuántas de las últimas filas mostrar por cada CSV */
+    var list = [];
+    FILES.forEach(function(cfg){
+      var items = parseLastN(textsByFile && textsByFile[cfg.f], cfg, PER_FILE);
+      list = list.concat(items);
+    });
     if(!list.length) return;
     totalCards = list.length;
     render(list);
@@ -2620,7 +2617,7 @@ loadCSVsFromGitHub();
         list.forEach(function(it){ if(it.idx<0) it.idx=findIdx(it.t,it.c,it.img); });
       } else if(att>60) clearInterval(pre);
     },300);
-  });
+  };
 })();
 
 </script>
