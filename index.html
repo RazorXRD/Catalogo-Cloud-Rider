@@ -443,33 +443,29 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
     background:rgba(0,212,255,.08) !important;
   }
 
-  /* Filtros activos en fila 3 */
+  /* Filtros activos junto a AÑO (fila 2) */
   #active-filters{
     display:flex;flex-wrap:wrap;
     gap:4px;padding:0;margin-left:4px;
   }
   #active-filters:empty{display:none;padding:0}
 
-  /* Ocultar botones de estado del desktop */
-  .nm-status-desktop{display:none !important}
+  /* VISTAS/FAVORITAS/PENDIENTES ahora se muestran aquí mismo, junto a AÑO
+     (antes estaban ocultos y duplicados en la fila 3 — esa fila ya no existe) */
+  .nm-status-desktop{display:inline-flex !important}
 
   /* Fila 1: ocultar doramas/novelas/juegos (están en fila 2 móvil) */
   .nm-desktop-only{display:none !important}
   /* Fila 2: mostrar doramas/novelas/juegos solo en móvil */
   .nm-mobile-only{display:inline-flex !important}
 
-  /* Chips activos → se muestran en fila 3 móvil, ocultar los de fila 2 */
-  #active-filters{display:none !important}
-  #active-filters-mobile{
-    display:flex;flex-wrap:wrap;gap:4px;margin-left:2px;
-  }
-  #active-filters-mobile:empty{display:none}
+  /* La fila de chips móvil ya no se usa (todo vive en #active-filters arriba) */
+  #active-filters-mobile{display:none !important}
 
-  /* FILA 3 — VISTAS / FAVORITAS / PENDIENTES + chips */
+  /* FILA 3 eliminada: VISTAS/FAVORITAS/PENDIENTES se movieron a la fila de AÑO
+     para ganar una fila completa de espacio vertical en el inicio */
   .nav-row-3{
-    display:flex;flex-wrap:wrap;
-    gap:2px;padding:3px 6px;
-    align-items:center;
+    display:none !important;
   }
 
   /* STATUS BAR — oculto en móvil */
@@ -490,6 +486,8 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
   .cat-badge{font-size:8px;padding:1px 5px}
 
   /* CAROUSEL MÓVIL: scroll horizontal, 2 tarjetas */
+  /* PEDIDO reubicado aquí (ver JS) — separarlo del título */
+  #carousel-header #cart-btn{margin-left:10px;flex-shrink:0}
   #carousel-wrap{padding:10px 8px 14px}
   #carousel-track-wrap{
     overflow-x:auto !important;overflow-y:hidden !important;
@@ -2405,6 +2403,39 @@ function loadCSVsFromGitHub(){
 load();
 loadOverrides();
 updateCartUI();
+
+/* PEDIDO junto a "Recién Actualizados" — solo en celular.
+   Se mueve el MISMO botón (no se crea uno nuevo), así el listener de
+   clic que ya tiene sigue funcionando igual. En desktop vuelve a su
+   lugar original en la barra de arriba. */
+(function(){
+  var cartBtn = document.getElementById('cart-btn');
+  var carouselHeader = document.getElementById('carousel-header');
+  var navRight = document.getElementById('nav-right');
+  if(!cartBtn || !carouselHeader || !navRight) return;
+  var originalNextSibling = cartBtn.nextSibling; /* para devolverlo a su lugar exacto en desktop */
+
+  function placeCartButton(){
+    var isMobile = window.innerWidth <= 600;
+    if(isMobile){
+      if(cartBtn.parentNode !== carouselHeader){
+        var dots = document.getElementById('carousel-dots');
+        carouselHeader.insertBefore(cartBtn, dots || null);
+      }
+    } else {
+      if(cartBtn.parentNode !== navRight){
+        navRight.insertBefore(cartBtn, originalNextSibling);
+      }
+    }
+  }
+  placeCartButton();
+  var resizeTimer;
+  window.addEventListener('resize', function(){
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(placeCartButton, 150);
+  });
+})();
+
 // DB se construye desde los CSVs; mostrar loading
 (function(){
   var grid = document.getElementById('grid');
