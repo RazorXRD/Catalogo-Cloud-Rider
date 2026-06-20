@@ -1282,13 +1282,23 @@ function filtered(){
   if(q){
     var lq=normSearch(q);
     items=items.filter(function(m){
-      /* Comparar versión normalizada del título */
-      if(normSearch(m.t).indexOf(lq)!==-1) return true;
-      /* También buscar en título original del DB si existe */
       var dbItem=DB[m.i];
-      if(dbItem&&dbItem.a&&normSearch(dbItem.a).indexOf(lq)!==-1) return true;
+      if(!dbItem) return false;
+      /* Título (ya normalizado al cargar, no se recalcula en cada tecla) */
+      if(dbItem.tn && dbItem.tn.indexOf(lq)!==-1) return true;
+      /* Título original/alterno */
+      if(dbItem.an && dbItem.an.indexOf(lq)!==-1) return true;
       if(m.y&&m.y.indexOf(lq)!==-1) return true;
-      if(m.g&&m.g.length&&normSearch(m.g.join(' ')).indexOf(lq)!==-1) return true;
+      /* Géneros */
+      if(dbItem.gn && dbItem.gn.indexOf(lq)!==-1) return true;
+      /* Sinopsis — se normaliza la primera vez que se necesita (no al cargar
+         la página) y se guarda en caché para que la próxima búsqueda en esta
+         misma sesión sea instantánea. */
+      var d=getData(m.i);
+      if(d.ov){
+        if(d.ovn===undefined) d.ovn=normSearch(d.ov);
+        if(d.ovn && d.ovn.indexOf(lq)!==-1) return true;
+      }
       return false;
     });
   }
@@ -2269,7 +2279,8 @@ function applyCSVRows(rows, cat){
     var generos = schema.generos?(row[schema.generos]||''):'';
     var gArr = generos?generos.split(/[,|;]|\. |\s\/\s/).map(function(g){ return g.trim(); }).filter(Boolean):[];
 
-    var entry = { t: title, y: year, c: cat, g: gArr, a: orig!==title?orig:undefined, sk: sortKey(title) };
+    var entry = { t: title, y: year, c: cat, g: gArr, a: orig!==title?orig:undefined, sk: sortKey(title),
+                  tn: normSearch(title), an: (orig!==title)?normSearch(orig):'', gn: gArr.length?normSearch(gArr.join(' ')):'' };
     newEntries.push(entry);
   });
 
@@ -2294,7 +2305,7 @@ function applyCSVRows(rows, cat){
     var episodios  = schema.episodios  ?(row[schema.episodios]  ||''):'';
     var urlExt     = schema.url        ?(row[schema.url]        ||''):'';
 
-    if(sinopsis)   ov.ov=sinopsis;
+    if(sinopsis)   ov.ov=sinopsis; /* la versión normalizada para búsqueda (ovn) se calcula perezosamente, solo si alguien busca — ver filtered() */
     if(poster   && poster.indexOf('http')===0)   ov.p=posterUrl(poster);
     if(backdrop && backdrop.indexOf('http')===0) ov.b=backdropUrl(backdrop);
     if(entry.g && entry.g.length) ov.g=entry.g;
@@ -2354,7 +2365,7 @@ function loadCSVsFromGitHub(){
   if(haveAnyCache){
     rebuildDB(cachedTexts);
     saveOverrides(); buildYears(); updateStats(); renderGrid(); progDone();
-    if(typeof window._buildCarousel === 'function') window._buildCarousel(cachedTexts);
+    setTimeout(function(){ if(typeof window._buildCarousel === 'function') window._buildCarousel(cachedTexts); },0);
     console.log('[CSV] Render instantáneo desde caché. Verificando actualizaciones…');
   }
 
@@ -2383,7 +2394,7 @@ function loadCSVsFromGitHub(){
       rebuildDB(freshTexts);
       saveOverrides(); buildYears(); updateStats(); renderGrid(); progDone();
       console.log('[CSV] ✓ DB:', DB.length, ' overrides:', Object.keys(overrides).length, changed?'[actualizado]':'[primera carga]');
-      if(typeof window._buildCarousel === 'function') window._buildCarousel(freshTexts);
+      setTimeout(function(){ if(typeof window._buildCarousel === 'function') window._buildCarousel(freshTexts); },0);
     } else {
       console.log('[CSV] Sin cambios en GitHub, se mantiene la versión en caché.');
     }
