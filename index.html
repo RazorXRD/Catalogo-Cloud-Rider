@@ -1235,6 +1235,9 @@ function buildYears(){
       yearF = a.dataset.y||null;
       document.querySelectorAll('[data-y]').forEach(function(x){ x.classList.remove('on'); x.style.color=''; });
       if(yearF){ a.classList.add('on'); a.style.color='var(--cyan)'; }
+      /* Cerrar el dropdown completo (antes no se cerraba en absoluto) */
+      document.querySelectorAll('.dmenu').forEach(function(m){ m.style.display='none'; m.classList.remove('open'); });
+      document.querySelectorAll('.nm-drop-btn').forEach(function(b){ b.classList.remove('open-active'); });
       page=1; renderGrid();
     });
   });
@@ -1514,7 +1517,14 @@ function renderActiveFilters(){
     novelas:'💋 NOVELAS',juegos:'🎮 JUEGOS PC',
     vista:'✓ VISTAS',favorita:'♥ FAVORITAS',pendiente:'⏳ PENDIENTES',sin:'SIN ESTADO'};
   if(catF && catF!=='todas'){
-    chips.push({label: catLabels[catF]||catF, remove:function(){catF='todas';page=1;renderGrid();}});
+    chips.push({label: catLabels[catF]||catF, remove:function(){
+      catF='todas'; statusF='todas'; page=1;
+      document.querySelectorAll('.nm').forEach(function(b){
+        b.classList.remove('on');
+        if(b.dataset.f==='todas') b.classList.add('on');
+      });
+      renderGrid();
+    }});
   }
 
   /* Genre chip */
@@ -1568,7 +1578,7 @@ function renderActiveFilters(){
   clr.className='af-clear';
   clr.textContent='✕ Limpiar';
   clr.addEventListener('click',function(){
-    catF='todas'; genreF=null; yearF=null; q=''; page=1;
+    catF='todas'; statusF='todas'; genreF=null; yearF=null; q=''; page=1;
     document.querySelectorAll('[data-y]').forEach(function(x){x.classList.remove('on');x.style.color='';});
     document.querySelectorAll('.nm').forEach(function(b){
       b.classList.remove('on');
@@ -1589,7 +1599,7 @@ function renderActiveFilters(){
   if(mWrap){
     var mClr=mWrap.querySelector('.af-clear');
     if(mClr) mClr.addEventListener('click',function(){
-      catF='todas';genreF=null;yearF=null;q='';page=1;
+      catF='todas';statusF='todas';genreF=null;yearF=null;q='';page=1;
       document.querySelectorAll('[data-y]').forEach(function(x){x.classList.remove('on');x.style.color='';});
       document.querySelectorAll('.nm').forEach(function(b){b.classList.remove('on');if(b.dataset.f==='todas')b.classList.add('on');});
       var srch=document.getElementById('srch');if(srch)srch.value='';
@@ -1893,7 +1903,10 @@ document.querySelectorAll('[data-g]').forEach(function(a){
     genreF=(genreF===gKey)?null:gKey;
     document.querySelectorAll('[data-g]').forEach(function(x){ x.classList.remove('on'); x.style.color=''; });
     if(genreF){ a.classList.add('on'); a.style.color='var(--cyan)'; }
-    document.querySelectorAll('.dmenu').forEach(function(m){ m.classList.remove('open'); });
+    /* Cerrar el dropdown completo (antes solo se quitaba la clase 'open'
+       pero el display:block puesto al abrirlo se quedaba activo) */
+    document.querySelectorAll('.dmenu').forEach(function(m){ m.style.display='none'; m.classList.remove('open'); });
+    document.querySelectorAll('.nm-drop-btn').forEach(function(b){ b.classList.remove('open-active'); });
     page=1; renderGrid();
   });
 });
