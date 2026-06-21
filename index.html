@@ -1607,6 +1607,7 @@ function renderGrid(){
     var isHome = (catF==='todas') && !genreF && !yearF && (!q || q==='');
     carouselWrap.style.display = isHome ? '' : 'none';
   }
+  if(typeof placeCartButton==='function') placeCartButton();
   var all=filtered(), total=all.length;
   var maxPg=Math.max(1,Math.ceil(total/PER));
   if(page>maxPg) page=1;
@@ -1807,12 +1808,26 @@ document.getElementById('cart-send').addEventListener('click',sendWhatsApp);
 /* Nav category */
 document.querySelectorAll('[data-f]').forEach(function(b){
   b.addEventListener('click',function(){
+    var statuses=['vista','favorita','pendiente','sin'];
+    var isStatusBtn = statuses.indexOf(b.dataset.f)>=0;
+
+    /* Toggle: si ya estaba activo este mismo filtro (vista/favorita/pendiente),
+       tocarlo otra vez lo deselecciona y vuelve a INICIO */
+    if(isStatusBtn && catF===b.dataset.f){
+      document.querySelectorAll('[data-f]').forEach(function(x){ x.classList.remove('on'); });
+      document.querySelectorAll('[data-f="todas"]').forEach(function(x){ x.classList.add('on'); });
+      catF='todas'; statusF='todas';
+      var gd=document.querySelector('.nm-drop');
+      if(gd) gd.classList.remove('disabled');
+      page=1; renderGrid();
+      return;
+    }
+
     document.querySelectorAll('[data-f]').forEach(function(x){ x.classList.remove('on'); });
     document.querySelectorAll('[data-f="'+b.dataset.f+'"]').forEach(function(x){ x.classList.add('on'); });
     catF=b.dataset.f;
-    var statuses=['vista','favorita','pendiente','sin'];
-    statusF=statuses.indexOf(b.dataset.f)>=0?b.dataset.f:'todas';
-    if(statuses.indexOf(b.dataset.f)<0) catF=b.dataset.f;
+    statusF=isStatusBtn?b.dataset.f:'todas';
+    if(!isStatusBtn) catF=b.dataset.f;
 
     /* Si es juegos: limpiar y bloquear géneros */
     var genreDrop=document.querySelector('.nm-drop');
@@ -2404,31 +2419,41 @@ load();
 loadOverrides();
 updateCartUI();
 
-/* PEDIDO junto a "Recién Actualizados" — solo en celular.
-   Se mueve el MISMO botón (no se crea uno nuevo), así el listener de
-   clic que ya tiene sigue funcionando igual. En desktop vuelve a su
-   lugar original en la barra de arriba. */
-(function(){
+/* PEDIDO se reubica solo en celular:
+   - En INICIO (sin filtros): junto a "Recién Actualizados".
+   - En cualquier otra sección: junto a PENDIENTES (para que nunca desaparezca
+     al estar dentro del carrusel, que se oculta fuera de inicio).
+   En desktop siempre queda en su lugar original de la barra de arriba.
+   Es función global (no IIFE) para poder llamarla también desde renderGrid(). */
+function placeCartButton(){
   var cartBtn = document.getElementById('cart-btn');
-  var carouselHeader = document.getElementById('carousel-header');
   var navRight = document.getElementById('nav-right');
-  if(!cartBtn || !carouselHeader || !navRight) return;
-  var originalNextSibling = cartBtn.nextSibling; /* para devolverlo a su lugar exacto en desktop */
+  if(!cartBtn || !navRight) return;
+  var isMobile = window.innerWidth <= 600;
 
-  function placeCartButton(){
-    var isMobile = window.innerWidth <= 600;
-    if(isMobile){
-      if(cartBtn.parentNode !== carouselHeader){
-        var dots = document.getElementById('carousel-dots');
-        carouselHeader.insertBefore(cartBtn, dots || null);
-      }
-    } else {
-      if(cartBtn.parentNode !== navRight){
-        navRight.insertBefore(cartBtn, originalNextSibling);
+  if(!isMobile){
+    if(cartBtn.parentNode !== navRight) navRight.appendChild(cartBtn);
+    return;
+  }
+
+  var isHome = (catF==='todas') && !genreF && !yearF && (!q || q==='');
+  var carouselHeader = document.getElementById('carousel-header');
+  if(isHome && carouselHeader){
+    if(cartBtn.parentNode !== carouselHeader){
+      var dots = document.getElementById('carousel-dots');
+      carouselHeader.insertBefore(cartBtn, dots || null);
+    }
+  } else {
+    var pendienteBtn = document.querySelector('.nm-status-desktop[data-f="pendiente"]');
+    if(pendienteBtn && pendienteBtn.parentNode){
+      if(cartBtn.previousSibling !== pendienteBtn){
+        pendienteBtn.parentNode.insertBefore(cartBtn, pendienteBtn.nextSibling);
       }
     }
   }
-  placeCartButton();
+}
+placeCartButton();
+(function(){
   var resizeTimer;
   window.addEventListener('resize', function(){
     clearTimeout(resizeTimer);
