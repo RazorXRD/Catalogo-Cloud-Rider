@@ -2427,6 +2427,59 @@ function loadCSVsFromGitHub(){
   });
 }
 
+/* ── REVISIÓN PERIÓDICA EN SEGUNDO PLANO ──
+   loadCSVsFromGitHub() solo revisa cambios UNA VEZ, al cargar la página.
+   Si alguien se queda con la pestaña abierta mientras subes un cambio,
+   nunca lo vería sin recargar manualmente. Esta función hace la misma
+   comparación (fresco vs. lo que ya se está mostrando) pero se puede
+   llamar repetidas veces sin tener que recargar nada. */
+var _checkingUpdates = false;
+function checkForUpdates(){
+  if(_checkingUpdates) return; /* evitar revisiones superpuestas */
+  if(!GITHUB_RAW_BASE) return;
+  _checkingUpdates = true;
+
+  var files = Object.keys(CSV_CAT_MAP);
+  var prevTexts = {};
+  files.forEach(function(file){
+    try { prevTexts[file] = localStorage.getItem('csvdata_'+file) || sessionStorage.getItem('csvdata_'+file) || null; }
+    catch(e){ prevTexts[file] = null; }
+  });
+
+  var freshTexts = {};
+  var changed = false;
+
+  var promises = files.map(function(file){
+    var url = GITHUB_RAW_BASE + file;
+    return fetch(url)
+      .then(function(r){ if(!r.ok) throw new Error(r.status); return r.text(); })
+      .then(function(text){
+        freshTexts[file] = text;
+        if(text !== prevTexts[file]) changed = true;
+        try { localStorage.setItem('csvdata_'+file, text); }
+        catch(e){ try { sessionStorage.setItem('csvdata_'+file, text); } catch(e2){} }
+      })
+      .catch(function(e){
+        if(prevTexts[file]) freshTexts[file] = prevTexts[file];
+        console.warn('[CSV] Revisión periódica: sin datos frescos para '+file, e);
+      });
+  });
+
+  Promise.all(promises).then(function(){
+    if(changed){
+      /* Se preserva la página/filtros actuales del visitante — solo se
+         actualiza el contenido detrás, sin interrumpir lo que esté viendo */
+      rebuildDB(freshTexts);
+      saveOverrides(); buildYears(); updateStats(); renderGrid(); progDone();
+      console.log('[CSV] ✓ Catálogo actualizado automáticamente en segundo plano.');
+      setTimeout(function(){ if(typeof window._buildCarousel === 'function') window._buildCarousel(freshTexts); },0);
+    } else {
+      console.log('[CSV] Revisión periódica: sin cambios.');
+    }
+  }).then(function(){ _checkingUpdates = false; },
+          function(){ _checkingUpdates = false; });
+}
+
 /* ── ARRANQUE ── */
 load();
 loadOverrides();
@@ -2482,6 +2535,15 @@ placeCartButton();
   }
 })();
 loadCSVsFromGitHub();
+
+/* Revisar cambios cada 3 minutos mientras la pestaña esté abierta,
+   y también justo cuando la persona vuelve a la pestaña (por ejemplo
+   si estuvo un rato en otra app/ventana) — así nadie necesita recargar
+   manualmente para ver el catálogo actualizado. */
+setInterval(checkForUpdates, 3*60*1000);
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState === 'visible') checkForUpdates();
+});
 
 })();
 
