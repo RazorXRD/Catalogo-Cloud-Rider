@@ -514,7 +514,9 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
   .cr-dot.on{background:var(--cyan)}
 
   /* CART PANEL */
-  #cart-panel{width:100vw;border-left:none}
+  #cart-panel{width:100vw;border-left:none;height:100vh;height:100dvh}
+  #cart-items{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  #cart-foot{flex-shrink:0;position:sticky;bottom:0;background:#0a0a16;padding:14px 18px}
   #cart-head h2{font-size:18px}
 
   /* DETAIL PAGE */
