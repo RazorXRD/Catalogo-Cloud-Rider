@@ -514,9 +514,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
   .cr-dot.on{background:var(--cyan)}
 
   /* CART PANEL */
-  #cart-panel{width:100vw;border-left:none;height:100vh;height:100dvh}
-  #cart-items{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
-  #cart-foot{flex-shrink:0;position:sticky;bottom:0;background:#0a0a16;padding:14px 18px}
+  #cart-panel{width:100vw;border-left:none}
   #cart-head h2{font-size:18px}
 
   /* DETAIL PAGE */
@@ -1699,8 +1697,33 @@ function updateCartUI(){
   });
   ci.appendChild(f);
 }
-function openCart(){ document.getElementById('cart-panel').classList.add('open'); document.getElementById('cart-overlay').classList.add('show'); }
+function openCart(){ document.getElementById('cart-panel').classList.add('open'); document.getElementById('cart-overlay').classList.add('show'); history.pushState({panel:'cart'},''); }
 function closeCart(){ document.getElementById('cart-panel').classList.remove('open'); document.getElementById('cart-overlay').classList.remove('show'); }
+
+/* ── BOTÓN ATRÁS MÓVIL + GESTO DESLIZAR DESDE BORDE ── */
+window.addEventListener('popstate', function(e){
+  if(document.getElementById('detail').classList.contains('open')){ closeDetail(); return; }
+  if(document.getElementById('cart-panel').classList.contains('open')){ closeCart(); return; }
+});
+
+(function(){
+  var startX=0, startY=0, tracking=false;
+  document.addEventListener('touchstart',function(e){
+    startX=e.touches[0].clientX;
+    startY=e.touches[0].clientY;
+    tracking = startX < 30;
+  },{passive:true});
+  document.addEventListener('touchend',function(e){
+    if(!tracking) return;
+    var dx=e.changedTouches[0].clientX - startX;
+    var dy=Math.abs(e.changedTouches[0].clientY - startY);
+    if(dx > 60 && dy < 80){
+      if(document.getElementById('detail').classList.contains('open')){ closeDetail(); }
+      else if(document.getElementById('cart-panel').classList.contains('open')){ closeCart(); }
+    }
+    tracking=false;
+  },{passive:true});
+})();
 function sendWhatsApp(){
   if(!cart.length) return;
   var lines=['🎬 *PEDIDO CLOUD RIDER*',''];
@@ -1728,6 +1751,7 @@ function openDetail(i){
   var m=DB[i], cd=getData(i);
   var det=document.getElementById('detail');
   det.classList.add('open'); document.body.style.overflow='hidden'; det.scrollTop=0;
+  history.pushState({panel:'detail', idx:i}, '');
   document.getElementById('det-tit-nav').textContent=m.t;
   document.getElementById('det-backdrop').style.backgroundImage=(cd&&cd.b)?'url('+cd.b+')':'none';
   updateDetCartBtn();
