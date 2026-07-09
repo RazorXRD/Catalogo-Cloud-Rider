@@ -1796,6 +1796,31 @@ function openDetail(i){
   ovDiv.textContent=(cd&&cd.ov)?cd.ov:'Sinopsis no disponible.';
   info.appendChild(ovDiv);
 
+  /* Temporadas detalladas (episodios por temporada) */
+  if(cd&&cd.seasDetail&&cd.seasDetail.length){
+    var seasWrap=document.createElement('div'); seasWrap.id='det-seasons';
+    var seasTitle=document.createElement('div'); seasTitle.className='seasons-title'; seasTitle.textContent='Temporadas';
+    seasWrap.appendChild(seasTitle);
+    var seasGrid=document.createElement('div'); seasGrid.className='seasons-grid';
+    cd.seasDetail.forEach(function(s){
+      var chip=document.createElement('div'); chip.className='season-chip';
+      var b=document.createElement('b'); b.textContent='Temporada '+s.n;
+      var sp=document.createElement('span'); sp.textContent=s.eps+(s.eps===1?' episodio':' episodios');
+      chip.appendChild(b); chip.appendChild(sp);
+      seasGrid.appendChild(chip);
+    });
+    seasWrap.appendChild(seasGrid);
+    info.appendChild(seasWrap);
+  }
+
+  /* Equipo (creador/director) */
+  if(cd&&cd.crew){
+    var crewDiv=document.createElement('div'); crewDiv.id='det-crew';
+    crewDiv.style.cssText='font-size:11.5px;color:#666;margin-top:6px;margin-bottom:2px';
+    crewDiv.textContent=cd.crew;
+    info.appendChild(crewDiv);
+  }
+
   /* Botón URL externa si existe */
   if(cd&&cd.url){
     var link=document.createElement('a');
@@ -1806,6 +1831,62 @@ function openDetail(i){
   }
 
   appendActions(info,i);
+
+  /* Reparto + Recomendaciones (sección inferior) */
+  var castSection=document.getElementById('det-cast-section');
+  if(cd&&cd.cast&&cd.cast.length){
+    var h3=document.createElement('h3'); h3.textContent='Reparto';
+    castSection.appendChild(h3);
+    var castGrid=document.createElement('div'); castGrid.id='det-cast';
+    cd.cast.forEach(function(actor){
+      var cc=document.createElement('div'); cc.className='cc';
+      if(actor.photo){
+        var img=document.createElement('img'); img.className='cc-img'; img.loading='lazy';
+        img.src=actor.photo; img.alt=actor.name;
+        img.onerror=function(){ /* si la foto no carga, cae a la máscara */
+          var ph2=document.createElement('div'); ph2.className='cc-ph'; ph2.textContent='🎭';
+          img.replaceWith(ph2);
+        };
+        cc.appendChild(img);
+      } else {
+        var ph=document.createElement('div'); ph.className='cc-ph'; ph.textContent='🎭';
+        cc.appendChild(ph);
+      }
+      var nm2=document.createElement('div'); nm2.className='cc-name'; nm2.textContent=actor.name;
+      cc.appendChild(nm2);
+      if(actor.char){ var ch=document.createElement('div'); ch.className='cc-char'; ch.textContent=actor.char; cc.appendChild(ch); }
+      castGrid.appendChild(cc);
+    });
+    castSection.appendChild(castGrid);
+  }
+
+  if(cd&&cd.recs&&cd.recs.length){
+    /* Solo mostrar recomendaciones que SÍ existen en el catálogo (evita
+       clicks que no llevan a ningún lado). Se resuelve el índice acá para
+       no tener que buscar de nuevo al hacer clic. */
+    var recsFound = [];
+    cd.recs.forEach(function(recTitle){
+      var nt=normSearch(recTitle);
+      for(var k=0;k<DB.length;k++){
+        if(DB[k].tn===nt || DB[k].an===nt){ recsFound.push({title:recTitle, idx:k}); break; }
+      }
+    });
+    if(recsFound.length){
+      var h3r=document.createElement('h3'); h3r.style.marginTop='28px'; h3r.textContent='Recomendados para ti';
+      castSection.appendChild(h3r);
+      var recGrid=document.createElement('div'); recGrid.style.cssText='display:flex;flex-wrap:wrap;gap:8px';
+      recsFound.forEach(function(rec){
+        var chip=document.createElement('button');
+        chip.textContent=rec.title;
+        chip.style.cssText='background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.18);color:#9ad;border-radius:20px;padding:7px 14px;font-size:11.5px;cursor:pointer;font-family:var(--fb);transition:background .15s;';
+        chip.addEventListener('mouseenter',function(){ chip.style.background='rgba(0,212,255,.18)'; });
+        chip.addEventListener('mouseleave',function(){ chip.style.background='rgba(0,212,255,.06)'; });
+        chip.addEventListener('click',function(){ openDetail(rec.idx); });
+        recGrid.appendChild(chip);
+      });
+      castSection.appendChild(recGrid);
+    }
+  }
 }
 
 function appendActions(parent,i){
@@ -2228,13 +2309,13 @@ var CSV_CAT_MAP = {
   series   : Titulo ; Anio ; Sinopsis ; Link_Imagen ; Generos ; Puntuacion_IMDb ; Temporadas ; Capitulos
 */
 var CSV_SCHEMA = {
-  animados  : { keyClean:'Titulo',           keyOrig:'Original',         sinopsis:'Sinopsis', poster:'Link_Imagen', backdrop:null,         generos:'Generos', puntuacion:'Puntuacion_IMDb',  temporadas:'Temporadas', episodios:'Episodios', url:null,         anio:'Anio' },
-  animes    : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:null,         generos:'Generos', puntuacion:'Puntuacion',       temporadas:null,         episodios:'Episodios', url:'URL_Externa', anio:null   },
-  doramas   : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:null,         generos:'Generos', puntuacion:'Puntuacion_TMDB',  temporadas:'Temporadas', episodios:'Episodios', url:'URL_Externa', anio:'Anio' },
+  animados  : { keyClean:'Titulo',           keyOrig:'Original',         sinopsis:'Sinopsis', poster:'Link_Imagen', backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion_IMDb',  temporadas:'Temporadas', episodios:'Episodios', url:'URL_TMDB',    anio:'Anio', temporadasDet:'Temporadas_Detalle', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones' },
+  animes    : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion',       temporadas:null,         episodios:'Episodios', url:'URL_Externa', anio:null,   temporadasDet:'Temporadas_Detalle', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones' },
+  doramas   : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion_TMDB',  temporadas:'Temporadas', episodios:'Episodios', url:'URL_Externa', anio:'Anio', temporadasDet:'Temporadas_Detalle', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones' },
   juegos    : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:null,         generos:'Generos', puntuacion:'Puntuacion_Usuario',temporadas:null,        episodios:null,        url:'URL_Slug',    anio:'Anio' },
-  novelas   : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion_TMDB',  temporadas:'Temporadas', episodios:'Episodios', url:'URL_TMDB',    anio:'Anio' },
+  novelas   : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion_TMDB',  temporadas:'Temporadas', episodios:'Episodios', url:'URL_TMDB',    anio:'Anio', temporadasDet:'Temporadas_Detalle', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones' },
   peliculas : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:null,         generos:'Generos', puntuacion:'Puntuacion',       temporadas:null,         episodios:null,        url:'URL_Externa', anio:'Anio' },
-  series    : { keyClean:'Titulo',            keyOrig:null,               sinopsis:'Sinopsis', poster:'Link_Imagen', backdrop:null,         generos:'Generos', puntuacion:'Puntuacion_IMDb',  temporadas:'Temporadas', episodios:'Capitulos', url:null,          anio:'Anio' }
+  series    : { keyClean:'Titulo',            keyOrig:null,               sinopsis:'Sinopsis', poster:'Link_Imagen', backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion_IMDb',  temporadas:'Temporadas', episodios:'Capitulos', url:'URL_TMDB',    anio:'Anio', temporadasDet:'Temporadas_Detalle', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones' }
 };
 
 function parseCSV(text){
@@ -2365,6 +2446,56 @@ function applyCSVRows(rows, cat){
     if(temporadas){ try{ var t=parseInt(temporadas); if(!isNaN(t)&&t>0) ov.seas=t; }catch(e){} }
     if(episodios) { try{ var ep=parseInt(episodios); if(!isNaN(ep)&&ep>0) ov.eps=ep; }catch(e){} }
     if(urlExt && urlExt.indexOf('http')===0) ov.url=urlExt;
+
+    /* Temporadas_Detalle: "T1:9|T2:16|T3:10" → [{n:1,eps:9},{n:2,eps:16},...] */
+    var temporadasDet = schema.temporadasDet ? (row[schema.temporadasDet]||'') : '';
+    if(temporadasDet){
+      var sd = temporadasDet.split('|').map(function(part){
+        var m = part.trim().match(/^T(\d+):(\d+)$/i);
+        return m ? { n:parseInt(m[1],10), eps:parseInt(m[2],10) } : null;
+      }).filter(Boolean);
+      if(sd.length) ov.seasDetail = sd;
+    }
+
+    /* Reparto: "Actor Uno (Personaje), Actor Dos (Personaje), ..." → [{name,char}] */
+    var reparto = schema.reparto ? (row[schema.reparto]||'') : '';
+    if(reparto){
+      var cast = reparto.split(',').map(function(part){
+        part = part.trim(); if(!part) return null;
+        /* Se usa indexOf/lastIndexOf en vez de una sola regex porque el
+           personaje a veces trae sus propios paréntesis, ej: "Seth Green
+           (Leonardo (voice))" — con regex simple eso rompe el match. */
+        var pOpen = part.indexOf('(');
+        var pClose = part.lastIndexOf(')');
+        if(pOpen > -1 && pClose > pOpen){
+          return { name: part.slice(0, pOpen).trim(), char: part.slice(pOpen+1, pClose).trim() };
+        }
+        return { name: part, char: '' };
+      }).filter(Boolean);
+      /* Reparto_Fotos viene alineado por posición con Reparto (misma
+         cantidad de elementos, separados igual por coma); string vacío
+         significa que ese actor no tiene foto en TMDB. */
+      var repartoFotos = schema.repartoFotos ? (row[schema.repartoFotos]||'') : '';
+      if(repartoFotos){
+        var fotos = repartoFotos.split(',').map(function(s){ return s.trim(); });
+        if(fotos.length === cast.length){
+          cast.forEach(function(actor, idx){ if(fotos[idx]) actor.photo = fotos[idx]; });
+        }
+      }
+      if(cast.length) ov.cast = cast;
+    }
+
+    /* Equipo: "Creador: Fulano | Director: Mengano" — texto libre */
+    var equipo = schema.equipo ? (row[schema.equipo]||'') : '';
+    if(equipo) ov.crew = equipo;
+
+    /* Recomendaciones: "Titulo A, Titulo B, Titulo C" → [titulos] */
+    var recomendaciones = schema.recomendaciones ? (row[schema.recomendaciones]||'') : '';
+    if(recomendaciones){
+      var recs = recomendaciones.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+      if(recs.length) ov.recs = recs;
+    }
+
     ov.src='csv';
 
     overrides[i]=ov;
