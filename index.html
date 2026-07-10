@@ -1813,12 +1813,68 @@ function openDetail(i){
     info.appendChild(seasWrap);
   }
 
+  /* Requisitos de PC (solo juegos) */
+  if(cd&&(cd.reqMin||cd.reqRec)){
+    var reqWrap=document.createElement('div'); reqWrap.id='det-requisitos';
+    reqWrap.style.cssText='margin-bottom:14px';
+    if(cd.reqMin){
+      var rmTitle=document.createElement('div'); rmTitle.style.cssText='font-family:var(--fh);font-size:13px;letter-spacing:.5px;color:var(--cyan);margin-top:10px';
+      rmTitle.textContent='Requisitos mínimos';
+      var rmText=document.createElement('div'); rmText.style.cssText='font-size:11.5px;color:#999;margin-top:3px;line-height:1.5';
+      rmText.textContent=cd.reqMin;
+      reqWrap.appendChild(rmTitle); reqWrap.appendChild(rmText);
+    }
+    if(cd.reqRec){
+      var rrTitle=document.createElement('div'); rrTitle.style.cssText='font-family:var(--fh);font-size:13px;letter-spacing:.5px;color:var(--cyan);margin-top:10px';
+      rrTitle.textContent='Requisitos recomendados';
+      var rrText=document.createElement('div'); rrText.style.cssText='font-size:11.5px;color:#999;margin-top:3px;line-height:1.5';
+      rrText.textContent=cd.reqRec;
+      reqWrap.appendChild(rrTitle); reqWrap.appendChild(rrText);
+    }
+    info.appendChild(reqWrap);
+  }
+
   /* Equipo (creador/director) */
   if(cd&&cd.crew){
     var crewDiv=document.createElement('div'); crewDiv.id='det-crew';
     crewDiv.style.cssText='font-size:11.5px;color:#666;margin-top:6px;margin-bottom:2px';
     crewDiv.textContent=cd.crew;
     info.appendChild(crewDiv);
+  }
+
+  /* Trailer (YouTube para TMDB, mp4 directo para juegos vía RAWG) */
+  if(cd&&cd.trailer){
+    var trailerBtn=document.createElement('button');
+    trailerBtn.className='trailer-btn'; trailerBtn.innerHTML='&#9654; Ver trailer';
+    var trailerBox=document.createElement('div'); trailerBox.id='det-trailer'; trailerBox.style.display='none';
+    trailerBtn.addEventListener('click', function(){
+      if(trailerBox.style.display==='none'){
+        if(!trailerBox.dataset.loaded){
+          var ytMatch = cd.trailer.match(/(?:v=|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
+          if(ytMatch){
+            var ifr=document.createElement('iframe');
+            ifr.src='https://www.youtube.com/embed/'+ytMatch[1]+'?autoplay=1';
+            ifr.allow='autoplay; encrypted-media; picture-in-picture';
+            ifr.allowFullscreen=true;
+            trailerBox.appendChild(ifr);
+          } else {
+            var vid=document.createElement('video');
+            vid.src=cd.trailer; vid.controls=true; vid.autoplay=true;
+            vid.style.cssText='width:100%;max-width:520px;border-radius:9px';
+            trailerBox.appendChild(vid);
+          }
+          trailerBox.dataset.loaded='1';
+        }
+        trailerBox.style.display='block';
+        trailerBtn.innerHTML='&#10005; Cerrar trailer';
+      } else {
+        trailerBox.style.display='none';
+        trailerBox.innerHTML=''; trailerBox.dataset.loaded='';
+        trailerBtn.innerHTML='&#9654; Ver trailer';
+      }
+    });
+    info.appendChild(trailerBtn);
+    info.appendChild(trailerBox);
   }
 
   /* Botón URL externa si existe */
@@ -2309,13 +2365,13 @@ var CSV_CAT_MAP = {
   series   : Titulo ; Anio ; Sinopsis ; Link_Imagen ; Generos ; Puntuacion_IMDb ; Temporadas ; Capitulos
 */
 var CSV_SCHEMA = {
-  animados  : { keyClean:'Titulo',           keyOrig:'Original',         sinopsis:'Sinopsis', poster:'Link_Imagen', backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion_IMDb',  temporadas:'Temporadas', episodios:'Episodios', url:'URL_TMDB',    anio:'Anio', temporadasDet:'Temporadas_Detalle', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones' },
-  animes    : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion',       temporadas:null,         episodios:'Episodios', url:'URL_Externa', anio:null,   temporadasDet:'Temporadas_Detalle', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones' },
-  doramas   : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion_TMDB',  temporadas:'Temporadas', episodios:'Episodios', url:'URL_Externa', anio:'Anio', temporadasDet:'Temporadas_Detalle', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones' },
-  juegos    : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:null,         generos:'Generos', puntuacion:'Puntuacion_Usuario',temporadas:null,        episodios:null,        url:'URL_Slug',    anio:'Anio' },
-  novelas   : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion_TMDB',  temporadas:'Temporadas', episodios:'Episodios', url:'URL_TMDB',    anio:'Anio', temporadasDet:'Temporadas_Detalle', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones' },
-  peliculas : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:null,         generos:'Generos', puntuacion:'Puntuacion',       temporadas:null,         episodios:null,        url:'URL_Externa', anio:'Anio' },
-  series    : { keyClean:'Titulo',            keyOrig:null,               sinopsis:'Sinopsis', poster:'Link_Imagen', backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion_IMDb',  temporadas:'Temporadas', episodios:'Capitulos', url:'URL_TMDB',    anio:'Anio', temporadasDet:'Temporadas_Detalle', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones' }
+  animados  : { keyClean:'Titulo',           keyOrig:'Original',         sinopsis:'Sinopsis', poster:'Link_Imagen', backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion_IMDb',  temporadas:'Temporadas', episodios:'Episodios', url:'URL_TMDB',    anio:'Anio', temporadasDet:'Temporadas_Detalle', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones', trailer:'Trailer_URL' },
+  animes    : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion',       temporadas:null,         episodios:'Episodios', url:'URL_Externa', anio:null,   temporadasDet:'Temporadas_Detalle', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones', trailer:'Trailer_URL' },
+  doramas   : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion_TMDB',  temporadas:'Temporadas', episodios:'Episodios', url:'URL_Externa', anio:'Anio', temporadasDet:'Temporadas_Detalle', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones', trailer:'Trailer_URL' },
+  juegos    : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion_Usuario',temporadas:null,        episodios:null,        url:'URL_Slug',    anio:'Anio', recomendaciones:'Recomendaciones', reqMin:'Requisitos_Minimos', reqRec:'Requisitos_Recomendados', trailer:'Trailer_URL' },
+  novelas   : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion_TMDB',  temporadas:'Temporadas', episodios:'Episodios', url:'URL_TMDB',    anio:'Anio', temporadasDet:'Temporadas_Detalle', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones', trailer:'Trailer_URL' },
+  peliculas : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion',       temporadas:null,         episodios:null,        url:'URL_Externa', anio:'Anio', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones', trailer:'Trailer_URL' },
+  series    : { keyClean:'Titulo',            keyOrig:null,               sinopsis:'Sinopsis', poster:'Link_Imagen', backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion_IMDb',  temporadas:'Temporadas', episodios:'Capitulos', url:'URL_TMDB',    anio:'Anio', temporadasDet:'Temporadas_Detalle', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones', trailer:'Trailer_URL' }
 };
 
 function parseCSV(text){
@@ -2495,6 +2551,16 @@ function applyCSVRows(rows, cat){
       var recs = recomendaciones.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
       if(recs.length) ov.recs = recs;
     }
+
+    /* Requisitos de PC (solo juegos) — texto libre */
+    var reqMin = schema.reqMin ? (row[schema.reqMin]||'') : '';
+    if(reqMin) ov.reqMin = reqMin;
+    var reqRec = schema.reqRec ? (row[schema.reqRec]||'') : '';
+    if(reqRec) ov.reqRec = reqRec;
+
+    /* Trailer: URL de YouTube (TMDB) o mp4 directo (RAWG en juegos) */
+    var trailer = schema.trailer ? (row[schema.trailer]||'') : '';
+    if(trailer && trailer.indexOf('http')===0) ov.trailer = trailer;
 
     ov.src='csv';
 
