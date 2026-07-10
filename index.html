@@ -237,10 +237,10 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
 #det-tagline{font-size:12.5px;color:#555;font-style:italic;margin-bottom:14px}
 #det-chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px;align-items:center}
 .chip{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
-  border-radius:14px;padding:3px 11px;font-size:11.5px;color:#bbb;}
+  border-radius:14px;padding:3px 11px;font-size:11.5px;color:#f0f0f0;}
 .chip.rat{background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.25);color:var(--amber)}
 .chip.tp{background:rgba(0,212,255,.08);border-color:rgba(0,212,255,.2);color:var(--cyan)}
-#det-overview{font-size:13px;color:#aaa;line-height:1.75;margin-bottom:16px;max-width:560px}
+#det-overview{font-size:13px;color:#f0f0f0;line-height:1.75;margin-bottom:16px;max-width:560px}
 #det-genres{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:16px}
 .dg{background:rgba(0,212,255,.07);border:1px solid rgba(0,212,255,.18);
   color:var(--cyan);border-radius:14px;padding:3px 11px;font-size:11px;font-weight:600;}
@@ -265,7 +265,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
 .cc-ph{width:100%;aspect-ratio:2/3;border-radius:6px;background:var(--s2);
   display:flex;align-items:center;justify-content:center;color:#1a1a2a;margin-bottom:4px;}
 .cc-name{font-size:10px;color:#ccc;line-height:1.2}
-.cc-char{font-size:9.5px;color:#444;margin-top:2px}
+.cc-char{font-size:9.5px;color:#ddd;margin-top:2px}
 .spin-wrap{display:flex;align-items:center;gap:9px;color:#444;font-size:12.5px;padding:18px 0}
 .spin{width:17px;height:17px;border:2px solid #1a1a2a;border-top-color:var(--cyan);
   border-radius:50%;animation:sp .7s linear infinite;flex-shrink:0}
@@ -333,7 +333,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
   border-radius:8px;padding:6px 12px;font-size:11.5px;color:#aaa;
   display:flex;flex-direction:column;gap:2px;min-width:80px;}
 .season-chip b{color:var(--cyan);font-size:13px;font-family:var(--fh);letter-spacing:.5px}
-.season-chip span{font-size:10.5px;color:#555}
+.season-chip span{font-size:10.5px;color:#e5e5e5}
 
 /* ── TRAILER BUTTON ── */
 #det-trailer{margin-top:8px;margin-bottom:4px}
@@ -1820,14 +1820,14 @@ function openDetail(i){
     if(cd.reqMin){
       var rmTitle=document.createElement('div'); rmTitle.style.cssText='font-family:var(--fh);font-size:13px;letter-spacing:.5px;color:var(--cyan);margin-top:10px';
       rmTitle.textContent='Requisitos mínimos';
-      var rmText=document.createElement('div'); rmText.style.cssText='font-size:11.5px;color:#999;margin-top:3px;line-height:1.5';
+      var rmText=document.createElement('div'); rmText.style.cssText='font-size:11.5px;color:#e5e5e5;margin-top:3px;line-height:1.5';
       rmText.textContent=cd.reqMin;
       reqWrap.appendChild(rmTitle); reqWrap.appendChild(rmText);
     }
     if(cd.reqRec){
       var rrTitle=document.createElement('div'); rrTitle.style.cssText='font-family:var(--fh);font-size:13px;letter-spacing:.5px;color:var(--cyan);margin-top:10px';
       rrTitle.textContent='Requisitos recomendados';
-      var rrText=document.createElement('div'); rrText.style.cssText='font-size:11.5px;color:#999;margin-top:3px;line-height:1.5';
+      var rrText=document.createElement('div'); rrText.style.cssText='font-size:11.5px;color:#e5e5e5;margin-top:3px;line-height:1.5';
       rrText.textContent=cd.reqRec;
       reqWrap.appendChild(rrTitle); reqWrap.appendChild(rrText);
     }
@@ -1837,7 +1837,7 @@ function openDetail(i){
   /* Equipo (creador/director) */
   if(cd&&cd.crew){
     var crewDiv=document.createElement('div'); crewDiv.id='det-crew';
-    crewDiv.style.cssText='font-size:11.5px;color:#666;margin-top:6px;margin-bottom:2px';
+    crewDiv.style.cssText='font-size:11.5px;color:#ddd;margin-top:6px;margin-bottom:2px';
     crewDiv.textContent=cd.crew;
     info.appendChild(crewDiv);
   }
