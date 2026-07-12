@@ -273,7 +273,12 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
 
 /* ── CART PANEL ── */
 #cart-panel{
-  position:fixed;top:0;right:-400px;width:360px;max-width:100vw;height:100vh;
+  position:fixed;top:0;right:-400px;width:360px;max-width:100vw;
+  height:100vh; height:100dvh; /* dvh: en Android/iPhone la barra de direcciones
+    cambia de tamaño al hacer scroll; 100vh no lo tiene en cuenta y puede
+    empujar el botón de WhatsApp fuera de la pantalla visible. 100dvh sí se
+    ajusta en tiempo real al alto realmente visible. Se deja 100vh primero
+    como respaldo para navegadores viejos que no soporten dvh. */
   background:#0a0a16;border-left:1px solid rgba(0,212,255,.15);
   z-index:700;transition:right .28s cubic-bezier(.25,.46,.45,.94);
   display:flex;flex-direction:column;
@@ -287,7 +292,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
 #cart-close{background:transparent;border:1px solid var(--border);color:#888;
   border-radius:6px;padding:6px 10px;cursor:pointer;font-size:16px;}
 #cart-close:hover{border-color:#555;color:#fff}
-#cart-items{flex:1;overflow-y:auto;padding:12px 18px}
+#cart-items{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 18px;min-height:0}
 .cart-item-wrap{border-bottom:1px solid var(--border);padding:10px 0}
 .cart-item{display:flex;gap:10px;align-items:center}
 .cart-item-img{width:40px;height:60px;border-radius:5px;object-fit:cover;background:var(--s2);flex-shrink:0}
@@ -309,7 +314,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
 .cart-seas-chk input{accent-color:var(--cyan);cursor:pointer;margin:0;width:11px;height:11px}
 .cart-seas-chk.off{opacity:.4;text-decoration:line-through;}
 #cart-empty{text-align:center;padding:40px 20px;color:#333;font-size:13px}
-#cart-foot{padding:14px 18px;border-top:1px solid var(--border)}
+#cart-foot{padding:14px 18px;border-top:1px solid var(--border);flex-shrink:0}
 #cart-count-label{font-size:12px;color:#555;margin-bottom:10px}
 #cart-count-label b{color:var(--txt)}
 #cart-price-total{font-size:13px;color:#999;margin-bottom:14px;padding-top:10px;
@@ -1681,9 +1686,18 @@ var SEASON_CATS = {series:1, novelas:1, doramas:1, animados:1, animes:1};
 var cartSeasOpen = {}; /* recuerda qué items tienen el desplegable de temporadas abierto */
 var PRICE_RATES = {series:5, doramas:5, novelas:5, animes:2, animados:3}; /* CUP por capítulo */
 var PRICE_MOVIE = 30; /* CUP fijo — películas normales, animadas o anime */
+var PRICE_GB_NORMAL = 10; /* CUP por GB, juegos de hasta 50 GB */
+var PRICE_GB_HALF = 5;    /* CUP por GB, juegos que superan 50 GB (precio a la mitad) */
+var PRICE_GB_THRESHOLD = 50;
 function computeItemPrice(item){
   if(item.c==='peliculas') return PRICE_MOVIE;
-  if(item.c==='juegos') return null; /* sin precio definido para juegos */
+  if(item.c==='juegos'){
+    var cdj = getData(resolveIndex(item));
+    var gb = (cdj && cdj.pesoGB!=null) ? cdj.pesoGB : null;
+    if(gb==null) return null; /* aún sin peso cargado en el CSV */
+    var gbRate = gb>PRICE_GB_THRESHOLD ? PRICE_GB_HALF : PRICE_GB_NORMAL;
+    return Math.round(gb*gbRate);
+  }
   var rate = PRICE_RATES[item.c];
   if(!rate) return null;
   var eps = null;
@@ -1900,7 +1914,17 @@ function openDetail(i){
   if(cd&&cd.r) chip('⭐ '+cd.r+' / 10','rat');
   if(cd&&cd.seas&&cd.seas>0) chip(cd.seas+(cd.seas===1?' temporada':' temporadas'),'tp');
   if(cd&&cd.eps &&cd.eps>0)  chip(cd.eps+' episodios','');
+  if(m.c==='juegos' && cd&&cd.pesoGB!=null) chip('💾 '+cd.pesoGB+' GB','');
   info.appendChild(chips);
+
+  /* Precio estimado (mismo cálculo que usa el carrito) */
+  var priceNow = computeItemPrice({c:m.c, i:i, t:m.t, y:m.y, tn:m.tn});
+  if(priceNow!=null){
+    var priceLine=document.createElement('div'); priceLine.id='det-price';
+    priceLine.style.cssText='font-family:var(--fh);font-size:15px;letter-spacing:.5px;color:var(--cyan);margin:-6px 0 14px';
+    priceLine.textContent='💰 '+priceNow+' CUP';
+    info.appendChild(priceLine);
+  }
 
   /* Géneros */
   if(cd&&cd.g&&cd.g.length){
@@ -2488,7 +2512,7 @@ var CSV_SCHEMA = {
   animados  : { keyClean:'Titulo',           keyOrig:'Original',         sinopsis:'Sinopsis', poster:'Link_Imagen', backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion_IMDb',  temporadas:'Temporadas', episodios:'Episodios', url:'URL_TMDB',    anio:'Anio', temporadasDet:'Temporadas_Detalle', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones', trailer:'Trailer_URL' },
   animes    : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion',       temporadas:null,         episodios:'Episodios', url:'URL_Externa', anio:null,   temporadasDet:'Temporadas_Detalle', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones', trailer:'Trailer_URL' },
   doramas   : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion_TMDB',  temporadas:'Temporadas', episodios:'Episodios', url:'URL_Externa', anio:'Anio', temporadasDet:'Temporadas_Detalle', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones', trailer:'Trailer_URL' },
-  juegos    : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion_Usuario',temporadas:null,        episodios:null,        url:'URL_Slug',    anio:'Anio', recomendaciones:'Recomendaciones', reqMin:'Requisitos_Minimos', reqRec:'Requisitos_Recomendados', trailer:'Trailer_URL' },
+  juegos    : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion_Usuario',temporadas:null,        episodios:null,        url:'URL_Slug',    anio:'Anio', recomendaciones:'Recomendaciones', reqMin:'Requisitos_Minimos', reqRec:'Requisitos_Recomendados', trailer:'Trailer_URL', peso:'Peso_GB' },
   novelas   : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion_TMDB',  temporadas:'Temporadas', episodios:'Episodios', url:'URL_TMDB',    anio:'Anio', temporadasDet:'Temporadas_Detalle', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones', trailer:'Trailer_URL' },
   peliculas : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion',       temporadas:null,         episodios:null,        url:'URL_Externa', anio:'Anio', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones', trailer:'Trailer_URL' },
   series    : { keyClean:'Titulo',            keyOrig:null,               sinopsis:'Sinopsis', poster:'Link_Imagen', backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion_IMDb',  temporadas:'Temporadas', episodios:'Capitulos', url:'URL_TMDB',    anio:'Anio', temporadasDet:'Temporadas_Detalle', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones', trailer:'Trailer_URL' }
@@ -2678,6 +2702,13 @@ function applyCSVRows(rows, cat){
     var reqRec = schema.reqRec ? (row[schema.reqRec]||'') : '';
     if(reqRec) ov.reqRec = reqRec;
 
+    /* Peso en GB (solo juegos) — usado para calcular el precio */
+    var peso = schema.peso ? (row[schema.peso]||'') : '';
+    if(peso){
+      var pesoNum = parseFloat(String(peso).replace(',','.'));
+      if(!isNaN(pesoNum) && pesoNum>0) ov.pesoGB = pesoNum;
+    }
+
     /* Trailer: URL de YouTube (TMDB) o mp4 directo (RAWG en juegos) */
     var trailer = schema.trailer ? (row[schema.trailer]||'') : '';
     if(trailer && trailer.indexOf('http')===0) ov.trailer = trailer;
@@ -2752,7 +2783,7 @@ function loadCSVsFromGitHub(){
 
   if(haveAnyCache){
     rebuildDB(cachedTexts);
-    saveOverrides(); buildYears(); updateStats(); renderGrid(); progDone();
+    saveOverrides(); buildYears(); updateStats(); renderGrid(); updateCartUI(); progDone();
     setTimeout(function(){ if(typeof window._buildCarousel === 'function') window._buildCarousel(cachedTexts); },0);
     console.log('[CSV] Render instantáneo desde caché. Verificando actualizaciones…');
   }
@@ -2780,7 +2811,7 @@ function loadCSVsFromGitHub(){
   return Promise.all(promises).then(function(){
     if(!haveAnyCache || changed){
       rebuildDB(freshTexts);
-      saveOverrides(); buildYears(); updateStats(); renderGrid(); progDone();
+      saveOverrides(); buildYears(); updateStats(); renderGrid(); updateCartUI(); progDone();
       console.log('[CSV] ✓ DB:', DB.length, ' overrides:', Object.keys(overrides).length, changed?'[actualizado]':'[primera carga]');
       setTimeout(function(){ if(typeof window._buildCarousel === 'function') window._buildCarousel(freshTexts); },0);
     } else {
@@ -2832,7 +2863,7 @@ function checkForUpdates(){
       /* Se preserva la página/filtros actuales del visitante — solo se
          actualiza el contenido detrás, sin interrumpir lo que esté viendo */
       rebuildDB(freshTexts);
-      saveOverrides(); buildYears(); updateStats(); renderGrid(); progDone();
+      saveOverrides(); buildYears(); updateStats(); renderGrid(); updateCartUI(); progDone();
       console.log('[CSV] ✓ Catálogo actualizado automáticamente en segundo plano.');
       setTimeout(function(){ if(typeof window._buildCarousel === 'function') window._buildCarousel(freshTexts); },0);
     } else {
