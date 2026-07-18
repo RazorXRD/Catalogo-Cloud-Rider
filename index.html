@@ -89,6 +89,12 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
 .dmenu a:hover{color:var(--cyan);background:rgba(0,212,255,.06);padding-left:18px}
 .dmenu a.on{color:var(--cyan)}
 #nav-right{display:flex;align-items:center;gap:10px;margin-left:auto;flex-shrink:0}
+#live-count{display:flex;align-items:center;gap:4px;font-size:11px;color:#9a9aa8;
+  font-family:var(--fb);white-space:nowrap;flex-shrink:0;}
+#live-dot{width:6px;height:6px;border-radius:50%;background:var(--green,#2ecc71);
+  box-shadow:0 0 4px var(--green,#2ecc71);animation:live-pulse 1.6s ease-in-out infinite;}
+#live-count-num{color:#ccc;font-weight:700;}
+@keyframes live-pulse{0%,100%{opacity:1}50%{opacity:.35}}
 #srch{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
   border-radius:18px;color:var(--txt);padding:0 14px;height:32px;font-size:12.5px;
   font-family:var(--fb);outline:none;transition:all .2s;width:160px;}
@@ -215,6 +221,13 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
   font-weight:700;cursor:pointer;font-family:var(--fb);transition:opacity .15s;margin-left:auto;}
 #det-add-cart:hover{opacity:.85}
 #det-add-cart.added{background:#1a3a1a;border:1px solid var(--green);color:var(--green)}
+#det-view-cart{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);
+  color:#fff;border-radius:7px;padding:7px 14px;font-size:12px;
+  font-weight:700;cursor:pointer;font-family:var(--fb);transition:all .15s;
+  display:flex;align-items:center;gap:6px;}
+#det-view-cart:hover{background:rgba(255,255,255,.14)}
+#det-cart-count{background:var(--cyan);color:#08080f;border-radius:10px;
+  font-size:10px;font-weight:800;padding:1px 6px;min-width:14px;text-align:center;}
 #det-tit-nav{font-family:var(--fh);font-size:16px;color:#fff;letter-spacing:1px;opacity:.6;
   overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:300px;}
 #det-backdrop{position:fixed;top:0;left:0;right:0;height:65vh;
@@ -423,6 +436,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
   #nav-right #srch{display:none}
   #nav-right{margin-left:0;gap:4px;flex-shrink:0}
   #cart-btn{padding:4px 8px;font-size:10px;border-radius:6px;white-space:nowrap}
+  #live-count{font-size:9px;gap:2px}
   #nav-stats{display:none}
   #hamburger{display:none}
 
@@ -828,6 +842,8 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
 }
 /* cr-card mobile overrides handled in @media(max-width:768px) above */
 </style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 </head>
 <body>
 
@@ -875,15 +891,9 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
       </div>
     </div>
       <div id="active-filters"></div>
-      <button class="nm nm-status-desktop" data-f="vista">✓ VISTAS</button>
-      <button class="nm nm-status-desktop" data-f="favorita">♥ FAVORITAS</button>
-      <button class="nm nm-status-desktop" data-f="pendiente">⏳ PENDIENTES</button>
     </div><!-- /nav-row-2 -->
-    <!-- FILA 3: VISTAS / FAVORITAS / PENDIENTES + chips (solo móvil) -->
+    <!-- FILA 3: chips (solo móvil) -->
     <div class="nav-row nav-row-3">
-      <button class="nm" data-f="vista">✓ VISTAS</button>
-      <button class="nm" data-f="favorita">♥ FAVORITAS</button>
-      <button class="nm" data-f="pendiente">⏳ PENDIENTES</button>
       <div id="active-filters-mobile"></div>
     </div><!-- /nav-row-3 -->
   </div>
@@ -893,6 +903,9 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
       <span></span><span></span><span></span>
     </button>
     <input id="srch" type="search" placeholder="🔍 Buscar..." autocomplete="off">
+    <span id="live-count" title="Personas viendo el catálogo ahora" style="display:none">
+      <span id="live-dot"></span>👤 <span id="live-count-num">1</span>
+    </span>
     <button id="cart-btn">🛒 PEDIDO <span id="cart-count">0</span></button>
   </div>
 </nav>
@@ -928,11 +941,6 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
   <button class="mm-item" data-g="drama">🎭 Drama</button>
   <button class="mm-item" data-g="terror">👻 Terror</button>
   <button class="mm-item" data-g="fantasia">🔮 Ciencia Ficción</button>
-  <div class="mm-sep"></div>
-  <div class="mm-sub">Mis listas</div>
-  <button class="mm-item" data-f="vista">✓ VISTAS</button>
-  <button class="mm-item" data-f="favorita">♥ FAVORITAS</button>
-  <button class="mm-item" data-f="pendiente">⏳ PENDIENTES</button>
 </div>
 
 
@@ -941,9 +949,6 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
 <div id="sbar">
   <div style="display:flex;gap:12px;flex-wrap:wrap">
     <span class="sc cy">Total: <b id="st">-</b></span>
-    <span class="sc gn">✓ Vistas: <b id="sv">0</b></span>
-    <span class="sc pk">♥ Favoritas: <b id="sf">0</b></span>
-    <span class="sc">⏳ Pend.: <b id="sp">0</b></span>
     <span class="sc">📋 Mostrando: <b id="cnt">-</b></span>
   </div>
   <select id="srt">
@@ -964,6 +969,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
     <button id="det-back">← Volver</button>
     <span id="det-tit-nav"></span>
     <button id="det-add-cart">🛒 Añadir al pedido</button>
+    <button id="det-view-cart">📋 PEDIDO <span id="det-cart-count">0</span></button>
   </div>
   <div id="det-backdrop"></div>
   <div id="det-body">
@@ -1236,11 +1242,6 @@ function saveS(){ LS('cr_s4', uState); }
 function saveCart(){ LS('cr_cart', cart); }
 
 function ck(t,y){ return t+'§'+y; }
-function getS(i){ return uState[i]||'none'; }
-function setS(i,st){
-  uState[i] = (uState[i]===st) ? 'none' : st;
-  saveS(); updateStats(); renderGrid();
-}
 
 /* ── BUILD YEAR DROPDOWN ── */
 function buildYears(){
@@ -1275,15 +1276,7 @@ function progDone(){
 
 /* ── STATS ── */
 function updateStats(){
-  var v=0,f=0,p=0;
-  for(var i=0;i<DB.length;i++){
-    var s=getS(i);
-    if(s==='vista') v++; else if(s==='favorita') f++; else if(s==='pendiente') p++;
-  }
   document.getElementById('st').textContent=DB.length;
-  document.getElementById('sv').textContent=v;
-  document.getElementById('sf').textContent=f;
-  document.getElementById('sp').textContent=p;
 }
 
 /* ── FILTER ── */
@@ -1327,13 +1320,8 @@ function filtered(){
       return false;
     });
   }
-  if(catF!=='todas'&&catF!=='vista'&&catF!=='favorita'&&catF!=='pendiente'&&catF!=='sin'){
+  if(catF!=='todas'){
     items=items.filter(function(m){ return m.c===catF; });
-  }
-  var sf=(['vista','favorita','pendiente','sin'].indexOf(catF)>=0)?catF:statusF;
-  if(sf!=='todas'){
-    if(sf==='sin') items=items.filter(function(m){ return getS(m.i)==='none'; });
-    else           items=items.filter(function(m){ return getS(m.i)===sf; });
   }
   if(genreF){
     var gfName=genreF.toLowerCase().trim();
@@ -1459,7 +1447,7 @@ function esc(s){ return(''+s).replace(/[<>&"]/g,function(c){ return c==='<'?'&lt
 
 function makeCard(m){
   if(!m||m.i===undefined) return document.createElement('div');
-  var i=m.i, s=getS(i), cd=getData(i);
+  var i=m.i, cd=getData(i);
   var inCart=cart.some(function(x){ return resolveIndex(x)===i; });
   var card=document.createElement('div'); card.className='card';
   card.addEventListener('click',function(e){ if(!e.target.closest('.card-acts')) openDetail(i); });
@@ -1478,13 +1466,6 @@ function makeCard(m){
     img.dataset.src=cd.p;
     pw.appendChild(img);
     imgObserver.observe(img);
-  }
-
-  if(s!=='none'){
-    var bdg=document.createElement('span');
-    bdg.className='card-badge '+(s==='vista'?'bv':s==='favorita'?'bf':'bp');
-    bdg.textContent=s==='vista'?'✓ Vista':s==='favorita'?'♥ Fav':'⏳';
-    pw.appendChild(bdg);
   }
 
   var cb2=document.createElement('span'); cb2.className='cat-badge cat-'+m.c;
@@ -1507,19 +1488,10 @@ function makeCard(m){
   }
 
   var ca=document.createElement('div'); ca.className='card-acts';
-  function mkA(lbl,st,cls){
-    var b=document.createElement('button');
-    b.className='ca'+(s===st?' '+cls:''); b.textContent=lbl; b.title=st;
-    b.addEventListener('click',function(e){ e.stopPropagation(); setS(i,st); });
-    return b;
-  }
-  ca.appendChild(mkA('✓','vista','av'));
-  ca.appendChild(mkA('♥','favorita','af'));
-  ca.appendChild(mkA('⏳','pendiente','ap'));
 
   var cartBtn=document.createElement('button');
-  cartBtn.className='ca'+(inCart?' ac':'');
-  cartBtn.textContent=inCart?'✔':'🛒';
+  cartBtn.className='ca ca-order'+(inCart?' ac':'');
+  cartBtn.textContent=inCart?'✔ En el pedido':'🛒 Añadir al pedido';
   cartBtn.title='Añadir al pedido';
   cartBtn.addEventListener('click',function(e){ e.stopPropagation(); toggleCart(i); });
   ca.appendChild(cartBtn);
@@ -1538,8 +1510,7 @@ function renderActiveFilters(){
   /* Category chip */
   var catLabels={todas:'INICIO',peliculas:'🎬 PELÍCULAS',series:'📺 SERIES',
     animes:'⛩ ANIMES',animados:'🎨 ANIMADOS',doramas:'🌸 DORAMAS',
-    novelas:'💋 NOVELAS',juegos:'🎮 JUEGOS PC',
-    vista:'✓ VISTAS',favorita:'♥ FAVORITAS',pendiente:'⏳ PENDIENTES',sin:'SIN ESTADO'};
+    novelas:'💋 NOVELAS',juegos:'🎮 JUEGOS PC'};
   if(catF && catF!=='todas'){
     chips.push({label: catLabels[catF]||catF, remove:function(){
       catF='todas'; statusF='todas'; page=1;
@@ -1750,6 +1721,8 @@ function updateCartUI(){
   var n=cart.length;
   var cc=document.getElementById('cart-count');
   cc.textContent=n; cc.classList.toggle('show',n>0);
+  var dcc=document.getElementById('det-cart-count');
+  if(dcc) dcc.textContent=n;
   document.getElementById('cart-total').textContent=n;
   var totalPrice = cart.reduce(function(sum,item){ var p=computeItemPrice(item); return sum + (p||0); }, 0);
   document.getElementById('cart-price-val').textContent = totalPrice;
@@ -2030,8 +2003,6 @@ function openDetail(i){
     info.appendChild(link);
   }
 
-  appendActions(info,i);
-
   /* Reparto + Recomendaciones (sección inferior) */
   var castSection=document.getElementById('det-cast-section');
   if(cd&&cd.cast&&cd.cast.length){
@@ -2089,25 +2060,6 @@ function openDetail(i){
   }
 }
 
-function appendActions(parent,i){
-  var s=getS(i);
-  var da=document.createElement('div'); da.id='det-acts';
-  function mkDA(lbl,st,cls){
-    var b=document.createElement('button');
-    b.className='da'+(s===st?' '+cls:''); b.textContent=lbl;
-    b.addEventListener('click',function(){
-      setS(i,st);
-      da.querySelectorAll('.da').forEach(function(x){ x.classList.remove('av','af','ap'); });
-      if(getS(i)===st) b.classList.add(cls);
-    });
-    return b;
-  }
-  da.appendChild(mkDA('✓  Vista','vista','av'));
-  da.appendChild(mkDA('♥  Favorita','favorita','af'));
-  da.appendChild(mkDA('⏳  Pendiente','pendiente','ap'));
-  parent.appendChild(da);
-}
-
 function closeDetail(){
   document.getElementById('detail').classList.remove('open');
   document.body.style.overflow=''; detIdx=-1;
@@ -2116,6 +2068,7 @@ function closeDetail(){
 /* ── EVENTS ── */
 document.getElementById('det-back').addEventListener('click',closeDetail);
 document.getElementById('det-add-cart').addEventListener('click',function(){ if(detIdx>=0) toggleCart(detIdx); });
+document.getElementById('det-view-cart').addEventListener('click',openCart);
 document.addEventListener('keydown',function(e){ if(e.key==='Escape'){ closeDetail(); closeCart(); } });
 document.getElementById('cart-btn').addEventListener('click',openCart);
 document.getElementById('cart-close').addEventListener('click',closeCart);
@@ -2755,6 +2708,54 @@ function resolveIndex(savedItem){
   return (idx!=null && DB[idx]) ? idx : savedItem.i;
 }
 
+/* ── CACHÉ DE CSV EN INDEXEDDB ──
+   Antes esto se guardaba en localStorage, pero localStorage tiene un
+   límite de ~5MB por sitio en la mayoría de navegadores — y solo
+   peliculas_data_avanzado.csv ya pesa casi 5MB, así que el guardado
+   fallaba en silencio y la caché nunca se actualizaba (el catálogo
+   siempre mostraba una copia vieja al abrir, hasta que llegaba la
+   respuesta de red). IndexedDB no tiene ese límite tan bajo. */
+var IDB_NAME='cr_csv_cache', IDB_STORE='csv';
+function idbOpen(){
+  return new Promise(function(resolve,reject){
+    if(!window.indexedDB){ reject(new Error('no indexedDB')); return; }
+    var req=indexedDB.open(IDB_NAME,1);
+    req.onupgradeneeded=function(){ req.result.createObjectStore(IDB_STORE); };
+    req.onsuccess=function(){ resolve(req.result); };
+    req.onerror=function(){ reject(req.error); };
+  });
+}
+function idbGet(key){
+  return idbOpen().then(function(db){
+    return new Promise(function(resolve){
+      var tx=db.transaction(IDB_STORE,'readonly');
+      var req=tx.objectStore(IDB_STORE).get(key);
+      req.onsuccess=function(){ resolve(req.result||null); };
+      req.onerror=function(){ resolve(null); };
+    });
+  }).catch(function(){ return null; });
+}
+function idbSet(key,val){
+  return idbOpen().then(function(db){
+    return new Promise(function(resolve){
+      var tx=db.transaction(IDB_STORE,'readwrite');
+      tx.objectStore(IDB_STORE).put(val,key);
+      tx.oncomplete=function(){ resolve(true); };
+      tx.onerror=function(){ resolve(false); };
+    });
+  }).catch(function(){ return false; });
+}
+/* Limpieza única de la caché vieja en localStorage/sessionStorage
+   (ya no se usa, pero podía estar ocupando cuota innecesariamente) */
+(function(){
+  try{
+    Object.keys(CSV_CAT_MAP).forEach(function(file){
+      localStorage.removeItem('csvdata_'+file);
+      sessionStorage.removeItem('csvdata_'+file);
+    });
+  }catch(e){}
+})();
+
 function loadCSVsFromGitHub(){
   if(!GITHUB_RAW_BASE) return Promise.resolve();
 
@@ -2775,18 +2776,23 @@ function loadCSVsFromGitHub(){
   var cachedTexts = {};
   var haveAnyCache = false;
 
-  files.forEach(function(file){
-    var t = null;
-    try { t = localStorage.getItem('csvdata_'+file) || sessionStorage.getItem('csvdata_'+file); } catch(e){}
-    if(t){ cachedTexts[file] = t; haveAnyCache = true; }
+  return Promise.all(files.map(function(file){
+    return idbGet('csvdata_'+file).then(function(t){
+      if(t){ cachedTexts[file] = t; haveAnyCache = true; }
+    });
+  })).then(function(){
+    if(haveAnyCache){
+      rebuildDB(cachedTexts);
+      saveOverrides(); buildYears(); updateStats(); renderGrid(); updateCartUI(); progDone();
+      setTimeout(function(){ if(typeof window._buildCarousel === 'function') window._buildCarousel(cachedTexts); },0);
+      console.log('[CSV] Render instantáneo desde caché (IndexedDB). Verificando actualizaciones…');
+    }
+    return fetchFreshCSVs(cachedTexts, haveAnyCache);
   });
+}
 
-  if(haveAnyCache){
-    rebuildDB(cachedTexts);
-    saveOverrides(); buildYears(); updateStats(); renderGrid(); updateCartUI(); progDone();
-    setTimeout(function(){ if(typeof window._buildCarousel === 'function') window._buildCarousel(cachedTexts); },0);
-    console.log('[CSV] Render instantáneo desde caché. Verificando actualizaciones…');
-  }
+function fetchFreshCSVs(cachedTexts, haveAnyCache){
+  var files = Object.keys(CSV_CAT_MAP);
 
   var freshTexts = {};
   var changed = false;
@@ -2798,8 +2804,7 @@ function loadCSVsFromGitHub(){
       .then(function(text){
         freshTexts[file] = text;
         if(text !== cachedTexts[file]) changed = true;
-        try { localStorage.setItem('csvdata_'+file, text); }
-        catch(e){ try { sessionStorage.setItem('csvdata_'+file, text); } catch(e2){} }
+        return idbSet('csvdata_'+file, text);
       })
       .catch(function(e){
         /* Sin red o falló la descarga → usar lo que ya teníamos en caché, si hay */
@@ -2834,41 +2839,41 @@ function checkForUpdates(){
 
   var files = Object.keys(CSV_CAT_MAP);
   var prevTexts = {};
-  files.forEach(function(file){
-    try { prevTexts[file] = localStorage.getItem('csvdata_'+file) || sessionStorage.getItem('csvdata_'+file) || null; }
-    catch(e){ prevTexts[file] = null; }
-  });
 
-  var freshTexts = {};
-  var changed = false;
+  Promise.all(files.map(function(file){
+    return idbGet('csvdata_'+file).then(function(t){ prevTexts[file] = t; });
+  })).then(function(){
 
-  var promises = files.map(function(file){
-    var url = GITHUB_RAW_BASE + file;
-    return fetch(url, {cache:'no-cache'})
-      .then(function(r){ if(!r.ok) throw new Error(r.status); return r.text(); })
-      .then(function(text){
-        freshTexts[file] = text;
-        if(text !== prevTexts[file]) changed = true;
-        try { localStorage.setItem('csvdata_'+file, text); }
-        catch(e){ try { sessionStorage.setItem('csvdata_'+file, text); } catch(e2){} }
-      })
-      .catch(function(e){
-        if(prevTexts[file]) freshTexts[file] = prevTexts[file];
-        console.warn('[CSV] Revisión periódica: sin datos frescos para '+file, e);
-      });
-  });
+    var freshTexts = {};
+    var changed = false;
 
-  Promise.all(promises).then(function(){
-    if(changed){
-      /* Se preserva la página/filtros actuales del visitante — solo se
-         actualiza el contenido detrás, sin interrumpir lo que esté viendo */
-      rebuildDB(freshTexts);
-      saveOverrides(); buildYears(); updateStats(); renderGrid(); updateCartUI(); progDone();
-      console.log('[CSV] ✓ Catálogo actualizado automáticamente en segundo plano.');
-      setTimeout(function(){ if(typeof window._buildCarousel === 'function') window._buildCarousel(freshTexts); },0);
-    } else {
-      console.log('[CSV] Revisión periódica: sin cambios.');
-    }
+    var promises = files.map(function(file){
+      var url = GITHUB_RAW_BASE + file;
+      return fetch(url, {cache:'no-cache'})
+        .then(function(r){ if(!r.ok) throw new Error(r.status); return r.text(); })
+        .then(function(text){
+          freshTexts[file] = text;
+          if(text !== prevTexts[file]) changed = true;
+          return idbSet('csvdata_'+file, text);
+        })
+        .catch(function(e){
+          if(prevTexts[file]) freshTexts[file] = prevTexts[file];
+          console.warn('[CSV] Revisión periódica: sin datos frescos para '+file, e);
+        });
+    });
+
+    return Promise.all(promises).then(function(){
+      if(changed){
+        /* Se preserva la página/filtros actuales del visitante — solo se
+           actualiza el contenido detrás, sin interrumpir lo que esté viendo */
+        rebuildDB(freshTexts);
+        saveOverrides(); buildYears(); updateStats(); renderGrid(); updateCartUI(); progDone();
+        console.log('[CSV] ✓ Catálogo actualizado automáticamente en segundo plano.');
+        setTimeout(function(){ if(typeof window._buildCarousel === 'function') window._buildCarousel(freshTexts); },0);
+      } else {
+        console.log('[CSV] Revisión periódica: sin cambios.');
+      }
+    });
   }).then(function(){ _checkingUpdates = false; },
           function(){ _checkingUpdates = false; });
 }
@@ -3165,6 +3170,62 @@ window.addEventListener('pageshow', function(e){
   };
 })();
 
+</script>
+
+<!-- ===================================================================
+     CONTADOR DE PERSONAS VIENDO EL CATÁLOGO (Firebase Realtime Database)
+     Reemplaza los 6 valores de abajo por los de TU proyecto Firebase:
+     Consola → ⚙️ Configuración del proyecto → Tus apps → (el objeto
+     "firebaseConfig" que te muestra ahí).
+     Si no lo configuras, esta sección simplemente no hace nada (el
+     catálogo sigue funcionando normal, el contador se queda oculto).
+==================================================================== -->
+<script>
+(function(){
+  var firebaseConfig = {
+    apiKey:            "TU_API_KEY",
+    authDomain:         "TU_PROYECTO.firebaseapp.com",
+    databaseURL:        "https://TU_PROYECTO-default-rtdb.firebaseio.com",
+    projectId:          "TU_PROYECTO",
+    storageBucket:       "TU_PROYECTO.appspot.com",
+    messagingSenderId:  "TU_SENDER_ID",
+    appId:              "TU_APP_ID"
+  };
+
+  var live = document.getElementById('live-count');
+  var numEl = document.getElementById('live-count-num');
+
+  // Si todavía no se configuró Firebase, no mostrar nada (evita errores)
+  if(!firebaseConfig.apiKey || firebaseConfig.apiKey.indexOf('TU_')===0){
+    if(live) live.style.display='none';
+    return;
+  }
+
+  try{
+    firebase.initializeApp(firebaseConfig);
+    var db = firebase.database();
+
+    // ID único para esta pestaña/visita (no identifica a la persona)
+    var myId = 'v_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+    var myRef = db.ref('presence/' + myId);
+
+    db.ref('.info/connected').on('value', function(snap){
+      if(snap.val() === true){
+        myRef.set(true);
+        myRef.onDisconnect().remove();
+      }
+    });
+
+    db.ref('presence').on('value', function(snap){
+      var n = snap.numChildren();
+      if(numEl) numEl.textContent = Math.max(n,1);
+    });
+
+    if(live) live.style.display='flex';
+  }catch(e){
+    if(live) live.style.display='none';
+  }
+})();
 </script>
 
 </body>
