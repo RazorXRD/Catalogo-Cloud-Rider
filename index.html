@@ -166,13 +166,13 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
 .card-info{padding:7px 8px 8px}
 .card-title{font-size:11.5px;font-weight:500;color:var(--txt);line-height:1.35;
   overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin-bottom:2px;}
-.card-year{font-size:10px;color:var(--muted);margin-bottom:5px}
-.card-genres{font-size:9.5px;color:#383848;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-year{font-size:10px;color:var(--txt);margin-bottom:5px}
+.card-genres{font-size:9.5px;color:var(--txt);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card-acts{display:flex;gap:3px}
-.ca{flex:1;border:1px solid var(--border);background:transparent;color:#444;
+.ca{flex:1;border:1px solid var(--border);background:transparent;color:var(--txt);
   font-size:12px;padding:4px;border-radius:5px;cursor:pointer;
   display:flex;align-items:center;justify-content:center;transition:all .14s;}
-.ca:hover{border-color:#555;color:#ccc}
+.ca:hover{border-color:#555;color:#fff}
 .ca.av{background:rgba(29,185,84,.12);border-color:var(--green);color:var(--green)}
 .ca.af{background:rgba(255,20,147,.12);border-color:var(--pink);color:var(--pink)}
 .ca.ap{background:rgba(245,158,11,.12);border-color:var(--amber);color:var(--amber)}
@@ -522,8 +522,6 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
   .cat-badge{font-size:8px;padding:1px 5px}
 
   /* CAROUSEL MÓVIL: scroll horizontal, 2 tarjetas */
-  /* PEDIDO reubicado aquí (ver JS) — separarlo del título */
-  #carousel-header #cart-btn{margin-left:10px;flex-shrink:0}
   #carousel-wrap{padding:10px 8px 14px}
   #carousel-track-wrap{
     overflow-x:auto !important;overflow-y:hidden !important;
@@ -2889,32 +2887,15 @@ updateCartUI();
      al estar dentro del carrusel, que se oculta fuera de inicio).
    En desktop siempre queda en su lugar original de la barra de arriba.
    Es función global (no IIFE) para poder llamarla también desde renderGrid(). */
+/* El botón PEDIDO se queda siempre dentro de #nav-right, que es parte
+   de la barra superior (#nav) con position:sticky — así nunca se pierde
+   al hacer scroll, en Inicio o en cualquier categoría (películas, series,
+   animes, animados, doramas, novelas, juegos), en escritorio o en móvil. */
 function placeCartButton(){
   var cartBtn = document.getElementById('cart-btn');
   var navRight = document.getElementById('nav-right');
   if(!cartBtn || !navRight) return;
-  var isMobile = window.innerWidth <= 600;
-
-  if(!isMobile){
-    if(cartBtn.parentNode !== navRight) navRight.appendChild(cartBtn);
-    return;
-  }
-
-  var isHome = (catF==='todas') && !genreF && !yearF && (!q || q==='');
-  var carouselHeader = document.getElementById('carousel-header');
-  if(isHome && carouselHeader){
-    if(cartBtn.parentNode !== carouselHeader){
-      var dots = document.getElementById('carousel-dots');
-      carouselHeader.insertBefore(cartBtn, dots || null);
-    }
-  } else {
-    var pendienteBtn = document.querySelector('.nm-status-desktop[data-f="pendiente"]');
-    if(pendienteBtn && pendienteBtn.parentNode){
-      if(cartBtn.previousSibling !== pendienteBtn){
-        pendienteBtn.parentNode.insertBefore(cartBtn, pendienteBtn.nextSibling);
-      }
-    }
-  }
+  if(cartBtn.parentNode !== navRight) navRight.appendChild(cartBtn);
 }
 placeCartButton();
 (function(){
