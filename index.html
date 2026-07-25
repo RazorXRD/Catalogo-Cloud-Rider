@@ -330,12 +330,16 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
 #cart-foot{padding:14px 18px;border-top:1px solid var(--border);flex-shrink:0}
 #cart-count-label{font-size:12px;color:#555;margin-bottom:10px}
 #cart-count-label b{color:var(--txt)}
-#cart-price-total{font-size:13px;color:#999;margin-bottom:14px;padding-top:10px;
+#cart-price-total{font-size:13px;color:#999;margin-bottom:4px;padding-top:10px;
   border-top:1px dashed var(--border);}
 #cart-price-total b{font-family:var(--fh);font-size:17px;letter-spacing:.5px;
   background:linear-gradient(135deg,var(--cyan),var(--pink));
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+#cart-weight-total{font-size:12px;color:#888;margin-bottom:14px;display:none}
+#cart-weight-total.show{display:block}
+#cart-weight-total b{color:#bbb;font-weight:700}
 .cart-item-price{font-size:11px;color:var(--cyan);font-weight:600;margin-top:2px}
+.cart-item-weight{font-size:11px;color:#888;font-weight:500;margin-top:2px}
 #cart-send{width:100%;background:linear-gradient(135deg,#25D366,#128C7E);
   border:none;color:#fff;border-radius:8px;padding:12px;font-size:14px;font-weight:700;
   cursor:pointer;font-family:var(--fb);letter-spacing:.5px;transition:opacity .15s;
@@ -990,6 +994,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
   <div id="cart-foot">
     <div id="cart-count-label">Tienes <b id="cart-total">0</b> título(s) en tu pedido</div>
     <div id="cart-price-total">Precio estimado: <b id="cart-price-val">0</b> CUP</div>
+    <div id="cart-weight-total">💾 Peso estimado: <b id="cart-weight-val">0</b> GB</div>
     <button id="cart-send" disabled>
       <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
       ENVIAR PEDIDO POR WHATSAPP
@@ -1679,6 +1684,21 @@ function computeItemPrice(item){
   if(!eps || eps<=0) return PRICE_MOVIE; /* ej: película animada dentro de "animados", sin episodios */
   return eps*rate;
 }
+/* Calcula el peso estimado (GB) de un item del carrito. Si tiene temporadas
+   seleccionables y hay peso por temporada cargado (Peso_Temporadas_Detalle),
+   suma solo el peso de las temporadas marcadas. Si no, usa el peso total
+   del CSV (Peso_GB). Devuelve null si no hay ningún dato de peso. */
+function computeItemWeight(item){
+  var cd = getData(resolveIndex(item));
+  if(item.seasSel && item.seasPesoMap && Object.keys(item.seasPesoMap).length){
+    var sum = 0, any = false;
+    item.seasSel.forEach(function(n){
+      if(item.seasPesoMap[n]!=null){ sum += item.seasPesoMap[n]; any = true; }
+    });
+    if(any) return Math.round(sum*100)/100;
+  }
+  return (cd && cd.pesoGB!=null) ? cd.pesoGB : null;
+}
 function toggleCart(i){
   var idx=cart.findIndex(function(x){ return resolveIndex(x)===i; });
   if(idx>=0){ delete cartSeasOpen[stableKey(cart[idx].c, cart[idx].tn||normSearch(cart[idx].t), cart[idx].y)]; cart.splice(idx,1); }
@@ -1689,7 +1709,11 @@ function toggleCart(i){
       entry.seasTotal = cd.seasDetail.map(function(s){ return s.n; });
       entry.seasSel = entry.seasTotal.slice(); /* todas seleccionadas por defecto */
       entry.seasEpMap = {};
-      cd.seasDetail.forEach(function(s){ entry.seasEpMap[s.n] = s.eps; });
+      entry.seasPesoMap = {};
+      cd.seasDetail.forEach(function(s){
+        entry.seasEpMap[s.n] = s.eps;
+        if(s.pesoGB!=null) entry.seasPesoMap[s.n] = s.pesoGB;
+      });
     }
     cart.push(entry);
   }
@@ -1724,6 +1748,13 @@ function updateCartUI(){
   document.getElementById('cart-total').textContent=n;
   var totalPrice = cart.reduce(function(sum,item){ var p=computeItemPrice(item); return sum + (p||0); }, 0);
   document.getElementById('cart-price-val').textContent = totalPrice;
+  var totalWeight = cart.reduce(function(sum,item){ var w=computeItemWeight(item); return sum + (w||0); }, 0);
+  var weightEl = document.getElementById('cart-weight-total');
+  var anyWeight = cart.some(function(item){ return computeItemWeight(item)!=null; });
+  if(weightEl){
+    weightEl.classList.toggle('show', anyWeight && n>0);
+    document.getElementById('cart-weight-val').textContent = Math.round(totalWeight*100)/100;
+  }
   document.getElementById('cart-send').disabled=n===0;
   var ci=document.getElementById('cart-items');
   var empty=document.getElementById('cart-empty');
@@ -1752,6 +1783,13 @@ function updateCartUI(){
       var priceDiv=document.createElement('div'); priceDiv.className='cart-item-price';
       priceDiv.textContent=price+' CUP';
       info.appendChild(priceDiv);
+    }
+
+    var weight = computeItemWeight(item);
+    if(weight!=null){
+      var weightDiv=document.createElement('div'); weightDiv.className='cart-item-weight';
+      weightDiv.textContent='💾 '+weight+' GB';
+      info.appendChild(weightDiv);
     }
 
     if(item.seasTotal && item.seasTotal.length>1){
@@ -1824,20 +1862,30 @@ function sendWhatsApp(){
   var lines=['🎬 *PEDIDO CLOUD RIDER*',''];
   var groups={};
   cart.forEach(function(item){ if(!groups[item.c]) groups[item.c]=[]; groups[item.c].push(item); });
-  var total=0;
+  var total=0, totalW=0, anyW=false;
   Object.keys(groups).forEach(function(cat){
     lines.push('*'+(CAT_EMOJI[cat]||'')+' '+(CL[cat]||cat).toUpperCase()+'S:*');
     groups[cat].forEach(function(item){
       var price = computeItemPrice(item);
+      var weight = computeItemWeight(item);
       if(price!=null) total += price;
-      lines.push('• '+item.t+(item.y?' ('+item.y+')':'')+(price!=null?' — '+price+' CUP':''));
+      if(weight!=null){ totalW += weight; anyW = true; }
+      var extras = [];
+      if(price!=null) extras.push(price+' CUP');
+      if(weight!=null) extras.push('💾 '+weight+' GB');
+      lines.push('• '+item.t+(item.y?' ('+item.y+')':'')+(extras.length?' — '+extras.join(' · '):''));
       if(item.seasSel && item.seasTotal && item.seasSel.length < item.seasTotal.length){
-        item.seasSel.forEach(function(n){ lines.push('   · Temporada '+n); });
+        item.seasSel.forEach(function(n){
+          var seasLine = '   · Temporada '+n;
+          if(item.seasPesoMap && item.seasPesoMap[n]!=null) seasLine += ' (💾 '+item.seasPesoMap[n]+' GB)';
+          lines.push(seasLine);
+        });
       }
     });
     lines.push('');
   });
   lines.push('💰 *Precio estimado: '+total+' CUP*');
+  if(anyW) lines.push('💾 *Peso estimado: '+(Math.round(totalW*100)/100)+' GB*');
   lines.push('');
   lines.push('_Enviado desde Cloud Rider Catálogo_');
   window.open('https://wa.me/'+WA+'?text='+encodeURIComponent(lines.join('\n')),'_blank');
@@ -1885,7 +1933,7 @@ function openDetail(i){
   if(cd&&cd.r) chip('⭐ '+cd.r+' / 10','rat');
   if(cd&&cd.seas&&cd.seas>0) chip(cd.seas+(cd.seas===1?' temporada':' temporadas'),'tp');
   if(cd&&cd.eps &&cd.eps>0)  chip(cd.eps+' episodios','');
-  if(m.c==='juegos' && cd&&cd.pesoGB!=null) chip('💾 '+cd.pesoGB+' GB','');
+  if(cd&&cd.pesoGB!=null) chip('💾 '+cd.pesoGB+' GB','');
   info.appendChild(chips);
 
   /* Precio estimado (mismo cálculo que usa el carrito) */
@@ -1920,7 +1968,9 @@ function openDetail(i){
     cd.seasDetail.forEach(function(s){
       var chip=document.createElement('div'); chip.className='season-chip';
       var b=document.createElement('b'); b.textContent='Temporada '+s.n;
-      var sp=document.createElement('span'); sp.textContent=s.eps+(s.eps===1?' episodio':' episodios');
+      var epsTxt = (s.eps!=null) ? (s.eps+(s.eps===1?' episodio':' episodios')) : '';
+      var pesoTxt = (s.pesoGB!=null) ? ('💾 '+s.pesoGB+' GB') : '';
+      var sp=document.createElement('span'); sp.textContent=[epsTxt,pesoTxt].filter(Boolean).join(' · ');
       chip.appendChild(b); chip.appendChild(sp);
       seasGrid.appendChild(chip);
     });
@@ -2456,17 +2506,17 @@ var CSV_CAT_MAP = {
   doramas  : Titulo_original ; Titulo_encontrado ; Fuente ; Anio ; Sinopsis ; Poster_URL ; Generos ; Puntuacion_TMDB ; Temporadas ; Episodios ; URL_Externa
   juegos   : Titulo_original ; Titulo_encontrado ; Fuente ; Anio ; Sinopsis ; Poster_URL ; Generos ; Desarrolladores ; Editores ; Puntuacion_Usuario ; Metascore ; URL_Slug
   novelas  : Titulo_original ; Titulo_encontrado ; Fuente ; Anio ; Sinopsis ; Poster_URL ; Backdrop_URL ; Generos ; Puntuacion_TMDB ; Temporadas ; Episodios ; URL_TMDB
-  peliculas: Titulo_original ; Titulo_encontrado ; Fuente ; Anio ; Sinopsis ; Poster_URL ; Generos ; Puntuacion ; Duracion_min ; URL_Externa
+  peliculas: Titulo_original ; Titulo_encontrado ; Fuente ; Anio ; Sinopsis ; Poster_URL ; Generos ; Puntuacion ; Duracion_min ; URL_Externa ; Peso_GB
   series   : Titulo ; Anio ; Sinopsis ; Link_Imagen ; Generos ; Puntuacion_IMDb ; Temporadas ; Capitulos
 */
 var CSV_SCHEMA = {
-  animados  : { keyClean:'Titulo',           keyOrig:'Original',         sinopsis:'Sinopsis', poster:'Link_Imagen', backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion_IMDb',  temporadas:'Temporadas', episodios:'Episodios', url:'URL_TMDB',    anio:'Anio', temporadasDet:'Temporadas_Detalle', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones', trailer:'Trailer_URL' },
-  animes    : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion',       temporadas:null,         episodios:'Episodios', url:'URL_Externa', anio:null,   temporadasDet:'Temporadas_Detalle', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones', trailer:'Trailer_URL' },
-  doramas   : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion_TMDB',  temporadas:'Temporadas', episodios:'Episodios', url:'URL_Externa', anio:'Anio', temporadasDet:'Temporadas_Detalle', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones', trailer:'Trailer_URL' },
+  animados  : { keyClean:'Titulo',           keyOrig:'Original',         sinopsis:'Sinopsis', poster:'Link_Imagen', backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion_IMDb',  temporadas:'Temporadas', episodios:'Episodios', url:'URL_TMDB',    anio:'Anio', temporadasDet:'Temporadas_Detalle', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones', trailer:'Trailer_URL', peso:'Peso_GB', pesoDet:'Peso_Temporadas_Detalle' },
+  animes    : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion',       temporadas:null,         episodios:'Episodios', url:'URL_Externa', anio:null,   temporadasDet:'Temporadas_Detalle', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones', trailer:'Trailer_URL', peso:'Peso_GB', pesoDet:'Peso_Temporadas_Detalle' },
+  doramas   : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion_TMDB',  temporadas:'Temporadas', episodios:'Episodios', url:'URL_Externa', anio:'Anio', temporadasDet:'Temporadas_Detalle', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones', trailer:'Trailer_URL', peso:'Peso_GB', pesoDet:'Peso_Temporadas_Detalle' },
   juegos    : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion_Usuario',temporadas:null,        episodios:null,        url:'URL_Slug',    anio:'Anio', recomendaciones:'Recomendaciones', reqMin:'Requisitos_Minimos', reqRec:'Requisitos_Recomendados', trailer:'Trailer_URL', peso:'Peso_GB' },
-  novelas   : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion_TMDB',  temporadas:'Temporadas', episodios:'Episodios', url:'URL_TMDB',    anio:'Anio', temporadasDet:'Temporadas_Detalle', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones', trailer:'Trailer_URL' },
-  peliculas : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion',       temporadas:null,         episodios:null,        url:'URL_Externa', anio:'Anio', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones', trailer:'Trailer_URL' },
-  series    : { keyClean:'Titulo',            keyOrig:null,               sinopsis:'Sinopsis', poster:'Link_Imagen', backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion_IMDb',  temporadas:'Temporadas', episodios:'Capitulos', url:'URL_TMDB',    anio:'Anio', temporadasDet:'Temporadas_Detalle', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones', trailer:'Trailer_URL' }
+  novelas   : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion_TMDB',  temporadas:'Temporadas', episodios:'Episodios', url:'URL_TMDB',    anio:'Anio', temporadasDet:'Temporadas_Detalle', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones', trailer:'Trailer_URL', peso:'Peso_GB', pesoDet:'Peso_Temporadas_Detalle' },
+  peliculas : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion',       temporadas:null,         episodios:null,        url:'URL_Externa', anio:'Anio', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones', trailer:'Trailer_URL', peso:'Peso_GB' },
+  series    : { keyClean:'Titulo',            keyOrig:null,               sinopsis:'Sinopsis', poster:'Link_Imagen', backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion_IMDb',  temporadas:'Temporadas', episodios:'Capitulos', url:'URL_TMDB',    anio:'Anio', temporadasDet:'Temporadas_Detalle', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones', trailer:'Trailer_URL', peso:'Peso_GB', pesoDet:'Peso_Temporadas_Detalle' }
 };
 
 function parseCSV(text){
@@ -2606,6 +2656,31 @@ function applyCSVRows(rows, cat){
         return m ? { n:parseInt(m[1],10), eps:parseInt(m[2],10) } : null;
       }).filter(Boolean);
       if(sd.length) ov.seasDetail = sd;
+    }
+
+    /* Peso_Temporadas_Detalle: "T1:3.68|T2:4.04" → se combina con seasDetail
+       agregando pesoGB a cada temporada ya existente. Si una temporada no
+       tiene su propio peso (o no había seasDetail de episodios), igual se
+       guarda en pesoDetMap por si hace falta más adelante. */
+    var pesoDetRaw = schema.pesoDet ? (row[schema.pesoDet]||'') : '';
+    if(pesoDetRaw){
+      var pesoMap = {};
+      pesoDetRaw.split('|').forEach(function(part){
+        var m = part.trim().match(/^T(\d+):([\d.,]+)$/i);
+        if(m){
+          var num = parseFloat(m[2].replace(',','.'));
+          if(!isNaN(num)) pesoMap[parseInt(m[1],10)] = num;
+        }
+      });
+      if(Object.keys(pesoMap).length){
+        if(ov.seasDetail){
+          ov.seasDetail.forEach(function(s){ if(pesoMap[s.n]!=null) s.pesoGB = pesoMap[s.n]; });
+        } else {
+          /* no hay desglose de episodios por temporada, pero sí de peso:
+             igual se arma seasDetail solo con el peso, sin eps */
+          ov.seasDetail = Object.keys(pesoMap).map(function(n){ return {n:parseInt(n,10), pesoGB:pesoMap[n]}; }).sort(function(a,b){return a.n-b.n;});
+        }
+      }
     }
 
     /* Reparto: "Actor Uno (Personaje), Actor Dos (Personaje), ..." → [{name,char}] */
