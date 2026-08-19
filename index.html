@@ -1836,7 +1836,9 @@ function sendWhatsApp(){
     groups[cat].forEach(function(item){
       var price = computeItemPrice(item);
       if(price!=null) total += price;
-      lines.push('• '+item.t+(item.y?' ('+item.y+')':'')+(price!=null?' — '+price+' CUP':''));
+      var cd = getData(resolveIndex(item));
+      var pesoTxt = (cd && cd.pesoGB!=null) ? ' [💾 '+cd.pesoGB+' GB]' : '';
+      lines.push('• '+item.t+(item.y?' ('+item.y+')':'')+pesoTxt+(price!=null?' — '+price+' CUP':''));
       if(item.seasSel && item.seasTotal && item.seasSel.length < item.seasTotal.length){
         item.seasSel.forEach(function(n){ lines.push('   · Temporada '+n); });
       }
