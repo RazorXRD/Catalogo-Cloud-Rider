@@ -2754,6 +2754,19 @@ function rowsToCSVText(rows){
   return lines.join('\n');
 }
 
+/* Supabase devuelve números reales para columnas numéricas (Anio, Peso_GB,
+   Episodios, etc.), pero applyCSVRows() y el resto del código dan por hecho
+   que TODO viene como texto (así era siempre con los CSV). Convertimos cada
+   valor a string apenas llega, así el resto de la app no necesita cambios. */
+function stringifyRow(row){
+  var out = {};
+  Object.keys(row).forEach(function(k){
+    var v = row[k];
+    out[k] = (v===null || v===undefined) ? '' : String(v);
+  });
+  return out;
+}
+
 function loadFromSupabase(){
   var tableNames = Object.keys(TABLE_CAT_MAP);
 
@@ -2772,7 +2785,8 @@ function loadFromSupabase(){
         console.warn('[Supabase] Error en '+table+':', res.error.message);
         return;
       }
-      var n = applyCSVRows(res.data || [], cfg.cat);
+      var rows = (res.data || []).map(stringifyRow);
+      var n = applyCSVRows(rows, cfg.cat);
       console.log('[Supabase] '+table+' → '+n+' ('+cfg.cat+')');
     });
 
@@ -2791,7 +2805,7 @@ function loadFromSupabase(){
         var res = carResults[i];
         var cfg = TABLE_CAT_MAP[table];
         if(res.error || !res.data || !res.data.length) return;
-        carouselTexts[cfg.carouselFile] = rowsToCSVText(res.data);
+        carouselTexts[cfg.carouselFile] = rowsToCSVText(res.data.map(stringifyRow));
       });
       setTimeout(function(){
         if(typeof window._buildCarousel === 'function') window._buildCarousel(carouselTexts);
