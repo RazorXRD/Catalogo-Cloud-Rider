@@ -845,16 +845,6 @@ body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100v
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-  /* Cliente de Supabase — la anon key va pública a propósito, la
-     protección real es RLS (Row Level Security) configurado en cada
-     tabla, que solo permite SELECT (lectura), nunca escritura. */
-  var supabase = window.supabase.createClient(
-    'https://zymggvedzsiilguonybt.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp5bWdndmVkenNpaWxndW9ueWJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxODYzMDUsImV4cCI6MjA5NTc2MjMwNX0.GlwwLyMzD-aYp34c2HU7h-qk-BZy-y96LTKmbeHyuEs'
-  );
-</script>
 </head>
 <body>
 
@@ -2724,98 +2714,6 @@ function rebuildDB(textsByFile){
   });
   rebuildKeyIndex();
 }
-/* ── CARGA DESDE SUPABASE (reemplaza a loadCSVsFromGitHub) ──
-   Cada tabla de Supabase tiene EXACTAMENTE las mismas columnas que su
-   CSV original (así se importaron), así que applyCSVRows() funciona
-   igual sin cambiar nada: recibe un array de objetos {Columna: valor}. */
-var TABLE_CAT_MAP = {
-  'Peliculas': { cat:'peliculas', carouselFile:'peliculas_data_avanzado2.csv', t:'Titulo_encontrado', p:'Poster_URL' },
-  'Series'   : { cat:'series',    carouselFile:'series_data.csv',              t:'Titulo',            p:'Link_Imagen' },
-  'Animes'   : { cat:'animes',    carouselFile:'animes_data.csv',              t:'Titulo_encontrado', p:'Poster_URL' },
-  'Animados' : { cat:'animados',  carouselFile:'animados_data.csv',            t:'Titulo',            p:'Link_Imagen' },
-  'Doramas'  : { cat:'doramas',   carouselFile:'doramas_data.csv',             t:'Titulo_encontrado', p:'Poster_URL' },
-  'Novelas'  : { cat:'novelas',   carouselFile:'novelas_data.csv',             t:'Titulo_encontrado', p:'Poster_URL' },
-  'Juegos'   : { cat:'juegos',    carouselFile:'juegos_data.csv',              t:'Titulo_encontrado', p:'Poster_URL' }
-};
-
-/* Convierte filas de Supabase a texto CSV en memoria (comas + comillas),
-   solo para reutilizar tal cual el código del carrusel "Recién
-   Actualizados" (window._buildCarousel), que espera texto CSV. */
-function rowsToCSVText(rows){
-  if(!rows || !rows.length) return '';
-  var headers = Object.keys(rows[0]).filter(function(h){ return h!=='id'; });
-  var lines = [headers.join(',')];
-  rows.forEach(function(row){
-    lines.push(headers.map(function(h){
-      var v = (row[h]==null ? '' : String(row[h]));
-      return '"' + v.replace(/"/g,'""') + '"';
-    }).join(','));
-  });
-  return lines.join('\n');
-}
-
-/* Supabase devuelve números reales para columnas numéricas (Anio, Peso_GB,
-   Episodios, etc.), pero applyCSVRows() y el resto del código dan por hecho
-   que TODO viene como texto (así era siempre con los CSV). Convertimos cada
-   valor a string apenas llega, así el resto de la app no necesita cambios. */
-function stringifyRow(row){
-  var out = {};
-  Object.keys(row).forEach(function(k){
-    var v = row[k];
-    out[k] = (v===null || v===undefined) ? '' : String(v);
-  });
-  return out;
-}
-
-function loadFromSupabase(){
-  var tableNames = Object.keys(TABLE_CAT_MAP);
-
-  var fullQueries = tableNames.map(function(table){
-    return supabase.from(table).select('*');
-  });
-
-  return Promise.all(fullQueries).then(function(results){
-    DB.length = 0;
-    Object.keys(overrides).forEach(function(k){ delete overrides[k]; });
-
-    tableNames.forEach(function(table, i){
-      var res = results[i];
-      var cfg = TABLE_CAT_MAP[table];
-      if(res.error){
-        console.warn('[Supabase] Error en '+table+':', res.error.message);
-        return;
-      }
-      var rows = (res.data || []).map(stringifyRow);
-      var n = applyCSVRows(rows, cfg.cat);
-      console.log('[Supabase] '+table+' → '+n+' ('+cfg.cat+')');
-    });
-
-    rebuildKeyIndex();
-    saveOverrides(); buildYears(); updateStats(); renderGrid(); updateCartUI(); progDone();
-
-    /* Carrusel "Recién Actualizados": últimas 10 filas por tabla (por id
-       descendente = más recientemente importadas), convertidas a texto
-       CSV en memoria para reusar window._buildCarousel() sin tocarlo. */
-    var carouselQueries = tableNames.map(function(table){
-      return supabase.from(table).select('*').order('id',{ascending:false}).limit(10);
-    });
-    return Promise.all(carouselQueries).then(function(carResults){
-      var carouselTexts = {};
-      tableNames.forEach(function(table, i){
-        var res = carResults[i];
-        var cfg = TABLE_CAT_MAP[table];
-        if(res.error || !res.data || !res.data.length) return;
-        carouselTexts[cfg.carouselFile] = rowsToCSVText(res.data.map(stringifyRow));
-      });
-      setTimeout(function(){
-        if(typeof window._buildCarousel === 'function') window._buildCarousel(carouselTexts);
-      },0);
-    });
-  }).catch(function(e){
-    console.error('[Supabase] Fallo al cargar el catálogo:', e);
-  });
-}
-
 /* Índice título+año+categoría → posición actual en DB. La posición cambia
    cada vez que se reconstruye DB (carga inicial, actualización en caliente,
    etc.), así que nada que deba sobrevivir entre recargas (carrito,
@@ -2960,15 +2858,49 @@ function fetchFreshCSVs(cachedTexts, haveAnyCache){
    llamar repetidas veces sin tener que recargar nada. */
 var _checkingUpdates = false;
 function checkForUpdates(){
-  /* Antes comparaba texto de CSV descargado vs. caché para detectar
-     cambios (para no gastar cuota de GitHub). Con Supabase cada consulta
-     ya es la data real de la base, así que revisar es simplemente volver
-     a cargar — se preserva la página/filtros actuales del visitante, solo
-     se actualiza el contenido detrás, sin interrumpir lo que esté viendo. */
   if(_checkingUpdates) return; /* evitar revisiones superpuestas */
+  if(!GITHUB_RAW_BASE) return;
   _checkingUpdates = true;
-  loadFromSupabase().then(function(){ _checkingUpdates = false; },
-                          function(){ _checkingUpdates = false; });
+
+  var files = Object.keys(CSV_CAT_MAP);
+  var prevTexts = {};
+
+  Promise.all(files.map(function(file){
+    return idbGet('csvdata_'+file).then(function(t){ prevTexts[file] = t; });
+  })).then(function(){
+
+    var freshTexts = {};
+    var changed = false;
+
+    var promises = files.map(function(file){
+      var url = GITHUB_RAW_BASE + file;
+      return fetch(url, {cache:'no-cache'})
+        .then(function(r){ if(!r.ok) throw new Error(r.status); return r.text(); })
+        .then(function(text){
+          freshTexts[file] = text;
+          if(text !== prevTexts[file]) changed = true;
+          return idbSet('csvdata_'+file, text);
+        })
+        .catch(function(e){
+          if(prevTexts[file]) freshTexts[file] = prevTexts[file];
+          console.warn('[CSV] Revisión periódica: sin datos frescos para '+file, e);
+        });
+    });
+
+    return Promise.all(promises).then(function(){
+      if(changed){
+        /* Se preserva la página/filtros actuales del visitante — solo se
+           actualiza el contenido detrás, sin interrumpir lo que esté viendo */
+        rebuildDB(freshTexts);
+        saveOverrides(); buildYears(); updateStats(); renderGrid(); updateCartUI(); progDone();
+        console.log('[CSV] ✓ Catálogo actualizado automáticamente en segundo plano.');
+        setTimeout(function(){ if(typeof window._buildCarousel === 'function') window._buildCarousel(freshTexts); },0);
+      } else {
+        console.log('[CSV] Revisión periódica: sin cambios.');
+      }
+    });
+  }).then(function(){ _checkingUpdates = false; },
+          function(){ _checkingUpdates = false; });
 }
 
 /* ── ARRANQUE ── */
@@ -3008,7 +2940,7 @@ placeCartButton();
     grid.innerHTML = '<div id="empty" style="opacity:0.5"><div class="spin"></div><p>Cargando catálogo...</p></div>';
   }
 })();
-loadFromSupabase();
+loadCSVsFromGitHub();
 
 /* Revisar cambios cada 3 minutos mientras la pestaña esté abierta,
    y también justo cuando la persona vuelve a la pestaña (por ejemplo
