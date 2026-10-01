@@ -1295,6 +1295,10 @@ function renderGrid(){
   }
   if(typeof placeCartButton==='function') placeCartButton();
   var all=filtered(), total=all.length;
+  if(!total && q && typeof ensureSynopses==='function' && JSON_MODE && !SYN.loaded){
+    var qNow=q;
+    ensureSynopses().then(function(ok){ if(ok && q===qNow) renderGrid(); });
+  }
   var maxPg=Math.max(1,Math.ceil(total/PER));
   if(page>maxPg) page=1;
   var slice=all.slice((page-1)*PER, page*PER);
@@ -1546,13 +1550,13 @@ function updateDetCartBtn(){
 }
 
 /* ── DETAIL ── */
-function openDetail(i){
+function renderDetail(i, refresh){
   detIdx=i;
   if(!DB[i]) return;
   var m=DB[i], cd=getData(i);
   var det=document.getElementById('detail');
-  det.classList.add('open'); document.body.style.overflow='hidden'; det.scrollTop=0;
-  history.pushState({panel:'detail', idx:i}, '');
+  det.classList.add('open'); document.body.style.overflow='hidden';
+  if(!refresh){ det.scrollTop=0; history.pushState({panel:'detail', idx:i}, ''); }
   document.getElementById('det-tit-nav').textContent=m.t;
   document.getElementById('det-backdrop').style.backgroundImage=(cd&&cd.b)?'url('+cd.b+')':'none';
   updateDetCartBtn();
@@ -1604,7 +1608,7 @@ function openDetail(i){
 
   /* Sinopsis */
   var ovDiv=document.createElement('div'); ovDiv.id='det-overview';
-  ovDiv.textContent=(cd&&cd.ov)?cd.ov:'Sinopsis no disponible.';
+  ovDiv.textContent=(cd&&cd.ov)?cd.ov:((cd&&cd.dl===false&&!cd.dfail)?'Cargando información…':'Sinopsis no disponible.');
   info.appendChild(ovDiv);
 
   /* Temporadas detalladas (episodios por temporada) */
@@ -1751,6 +1755,15 @@ function openDetail(i){
       });
       castSection.appendChild(recGrid);
     }
+  }
+}
+
+/* Abre la ficha al instante con lo que ya hay (lista) y, si hace falta, baja el
+   bloque de detalle de ese título y vuelve a pintar (sinopsis, reparto, trailer…). */
+function openDetail(i){
+  renderDetail(i, false);
+  if(typeof ensureDetail === 'function'){
+    ensureDetail(i).then(function(changed){ if(changed && detIdx===i) renderDetail(i, true); });
   }
 }
 
@@ -2381,7 +2394,7 @@ function fetchFreshCSVs(cachedTexts, haveAnyCache){
    si alguno cambió se leen los textos y se reconstruye el catálogo. */
 var _checkingUpdates = false, _lastCheck = Date.now();
 var CHECK_EVERY = 10*60*1000;
-function checkForUpdates(){
+function checkForUpdatesCSV(){
   if(_checkingUpdates) return;
   if(!GITHUB_RAW_BASE) return;
   _checkingUpdates = true; _lastCheck = Date.now();
@@ -2408,6 +2421,220 @@ function checkForUpdates(){
     });
   }).then(function(){ _checkingUpdates = false; },
           function(){ _checkingUpdates = false; });
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   MODO JSON — lista + detalle  (carga rápida)
+   Generado por build_data.py a partir de los CSV:
+     data/manifest.json        versiones por categoría + "Recién actualizados"
+     data/lista_<cat>.json     lo mínimo para el grid, filtros, búsqueda y carrito
+     data/d/<cat>_<n>.json     detalle (sinopsis, reparto, trailer…) en bloques de 40
+     data/s/<cat>.json         sinopsis sueltas (solo si una búsqueda no halla nada por título)
+   Si data/ no existe o falla, se usa el camino antiguo de los CSV.
+   ══════════════════════════════════════════════════════════════════ */
+var DATA_BASE = GITHUB_RAW_BASE + 'data/';
+var JSON_MODE = false;
+var DATA_CATS = ['series','peliculas','animes','animados','doramas','novelas','juegos'];
+var DETAIL_SHARD = 40;
+var CAT_VER = {};            /* versión de cada categoría que está en pantalla */
+var CAT_IDX = {};            /* cat → [índice en DB, por posición en su lista] */
+var SYN = { loaded:false, loading:null };
+var _shardCache = {};
+
+function buildFromLists(lists){
+  DB.length = 0;
+  Object.keys(overrides).forEach(function(k){ delete overrides[k]; });
+  CAT_IDX = {}; SYN.loaded = false; SYN.loading = null; _shardCache = {};
+  DATA_CATS.forEach(function(cat){
+    var L = lists[cat]; if(!L) return;
+    var idxs = CAT_IDX[cat] = [];
+    for(var ci=0; ci<L.length; ci++){
+      var l = L[ci], i = DB.length, g = l.g || [];
+      DB.push({ t:l.t, y:l.y||'', c:cat, g:g, a:l.a, sk:sortKey(l.t),
+                tn:normSearch(l.t), an:l.a?normSearch(l.a):'', gn:g.length?normSearch(g.join(' ')):'',
+                _idx:i, _ci:ci });
+      idxs.push(i);
+      var ov = { src:'csv', dl:false };
+      if(l.p) ov.p = posterUrl(l.p);
+      if(g.length) ov.g = g;
+      if(l.r) ov.r = l.r;
+      if(l.s) ov.seas = l.s;
+      if(l.e) ov.eps = l.e;
+      if(l.w) ov.pesoGB = l.w;
+      if(l.sd) ov.seasDetail = l.sd.map(function(s){ return { n:s[0], eps:s[1] }; });
+      overrides[i] = ov;
+    }
+  });
+  rebuildKeyIndex();
+}
+
+function afterBuild(){ buildYears(); updateStats(); renderGrid(); updateCartUI(); progDone(); }
+
+function fetchManifest(){
+  return fetch(DATA_BASE+'manifest.json', {cache:'no-cache'}).then(function(r){
+    if(!r.ok) throw new Error('manifest '+r.status);
+    return r.json();
+  }).then(function(man){
+    if(!man || !man.cats) throw new Error('manifest inválido');
+    return man;
+  });
+}
+function fetchList(cat, v){
+  return fetch(DATA_BASE+'lista_'+cat+'.json?v='+v).then(function(r){
+    if(!r.ok) throw new Error('lista '+cat+' '+r.status);
+    return r.text();
+  }).then(function(txt){
+    var L = JSON.parse(txt);
+    idbSet('jl_'+cat, { v:v, t:txt });
+    return L;
+  });
+}
+
+/* Stale-while-revalidate: pinta al instante desde IndexedDB, luego pide solo el manifest
+   (unos pocos KB) y baja únicamente las categorías cuya versión cambió. */
+function loadCatalogJSON(){
+  return Promise.all(DATA_CATS.map(function(c){ return idbGet('jl_'+c); }).concat([idbGet('jman')]))
+  .then(function(arr){
+    var lists = {}, haveAny = false, cachedRec = '';
+    DATA_CATS.forEach(function(c, k){
+      var o = arr[k];
+      if(o && o.v && o.t){
+        try{ lists[c] = JSON.parse(o.t); CAT_VER[c] = o.v; haveAny = true; }catch(e){}
+      }
+    });
+    var jm = arr[DATA_CATS.length];
+    if(jm && jm.shard) DETAIL_SHARD = jm.shard;
+    if(haveAny){
+      JSON_MODE = true;
+      buildFromLists(lists); afterBuild();
+      if(jm && jm.rec){ cachedRec = JSON.stringify(jm.rec); setTimeout(function(){ if(window._buildCarousel) window._buildCarousel(jm.rec); },0); }
+      console.log('[DATA] Render instantáneo desde caché. Verificando actualizaciones…');
+    }
+    return fetchManifest().then(function(man){
+      JSON_MODE = true;
+      idbSet('jman', man);
+      if(man.shard) DETAIL_SHARD = man.shard;
+      var need = DATA_CATS.filter(function(c){ return man.cats[c] && CAT_VER[c] !== man.cats[c].v; });
+      var gone = DATA_CATS.filter(function(c){ return !man.cats[c] && lists[c]; });
+      var failed = false;
+      return Promise.all(need.map(function(c){
+        return fetchList(c, man.cats[c].v).then(function(L){ lists[c] = L; CAT_VER[c] = man.cats[c].v; })
+          .catch(function(e){ console.warn('[DATA] No se pudo bajar '+c, e); if(!lists[c]) failed = true; });
+      })).then(function(){
+        if(failed && !haveAny) throw new Error('listas incompletas');
+        gone.forEach(function(c){ delete lists[c]; delete CAT_VER[c]; });
+        if(need.length || gone.length || !haveAny){
+          buildFromLists(lists); afterBuild();
+          console.log('[DATA] ✓ DB:', DB.length, need.length ? '[actualizado: '+need.join(', ')+']' : '[primera carga]');
+        } else {
+          console.log('[DATA] Sin cambios, se mantiene la versión en caché.');
+        }
+        var recStr = JSON.stringify(man.rec || []);
+        if(recStr !== cachedRec){ setTimeout(function(){ if(window._buildCarousel) window._buildCarousel(man.rec || []); },0); }
+      });
+    }).catch(function(e){
+      if(haveAny){ console.warn('[DATA] Sin red; se muestra la copia guardada.', e); return; }
+      throw e;
+    });
+  });
+}
+
+/* Detalle de UN título: baja solo su bloque (~40 títulos, unos pocos KB). */
+function loadShard(cat, k){
+  var key = cat+'_'+k+'_'+CAT_VER[cat];
+  if(_shardCache[key]) return _shardCache[key];
+  var p = fetch(DATA_BASE+'d/'+cat+'_'+k+'.json?v='+CAT_VER[cat]).then(function(r){
+    if(!r.ok) throw new Error('detalle '+r.status);
+    return r.json();
+  });
+  p.catch(function(){ delete _shardCache[key]; });
+  return (_shardCache[key] = p);
+}
+function applyDetail(i, d){
+  var ov = overrides[i]; if(!ov) return;
+  if(d.ov) ov.ov = d.ov;
+  if(d.b) ov.b = backdropUrl(d.b);
+  if(d.u) ov.url = d.u;
+  if(d.cast && d.cast.length){
+    ov.cast = d.cast.map(function(a){ var o = { name:a.n, char:a.c||'' }; if(a.f) o.photo = a.f; return o; });
+  }
+  if(d.crew) ov.crew = d.crew;
+  if(d.recs && d.recs.length) ov.recs = d.recs;
+  if(d.rq) ov.reqMin = d.rq;
+  if(d.rr) ov.reqRec = d.rr;
+  if(d.tr) ov.trailer = d.tr;
+  ov.ovn = undefined;
+  ov.dl = true;
+}
+/* Devuelve una promesa → true si hay algo nuevo que pintar */
+function ensureDetail(i){
+  var e = DB[i], ov = overrides[i];
+  if(!JSON_MODE || !e || e._ci===undefined || !ov || ov.dl) return Promise.resolve(false);
+  var k = Math.floor(e._ci / DETAIL_SHARD);
+  return loadShard(e.c, k).then(function(arr){
+    if(DB[i] !== e) return false;                 /* el catálogo se reconstruyó mientras tanto */
+    var d = arr[e._ci - k*DETAIL_SHARD];
+    if(d && d.t === e.t) applyDetail(i, d); else ov.dl = true;
+    return true;
+  }).catch(function(err){
+    console.warn('[DATA] Detalle no disponible', err);
+    if(overrides[i]){ overrides[i].dfail = true; }
+    return true;
+  });
+}
+
+/* Búsqueda por sinopsis: solo se activa si el título no dio resultados. */
+function ensureSynopses(){
+  if(!JSON_MODE || SYN.loaded) return Promise.resolve(false);
+  if(SYN.loading) return SYN.loading;
+  SYN.loading = Promise.all(DATA_CATS.map(function(c){
+    if(!CAT_VER[c]) return null;
+    return fetch(DATA_BASE+'s/'+c+'.json?v='+CAT_VER[c]).then(function(r){ return r.ok ? r.json() : []; })
+      .then(function(arr){
+        var idxs = CAT_IDX[c] || [];
+        for(var k=0; k<arr.length && k<idxs.length; k++){
+          var o = overrides[idxs[k]];
+          if(o && arr[k] && !o.ov){ o.ov = arr[k]; o.ovn = undefined; }
+        }
+      }).catch(function(){});
+  })).then(function(){ SYN.loaded = true; return true; });
+  return SYN.loading;
+}
+
+/* Revisión periódica (modo JSON): solo el manifest; si una categoría cambió, se baja esa. */
+function checkJSON(){
+  if(_checkingUpdates) return;
+  _checkingUpdates = true; _lastCheck = Date.now();
+  fetchManifest().then(function(man){
+    idbSet('jman', man);
+    if(man.shard) DETAIL_SHARD = man.shard;
+    var need = DATA_CATS.filter(function(c){ return man.cats[c] && CAT_VER[c] !== man.cats[c].v; });
+    if(!need.length){ console.log('[DATA] Revisión periódica: sin cambios.'); return; }
+    if(detIdx >= 0) return;            /* no reconstruir con una ficha abierta; se reintenta luego */
+    var lists = {};
+    return Promise.all(DATA_CATS.map(function(c){
+      if(!man.cats[c]) return null;
+      if(need.indexOf(c) >= 0){
+        return fetchList(c, man.cats[c].v).then(function(L){ lists[c] = L; CAT_VER[c] = man.cats[c].v; });
+      }
+      return idbGet('jl_'+c).then(function(o){ if(o && o.t) lists[c] = JSON.parse(o.t); });
+    })).then(function(){
+      buildFromLists(lists); afterBuild();
+      if(window._buildCarousel) window._buildCarousel(man.rec || []);
+      console.log('[DATA] ✓ Catálogo actualizado en segundo plano:', need.join(', '));
+    });
+  }).catch(function(e){ console.warn('[DATA] Revisión periódica falló', e); })
+    .then(function(){ _checkingUpdates = false; });
+}
+function checkForUpdates(){ return JSON_MODE ? checkJSON() : checkForUpdatesCSV(); }
+
+/* Arranque: JSON primero; si no está disponible, el camino antiguo de los CSV */
+function startCatalog(){
+  loadCatalogJSON().catch(function(e){
+    console.warn('[DATA] Modo JSON no disponible, usando CSV:', e);
+    JSON_MODE = false;
+    return loadCSVsFromGitHub();
+  });
 }
 
 /* ── ARRANQUE ── */
@@ -2447,7 +2674,7 @@ placeCartButton();
     grid.innerHTML = '<div id="empty" style="opacity:0.5"><div class="spin"></div><p>Cargando catálogo...</p></div>';
   }
 })();
-loadCSVsFromGitHub();
+startCatalog();
 
 /* Revisar cambios cada 10 minutos mientras la pestaña esté abierta,
    y también justo cuando la persona vuelve a la pestaña (por ejemplo
@@ -2662,10 +2889,15 @@ window.addEventListener('pageshow', function(e){
   window._buildCarousel = function(textsByFile){
     var PER_FILE = 3; /* cuántas de las últimas filas mostrar por cada CSV */
     var list = [];
-    FILES.forEach(function(cfg){
-      var items = parseLastN(textsByFile && textsByFile[cfg.f], cfg, PER_FILE);
-      list = list.concat(items);
-    });
+    if(Array.isArray(textsByFile)){
+      /* Modo JSON: el manifest ya trae los recientes {t,c,img} */
+      list = textsByFile.map(function(it){ return { t:it.t, c:it.c, img:lightImg(it.img) }; });
+    } else {
+      FILES.forEach(function(cfg){
+        var items = parseLastN(textsByFile && textsByFile[cfg.f], cfg, PER_FILE);
+        list = list.concat(items);
+      });
+    }
     if(!list.length) return;
     totalCards = list.length;
     render(list);
