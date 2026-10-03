@@ -47,7 +47,7 @@ for _f, _c in FILES:
 
 # Copia fiel de CSV_SCHEMA del index.html: qué columna alimenta cada dato
 def S(keyClean, keyOrig, poster, punt, temporadas, episodios, url, anio,
-      tdet=None, reparto=True, peso=None, req=False):
+      tdet=None, reparto=True, peso=None, req=False, ptemp=None):
     d = dict(keyClean=keyClean, keyOrig=keyOrig, sinopsis='Sinopsis', poster=poster,
              backdrop='Backdrop_URL', generos='Generos', puntuacion=punt,
              temporadas=temporadas, episodios=episodios, url=url, anio=anio,
@@ -56,18 +56,20 @@ def S(keyClean, keyOrig, poster, punt, temporadas, episodios, url, anio,
         d.update(reparto='Reparto', repartoFotos='Reparto_Fotos', equipo='Equipo')
     if peso:
         d['peso'] = peso
+    if ptemp:
+        d['pesoTemp'] = ptemp
     if req:
         d.update(reqMin='Requisitos_Minimos', reqRec='Requisitos_Recomendados')
     return d
 
 SCHEMA = {
-    'animados':  S('Titulo', 'Original', 'Link_Imagen', 'Puntuacion_IMDb', 'Temporadas', 'Episodios', 'URL_TMDB', 'Anio', tdet='Temporadas_Detalle'),
-    'animes':    S('Titulo_encontrado', 'Titulo_original', 'Poster_URL', 'Puntuacion', None, 'Episodios', 'URL_Externa', None, tdet='Temporadas_Detalle'),
-    'doramas':   S('Titulo_encontrado', 'Titulo_original', 'Poster_URL', 'Puntuacion_TMDB', 'Temporadas', 'Episodios', 'URL_Externa', 'Anio', tdet='Temporadas_Detalle'),
+    'animados':  S('Titulo', 'Original', 'Link_Imagen', 'Puntuacion_IMDb', 'Temporadas', 'Episodios', 'URL_TMDB', 'Anio', tdet='Temporadas_Detalle', peso='Peso_GB', ptemp='Peso_Temporadas_Detalle'),
+    'animes':    S('Titulo_encontrado', 'Titulo_original', 'Poster_URL', 'Puntuacion', None, 'Episodios', 'URL_Externa', None, tdet='Temporadas_Detalle', peso='Peso_GB', ptemp='Peso_Temporadas_Detalle'),
+    'doramas':   S('Titulo_encontrado', 'Titulo_original', 'Poster_URL', 'Puntuacion_TMDB', 'Temporadas', 'Episodios', 'URL_Externa', 'Anio', tdet='Temporadas_Detalle', peso='Peso_GB', ptemp='Peso_Temporadas_Detalle'),
     'juegos':    S('Titulo_encontrado', 'Titulo_original', 'Poster_URL', 'Puntuacion_Usuario', None, None, 'URL_Slug', 'Anio', reparto=False, peso='Peso_GB', req=True),
-    'novelas':   S('Titulo_encontrado', 'Titulo_original', 'Poster_URL', 'Puntuacion_TMDB', 'Temporadas', 'Episodios', 'URL_TMDB', 'Anio', tdet='Temporadas_Detalle'),
+    'novelas':   S('Titulo_encontrado', 'Titulo_original', 'Poster_URL', 'Puntuacion_TMDB', 'Temporadas', 'Episodios', 'URL_TMDB', 'Anio', tdet='Temporadas_Detalle', peso='Peso_GB', ptemp='Peso_Temporadas_Detalle'),
     'peliculas': S('Titulo_encontrado', 'Titulo_original', 'Poster_URL', 'Puntuacion', None, None, 'URL_Externa', 'Anio', peso='Peso_GB'),
-    'series':    S('Titulo', None, 'Link_Imagen', 'Puntuacion_IMDb', 'Temporadas', 'Capitulos', 'URL_TMDB', 'Anio', tdet='Temporadas_Detalle', peso='Peso_GB'),
+    'series':    S('Titulo', None, 'Link_Imagen', 'Puntuacion_IMDb', 'Temporadas', 'Capitulos', 'URL_TMDB', 'Anio', tdet='Temporadas_Detalle', peso='Peso_GB', ptemp='Peso_Temporadas_Detalle'),
 }
 
 
@@ -219,6 +221,17 @@ def build_category(cat, rows_by_file):
                     if pw is not None and pw > 0:
                         L['w'] = pw if pw != int(pw) else int(pw)
                 td = g('temporadasDet')
+                ptd = g('pesoTemp')
+                if ptd:
+                    pw = []
+                    for part in ptd.split('|'):
+                        mm = re.match(r'^T(\d+):(\d+(?:[.,]\d+)?)$', part.strip(), re.I)
+                        if mm:
+                            gbv = float(mm.group(2).replace(',', '.'))
+                            if gbv > 0:
+                                pw.append([int(mm.group(1)), gbv if gbv != int(gbv) else int(gbv)])
+                    if pw:
+                        L['pw'] = pw
                 if td:
                     sd = []
                     for part in td.split('|'):
