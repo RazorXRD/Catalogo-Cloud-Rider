@@ -1,0 +1,3293 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cloud Rider &mdash; Cat&aacute;logo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --cyan:#00d4ff;--pink:#ff1493;--dark-cyan:#00a8cc;--cr:0,212,255;--pr:255,20,147;
+  --bg:#080810;--s1:#0e0e18;--s2:#14141f;--s3:#1c1c2a;
+  --txt:#eaeaea;--muted:#777;--border:#1e1e2e;
+  --green:#1db954;--amber:#f59e0b;
+  --fh:'Bebas Neue',sans-serif;--fb:'Barlow',sans-serif;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--txt);font-family:var(--fb);min-height:100vh;overflow-x:hidden}
+
+/* ── NAV ── */
+#nav{
+  position:sticky;top:0;z-index:300;min-height:58px;
+  background:rgba(8,8,16,.97);backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(var(--cr),.12);
+  display:flex;align-items:stretch;padding:0 18px;gap:0;
+}
+#logo-wrap{display:flex;align-items:center;gap:10px;margin-right:20px;flex-shrink:0;text-decoration:none}
+#hamburger{display:none}
+#mobile-menu{display:none}
+#logo-img{width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid var(--cyan)}
+#logo-text{font-family:var(--fh);font-size:22px;letter-spacing:2px;
+  background:linear-gradient(135deg,var(--cyan),var(--pink));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+#info-btn{
+  font-family:var(--fb);font-size:11px;font-weight:700;letter-spacing:.8px;
+  color:var(--cyan);background:rgba(var(--cr),.08);
+  border:1px solid rgba(var(--cr),.35);border-radius:6px;
+  padding:6px 12px;cursor:pointer;white-space:nowrap;
+  margin-right:14px;flex-shrink:0;transition:all .15s;
+}
+#info-btn:hover{background:rgba(var(--cr),.18);border-color:var(--cyan);color:#fff}
+#nav-menu{display:flex;flex-direction:column;align-items:stretch;flex:1;gap:0}
+.nav-row{display:flex;align-items:center;gap:1px;overflow:visible;scrollbar-width:none;flex-wrap:wrap}
+.nav-row::-webkit-scrollbar{display:none}
+.nav-row-1{border-bottom:1px solid rgba(255,255,255,.08)}
+.nav-row-2{padding-top:2px;flex-wrap:wrap;gap:4px}
+#active-filters{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-left:6px}
+.af-chip{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 8px 2px 10px;border-radius:20px;
+  background:rgba(var(--cr),.15);border:1px solid rgba(var(--cr),.4);
+  color:var(--cyan);font-size:11px;font-family:var(--fh);letter-spacing:.5px;
+  cursor:pointer;transition:background .15s;
+}
+.af-chip:hover{background:rgba(var(--cr),.28)}
+.af-chip .af-x{font-size:13px;opacity:.7;line-height:1}
+.af-clear{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 10px;border-radius:20px;
+  background:rgba(255,60,100,.15);border:1px solid rgba(255,60,100,.4);
+  color:#ff6b8a;font-size:11px;font-family:var(--fh);letter-spacing:.5px;
+  cursor:pointer;transition:background .15s;
+}
+.af-clear:hover{background:rgba(255,60,100,.3)}
+#nav-menu::-webkit-scrollbar{display:none}
+.nm{font-family:var(--fb);font-size:11px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;
+  color:#666;padding:6px 11px;border-radius:5px;border:none;background:transparent;
+  cursor:pointer;white-space:nowrap;transition:all .15s;}
+.nm-drop-btn{font-family:var(--fb);font-size:11px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;
+  color:#666;padding:6px 11px;border-radius:5px;border:none;background:transparent;
+  cursor:pointer;white-space:nowrap;transition:all .15s;}
+.nm-drop-btn:hover,.nm-drop-btn.open-active{color:var(--cyan);background:rgba(var(--cr),.08)}
+
+.nm:hover{color:#fff;background:rgba(255,255,255,.06)}
+.nm.on{color:var(--cyan)}
+.nm-drop{position:relative}
+.nm-drop:hover .dmenu{display:block}
+.nm-drop.disabled{opacity:.3;pointer-events:none;cursor:not-allowed}
+.nm-drop.disabled .nm{color:#333 !important}
+.dmenu.open{display:block !important} /* overridden to flex on mobile */
+.dmenu{display:none;position:absolute;top:calc(100% + 2px);left:0;min-width:160px;
+  background:#0a0a14;border:1px solid rgba(var(--cr),.15);border-radius:8px;
+  padding:5px 0;z-index:400;box-shadow:0 10px 30px rgba(0,0,0,.8);}
+.dmenu.scrollable{max-height:280px;overflow-y:auto}
+.dmenu a{display:block;padding:7px 14px;font-size:11px;font-weight:600;letter-spacing:.6px;
+  text-transform:uppercase;color:#888;text-decoration:none;transition:all .12s;}
+.dmenu a:hover{color:var(--cyan);background:rgba(var(--cr),.06);padding-left:18px}
+.dmenu a.on{color:var(--cyan)}
+#nav-right{display:flex;align-items:center;gap:10px;margin-left:auto;flex-shrink:0}
+#live-count{display:flex;align-items:center;gap:4px;font-size:11px;color:#9a9aa8;
+  font-family:var(--fb);white-space:nowrap;flex-shrink:0;}
+#live-dot{width:6px;height:6px;border-radius:50%;background:var(--green,#2ecc71);
+  box-shadow:0 0 4px var(--green,#2ecc71);animation:live-pulse 1.6s ease-in-out infinite;}
+#live-count-num{color:#ccc;font-weight:700;}
+@keyframes live-pulse{0%,100%{opacity:1}50%{opacity:.35}}
+#srch{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
+  border-radius:18px;color:var(--txt);padding:0 14px;height:32px;font-size:12.5px;
+  font-family:var(--fb);outline:none;transition:all .2s;width:160px;}
+#srch:focus{border-color:var(--cyan);width:200px;background:rgba(var(--cr),.04)}
+#srch-mobile{display:none}
+#srch::placeholder{color:#333}
+#cart-btn{
+  position:relative;background:linear-gradient(135deg,var(--cyan),var(--pink));
+  border:none;border-radius:8px;color:#fff;padding:6px 14px;font-size:12px;
+  font-weight:700;cursor:pointer;font-family:var(--fb);letter-spacing:.5px;
+  white-space:nowrap;transition:opacity .15s;
+}
+#cart-btn:hover{opacity:.85}
+#cart-count{
+  position:absolute;top:-6px;right:-6px;background:var(--pink);color:#fff;
+  border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:700;
+  display:none;align-items:center;justify-content:center;
+}
+#cart-count.show{display:flex}
+
+/* ── NAV ROW 3 (VISTAS/FAVORITAS/PENDIENTES) ── */
+.nav-row-3{display:none} /* oculto en desktop; en móvil se muestra vía media query */
+/* desktop: doramas/novelas/juegos visibles en fila 1, ocultos en fila 2 */
+.nm-desktop-only{display:inline-flex}
+.nm-mobile-only{display:none}
+#active-filters-mobile{display:none}
+
+#sbar{padding:7px 18px;display:flex;justify-content:space-between;align-items:center;
+  gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--border);}
+.sc{font-size:11px;color:#444}.sc b{color:var(--txt);font-weight:600}
+.sc.cy b{color:var(--cyan)}.sc.pk b{color:var(--pink)}.sc.gn b{color:var(--green)}
+#srt{background:rgba(255,255,255,.04);border:1px solid var(--border);color:#777;
+  border-radius:6px;padding:4px 9px;font-size:11.5px;cursor:pointer;outline:none;font-family:var(--fb);}
+
+/* ── GRID ── */
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));
+  gap:12px;padding:14px 18px 18px;}
+
+/* ── CARD ── */
+.card{border-radius:9px;overflow:hidden;cursor:pointer;position:relative;
+  background:var(--s1);border:1px solid var(--border);
+  transition:transform .2s ease,box-shadow .2s,border-color .2s;
+  contain:layout style;}
+.card:hover{will-change:transform;transform:translateY(-5px) scale(1.02);
+  box-shadow:0 12px 36px rgba(var(--cr),.15),0 0 0 1px var(--cyan);border-color:var(--cyan);z-index:2;}
+.poster{aspect-ratio:2/3;overflow:hidden;position:relative;background:var(--s2);}
+.poster img{width:100%;height:100%;object-fit:cover;display:block;
+  opacity:0;transition:opacity .3s ease;image-rendering:auto;}
+.poster img.ok{opacity:1}
+.poster-ph{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:8px;color:#1a1a2a;padding:10px;text-align:center;}
+.poster-ph svg{width:32px;height:32px;flex-shrink:0;opacity:.3}
+.poster-ph span{font-size:9.5px;color:#222;line-height:1.3;word-break:break-word}
+.card-badge{position:absolute;top:6px;left:6px;z-index:3;
+  font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:8px;letter-spacing:.3px;}
+.cat-badge{position:absolute;top:6px;right:6px;z-index:3;
+  font-size:8.5px;font-weight:700;padding:2px 6px;border-radius:6px;letter-spacing:.4px;
+  background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.1);color:#aaa;}
+.bv{background:rgba(29,185,84,.9);color:#fff}
+.bf{background:rgba(var(--pr),.9);color:#fff}
+.bp{background:rgba(245,158,11,.9);color:#fff}
+.card-ov{position:absolute;inset:0;
+  background:linear-gradient(0deg,rgba(0,0,0,.95) 0%,rgba(0,0,0,.2) 55%,transparent 100%);
+  opacity:0;transition:opacity .18s;display:flex;flex-direction:column;
+  justify-content:flex-end;padding:10px 8px 8px;pointer-events:none;}
+.card:hover .card-ov{opacity:1}
+.ov-t{font-size:11.5px;font-weight:600;color:#fff;line-height:1.3;margin-bottom:2px}
+.ov-m{font-size:10px;color:#aaa}
+.card-info{padding:7px 8px 8px}
+.card-title{font-size:11.5px;font-weight:500;color:var(--txt);line-height:1.35;
+  overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin-bottom:2px;}
+.card-year{font-size:10px;color:var(--txt);margin-bottom:5px}
+.card-genres{font-size:9.5px;color:var(--txt);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-acts{display:flex;gap:3px}
+.ca{flex:1;border:1px solid var(--border);background:transparent;color:var(--txt);
+  font-size:12px;padding:4px;border-radius:5px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:all .14s;}
+.ca:hover{border-color:#555;color:#fff}
+.ca.av{background:rgba(29,185,84,.12);border-color:var(--green);color:var(--green)}
+.ca.af{background:rgba(var(--pr),.12);border-color:var(--pink);color:var(--pink)}
+.ca.ap{background:rgba(245,158,11,.12);border-color:var(--amber);color:var(--amber)}
+.ca.ac{background:rgba(var(--cr),.12);border-color:var(--cyan);color:var(--cyan)}
+
+/* ── PAGER ── */
+#pager{display:flex;justify-content:center;gap:5px;padding:10px 18px 32px;flex-wrap:wrap}
+.pg{background:var(--s2);border:1px solid var(--border);color:#666;
+  border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;
+  transition:all .14s;font-family:var(--fb);}
+.pg:hover{border-color:#555;color:#fff}
+.pg.on{background:var(--cyan);border-color:var(--cyan);color:#000;font-weight:700}
+.pg:disabled{opacity:.25;cursor:not-allowed}
+.pg-dots{color:#333;padding:5px 3px;font-size:13px}
+
+/* ── INFO MODAL (Ofertas Cloud Rider) ── */
+#info-modal{position:fixed;inset:0;z-index:900;display:none;
+  align-items:center;justify-content:center;background:rgba(4,4,8,.85);
+  backdrop-filter:blur(4px);padding:20px;}
+#info-modal.open{display:flex;animation:fadeIn .18s ease}
+#info-box{position:relative;max-width:520px;width:100%;max-height:85vh;overflow-y:auto;
+  background:var(--s1);border:1px solid rgba(var(--cr),.25);border-radius:14px;
+  padding:26px 22px 24px;box-shadow:0 20px 60px rgba(0,0,0,.7);}
+#info-close{position:absolute;top:10px;right:12px;background:transparent;border:none;
+  color:#777;font-size:18px;cursor:pointer;padding:4px 8px;border-radius:6px;transition:all .15s;}
+#info-close:hover{color:var(--pink);background:rgba(var(--pr),.08)}
+#info-box h2{font-family:var(--fh);font-size:24px;letter-spacing:1px;
+  color:var(--cyan);margin-bottom:14px;text-align:center;}
+#info-box .info-text{font-size:13.5px;line-height:1.7;color:#ddd;white-space:pre-wrap;}
+#info-box .info-text b,#info-box .info-text strong{color:var(--cyan)}
+#info-box a{color:var(--cyan);text-decoration:underline;word-break:break-all}
+
+/* ── DETAIL ── */
+#detail{position:fixed;inset:0;z-index:600;overflow-y:auto;background:var(--bg);display:none;}
+#detail.open{display:block;animation:fadeIn .18s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+#det-nav{position:sticky;top:0;z-index:10;padding:12px 20px;
+  background:linear-gradient(180deg,rgba(8,8,16,.98) 0%,transparent 100%);
+  display:flex;align-items:center;gap:12px;}
+#det-back{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+  color:#fff;border-radius:7px;padding:7px 14px;font-size:12px;
+  cursor:pointer;font-family:var(--fb);display:flex;align-items:center;gap:5px;transition:all .15s;}
+#det-back:hover{background:rgba(255,255,255,.14)}
+#det-add-cart{background:linear-gradient(135deg,var(--cyan),var(--pink));
+  border:none;color:#fff;border-radius:7px;padding:7px 14px;font-size:12px;
+  font-weight:700;cursor:pointer;font-family:var(--fb);transition:opacity .15s;margin-left:auto;}
+#det-add-cart:hover{opacity:.85}
+#det-add-cart.added{background:#1a3a1a;border:1px solid var(--green);color:var(--green)}
+#det-view-cart{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);
+  color:#fff;border-radius:7px;padding:7px 14px;font-size:12px;
+  font-weight:700;cursor:pointer;font-family:var(--fb);transition:all .15s;
+  display:flex;align-items:center;gap:6px;}
+#det-view-cart:hover{background:rgba(255,255,255,.14)}
+#det-cart-count{background:var(--cyan);color:#08080f;border-radius:10px;
+  font-size:10px;font-weight:800;padding:1px 6px;min-width:14px;text-align:center;}
+#det-tit-nav{font-family:var(--fh);font-size:16px;color:#fff;letter-spacing:1px;opacity:.6;
+  overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:300px;}
+#det-backdrop{position:fixed;top:0;left:0;right:0;height:65vh;
+  background-size:cover;background-position:center 20%;
+  mask-image:linear-gradient(180deg,rgba(0,0,0,.55) 0%,transparent 100%);
+  -webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,.55) 0%,transparent 100%);
+  pointer-events:none;z-index:0;}
+#det-body{position:relative;z-index:1;display:flex;gap:26px;
+  padding:16px 22px 36px;flex-wrap:wrap;margin-top:-30px;}
+#det-poster{width:185px;flex-shrink:0;border-radius:10px;overflow:hidden;
+  box-shadow:0 16px 48px rgba(0,0,0,.85);align-self:flex-start;margin-top:55px;}
+#det-poster img{width:100%;display:block}
+#det-poster-ph{width:100%;aspect-ratio:2/3;background:var(--s2);
+  display:flex;align-items:center;justify-content:center;color:#1a1a2a;}
+#det-info{flex:1;min-width:240px;padding-top:110px}
+#det-name{font-family:var(--fh);font-size:40px;
+  background:linear-gradient(135deg,#fff 60%,var(--cyan));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  letter-spacing:2px;line-height:1;margin-bottom:5px;text-shadow:none;}
+#det-tagline{font-size:12.5px;color:#555;font-style:italic;margin-bottom:14px}
+#det-chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px;align-items:center}
+#det-seasw{display:flex;gap:6px;flex-wrap:wrap;margin:-4px 0 13px;align-items:center}
+#det-seasw .swl{font-size:12px;color:#9a9aa8;margin-right:2px}
+.chip{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+  border-radius:14px;padding:3px 11px;font-size:11.5px;color:#f0f0f0;}
+.chip.rat{background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.25);color:var(--amber)}
+.chip.tp{background:rgba(var(--cr),.08);border-color:rgba(var(--cr),.2);color:var(--cyan)}
+#det-overview{font-size:13px;color:#f0f0f0;line-height:1.75;margin-bottom:16px;max-width:560px}
+#det-genres{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:16px}
+.dg{background:rgba(var(--cr),.07);border:1px solid rgba(var(--cr),.18);
+  color:var(--cyan);border-radius:14px;padding:3px 11px;font-size:11px;font-weight:600;}
+#det-acts{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:20px}
+.da{border:1px solid var(--border);background:rgba(255,255,255,.03);color:#777;
+  border-radius:7px;padding:7px 15px;font-size:12px;cursor:pointer;font-weight:600;
+  transition:all .16s;font-family:var(--fb);display:flex;align-items:center;gap:5px;}
+.da:hover{border-color:#666;color:#fff;background:rgba(255,255,255,.07)}
+.da.av{background:rgba(29,185,84,.1);border-color:var(--green);color:var(--green)}
+.da.af{background:rgba(var(--pr),.1);border-color:var(--pink);color:var(--pink)}
+.da.ap{background:rgba(245,158,11,.1);border-color:var(--amber);color:var(--amber)}
+#det-trailer{margin-top:6px}
+#det-trailer iframe{width:100%;max-width:520px;aspect-ratio:16/9;border-radius:9px;border:none;display:block;}
+#det-not-found{font-size:13px;color:#444;padding:8px 0;line-height:1.6}
+#det-cast-section{padding:0 22px 48px;position:relative;z-index:1}
+#det-cast-section h3{font-family:var(--fh);font-size:20px;letter-spacing:1px;
+  color:var(--cyan);margin-bottom:12px;}
+#det-cast{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:9px}
+.cc{text-align:center}
+.cc-img{width:100%;aspect-ratio:2/3;border-radius:6px;object-fit:cover;
+  background:var(--s2);display:block;margin-bottom:4px;}
+.cc-ph{width:100%;aspect-ratio:2/3;border-radius:6px;background:var(--s2);
+  display:flex;align-items:center;justify-content:center;color:#1a1a2a;margin-bottom:4px;}
+.cc-name{font-size:10px;color:#ccc;line-height:1.2}
+.cc-char{font-size:9.5px;color:#ddd;margin-top:2px}
+.spin-wrap{display:flex;align-items:center;gap:9px;color:#444;font-size:12.5px;padding:18px 0}
+.spin{width:17px;height:17px;border:2px solid #1a1a2a;border-top-color:var(--cyan);
+  border-radius:50%;animation:sp .7s linear infinite;flex-shrink:0}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ── CART PANEL ── */
+#cart-panel{
+  position:fixed;top:0;right:-400px;width:360px;max-width:100vw;
+  height:100vh; height:100dvh; /* dvh: en Android/iPhone la barra de direcciones
+    cambia de tamaño al hacer scroll; 100vh no lo tiene en cuenta y puede
+    empujar el botón de WhatsApp fuera de la pantalla visible. 100dvh sí se
+    ajusta en tiempo real al alto realmente visible. Se deja 100vh primero
+    como respaldo para navegadores viejos que no soporten dvh. */
+  background:#0a0a16;border-left:1px solid rgba(var(--cr),.15);
+  z-index:700;transition:right .28s cubic-bezier(.25,.46,.45,.94);
+  display:flex;flex-direction:column;
+}
+#cart-panel.open{right:0}
+#cart-head{padding:16px 18px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;}
+#cart-head h2{font-family:var(--fh);font-size:22px;letter-spacing:1px;
+  background:linear-gradient(135deg,var(--cyan),var(--pink));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+#cart-close{background:transparent;border:1px solid var(--border);color:#888;
+  border-radius:6px;padding:6px 10px;cursor:pointer;font-size:16px;}
+#cart-close:hover{border-color:#555;color:#fff}
+#cart-items{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 18px;min-height:0}
+.cart-item-wrap{border-bottom:1px solid var(--border);padding:10px 0}
+.cart-item{display:flex;gap:10px;align-items:center}
+.cart-item-img{width:40px;height:60px;border-radius:5px;object-fit:cover;background:var(--s2);flex-shrink:0}
+.cart-item-info{flex:1;min-width:0}
+.cart-item-title{font-size:12px;font-weight:500;color:var(--txt);
+  overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin-bottom:2px}
+.cart-item-cat{font-size:10px;color:#555;text-transform:uppercase;letter-spacing:.5px}
+.cart-item-del{background:transparent;border:none;color:#444;cursor:pointer;font-size:15px;padding:4px;
+  flex-shrink:0;transition:color .14s;}
+.cart-item-del:hover{color:var(--pink)}
+.cart-seas-toggle{background:transparent;border:none;color:var(--cyan);font-size:10.5px;
+  cursor:pointer;padding:4px 0 0;font-family:var(--fb);letter-spacing:.3px;}
+.cart-seas-toggle:hover{text-decoration:underline}
+.cart-seasons{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;padding-top:8px;
+  border-top:1px dashed var(--border);}
+.cart-seas-chk{display:flex;align-items:center;gap:4px;background:rgba(var(--cr),.06);
+  border:1px solid rgba(var(--cr),.18);border-radius:6px;padding:3px 7px;cursor:pointer;
+  font-size:10.5px;color:#ccc;user-select:none;transition:opacity .15s;}
+.cart-seas-chk input{accent-color:var(--cyan);cursor:pointer;margin:0;width:11px;height:11px}
+.cart-seas-chk.off{opacity:.4;text-decoration:line-through;}
+#cart-empty{text-align:center;padding:40px 20px;color:#333;font-size:13px}
+#cart-foot{padding:14px 18px;border-top:1px solid var(--border);flex-shrink:0}
+#cart-count-label{font-size:12px;color:#555;margin-bottom:10px}
+#cart-count-label b{color:var(--txt)}
+#cart-price-total{font-size:13px;color:#999;margin-bottom:6px;padding-top:10px;
+  border-top:1px dashed var(--border);}
+#cart-price-total b{font-family:var(--fh);font-size:17px;letter-spacing:.5px;
+  background:linear-gradient(135deg,var(--cyan),var(--pink));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+#cart-weight-total{font-size:12px;color:#888;margin-bottom:14px;}
+#cart-weight-total b{color:#aaa;font-weight:600;}
+.cart-item-price{font-size:11px;color:var(--cyan);font-weight:600;margin-top:2px}
+.cart-item-weight{font-size:11px;color:#888;font-weight:500;margin-top:2px}
+#cart-send{width:100%;background:linear-gradient(135deg,#25D366,#128C7E);
+  border:none;color:#fff;border-radius:8px;padding:12px;font-size:14px;font-weight:700;
+  cursor:pointer;font-family:var(--fb);letter-spacing:.5px;transition:opacity .15s;
+  display:flex;align-items:center;justify-content:center;gap:8px;}
+#cart-send:hover{opacity:.88}
+#cart-send:disabled{opacity:.3;cursor:not-allowed}
+#cart-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:699;display:none}
+#cart-overlay.show{display:block}
+
+/* ── MISC ── */
+#empty{text-align:center;padding:70px 20px;color:#252535;grid-column:1/-1}
+#empty p{font-size:13px;margin-top:8px}
+#bktop{position:fixed;bottom:20px;right:20px;
+  background:linear-gradient(135deg,var(--cyan),var(--pink));
+  color:#000;border:none;border-radius:50%;width:38px;height:38px;font-size:17px;
+  cursor:pointer;display:none;align-items:center;justify-content:center;z-index:200;
+  box-shadow:0 4px 14px rgba(var(--cr),.3);font-weight:700;}
+#bktop.show{display:flex}
+#prog-bar{position:fixed;bottom:0;left:0;right:0;height:2px;z-index:500;pointer-events:none}
+#prog-fill{height:100%;width:0%;transition:width .4s;
+  background:linear-gradient(90deg,var(--cyan),var(--pink));
+  box-shadow:0 0 8px var(--cyan);}
+
+/* ── SEASONS TABLE ── */
+#det-seasons{margin-bottom:18px}
+.seasons-title{font-family:var(--fh);font-size:14px;letter-spacing:1px;color:#555;
+  margin-bottom:8px;font-weight:400;}
+.seasons-grid{display:flex;flex-wrap:wrap;gap:6px}
+.season-chip{background:rgba(var(--cr),.06);border:1px solid rgba(var(--cr),.15);
+  border-radius:8px;padding:6px 12px;font-size:11.5px;color:#aaa;
+  display:flex;flex-direction:column;gap:2px;min-width:80px;}
+.season-chip b{color:var(--cyan);font-size:13px;font-family:var(--fh);letter-spacing:.5px}
+.season-chip span{font-size:10.5px;color:#e5e5e5}
+
+/* ── TRAILER BUTTON ── */
+#det-trailer{margin-top:8px;margin-bottom:4px}
+.trailer-btn{display:inline-flex;align-items:center;gap:8px;
+  background:rgba(255,0,0,.12);border:1px solid rgba(255,0,0,.25);
+  color:#ff4444;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:600;
+  text-decoration:none;transition:all .15s;font-family:var(--fb);}
+.trailer-btn:hover{background:rgba(255,0,0,.22);border-color:rgba(255,0,0,.5);color:#ff6666}
+
+/* CAT COLORS */
+.cat-peliculas{border-color:rgba(var(--cr),.2);color:var(--cyan)}
+.cat-series{border-color:rgba(var(--pr),.2);color:#ff1493}
+.cat-animes{border-color:rgba(255,140,0,.2);color:#ff8c00}
+.cat-animados{border-color:rgba(154,205,50,.2);color:#9acd32}
+.cat-doramas{border-color:rgba(218,112,214,.2);color:#da70d6}
+.cat-novelas{border-color:rgba(255,182,193,.2);color:#ffb6c1}
+.cat-juegos{border-color:rgba(0,255,127,.2);color:#00ff7f}
+
+
+/* ══════════════════════════════════════════
+   RESPONSIVE MÓVIL
+══════════════════════════════════════════ */
+
+/* ── Tablet (≤768px) ── */
+@media(max-width:768px){
+  #nav-menu{display:flex}
+  #nav-menu .nm-drop:hover .dmenu{display:block}
+}
+
+
+/* ── Móvil (≤600px) ── */
+@media(max-width:600px){
+
+  /* NAV MÓVIL */
+  #nav{
+    height:auto;padding:0;
+    flex-direction:column;align-items:stretch;gap:0;
+  }
+
+  /* TOP: Logo | Búsqueda | Carrito */
+  #nav-top{
+    display:flex;align-items:center;
+    padding:6px 8px;gap:6px;min-height:46px;flex-wrap:nowrap;
+  }
+  #logo-wrap{margin-right:0;flex:0 0 auto}
+  #logo-img{width:26px;height:26px}
+  #logo-text{font-size:14px;letter-spacing:1px}
+  #info-btn{font-size:9px;padding:5px 7px;margin-right:6px;letter-spacing:.4px}
+
+  /* Buscador móvil — ocupa espacio entre logo y carrito */
+  #srch-mobile{
+    display:block;
+    flex:1;min-width:0;
+    height:28px;font-size:11px;
+    padding:0 8px;border-radius:14px;
+    background:rgba(255,255,255,.05);
+    border:1px solid rgba(255,255,255,.08);
+    color:var(--txt);outline:none;
+    transition:border-color .2s;font-family:var(--fb);
+  }
+  #srch-mobile:focus{border-color:var(--cyan);background:rgba(var(--cr),.04)}
+  #srch-mobile::placeholder{color:#444}
+
+  /* Ocultar búsqueda original del nav-right */
+  #nav-right #srch{display:none}
+  #nav-right{margin-left:0;gap:4px;flex-shrink:0}
+  #cart-btn{padding:4px 8px;font-size:10px;border-radius:6px;white-space:nowrap}
+  #live-count{font-size:9px;gap:2px}
+  #nav-stats{display:none}
+  #hamburger{display:none}
+
+  /* NAV MENU — columna de filas */
+  #nav-menu{
+    display:flex;flex-direction:column;gap:0;
+    border-top:1px solid rgba(255,255,255,.06);
+  }
+
+  /* FILAS: wrap en 2 líneas, sin scroll */
+  .nav-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:2px;
+    padding:3px 6px;
+    align-items:center;
+    overflow:visible;
+  }
+  .nav-row-1{
+    border-bottom:1px solid rgba(255,255,255,.06);
+  }
+  .nav-row-2{
+    padding:3px 6px;
+    border-bottom:1px solid rgba(255,255,255,.06);
+  }
+
+  /* Botones compactos */
+  .nm{
+    font-size:10px;padding:5px 7px;white-space:nowrap;
+    letter-spacing:.3px;border-radius:5px;
+  }
+
+  /* Dropdowns GÉNEROS y AÑO en móvil — lista vertical simple */
+  .nm-drop{display:inline-block;position:relative}
+  .nm-drop > .nm-drop-btn{display:inline-flex}
+  /* Anular regla tablet que oculta con !important */
+  #nav-menu .dmenu.open{display:block !important}
+  .nm-drop > .nm-drop-btn.open-active{
+    color:var(--cyan) !important;
+    background:rgba(var(--cr),.08) !important;
+  }
+
+  /* Filtros activos junto a AÑO (fila 2) */
+  #active-filters{
+    display:flex;flex-wrap:wrap;
+    gap:4px;padding:0;margin-left:4px;
+  }
+  #active-filters:empty{display:none;padding:0}
+
+  /* VISTAS/FAVORITAS/PENDIENTES ahora se muestran aquí mismo, junto a AÑO
+     (antes estaban ocultos y duplicados en la fila 3 — esa fila ya no existe) */
+  .nm-status-desktop{display:inline-flex !important}
+
+  /* Fila 1: ocultar doramas/novelas/juegos (están en fila 2 móvil) */
+  .nm-desktop-only{display:none !important}
+  /* Fila 2: mostrar doramas/novelas/juegos solo en móvil */
+  .nm-mobile-only{display:inline-flex !important}
+
+  /* La fila de chips móvil ya no se usa (todo vive en #active-filters arriba) */
+  #active-filters-mobile{display:none !important}
+
+  /* FILA 3 eliminada: VISTAS/FAVORITAS/PENDIENTES se movieron a la fila de AÑO
+     para ganar una fila completa de espacio vertical en el inicio */
+  .nav-row-3{
+    display:none !important;
+  }
+
+  /* STATUS BAR — oculto en móvil */
+  #sbar{display:none !important;}
+
+  /* GRID: 2 columns on mobile */
+  #grid{
+    grid-template-columns:repeat(2,1fr);
+    gap:8px;padding:10px 10px 80px;
+  }
+
+  /* CARDS */
+  .card-title{font-size:11px}
+  .card-year{font-size:10px;margin-bottom:4px}
+  .card-genres{font-size:9px;margin-bottom:5px}
+  .ca{gap:3px}
+  .ca{font-size:12px;padding:4px 2px}
+  .cat-badge{font-size:8px;padding:1px 5px}
+
+  /* CAROUSEL MÓVIL: scroll horizontal, 2 tarjetas */
+  #carousel-wrap{padding:10px 8px 14px}
+  #carousel-track-wrap{
+    overflow-x:auto !important;overflow-y:hidden !important;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  #carousel-track-wrap::-webkit-scrollbar{display:none}
+  #carousel-track{
+    flex-wrap:nowrap !important;
+    justify-content:flex-start !important;
+    gap:10px !important;
+    padding:0 4px;
+  }
+  .cr-card{
+    flex:0 0 44vw !important;
+    min-width:130px;max-width:175px;
+  }
+  .cr-card img{height:calc(44vw * 1.5) !important;max-height:265px !important}
+  #carousel-dots{display:flex;gap:5px;margin-left:auto}
+  .cr-dot{
+    width:7px;height:7px;border-radius:50%;
+    background:rgba(var(--cr),.25);cursor:pointer;transition:.2s;
+  }
+  .cr-dot.on{background:var(--cyan)}
+
+  /* CART PANEL */
+  #cart-panel{width:100vw;border-left:none}
+  #cart-head h2{font-size:18px}
+
+  /* DETAIL PAGE */
+  #det-body{
+    padding:10px 12px 30px;
+    flex-direction:column;gap:16px;
+    margin-top:-20px;
+  }
+  #det-poster{
+    width:130px;margin-top:50px;
+    align-self:flex-start;
+  }
+  #det-info{padding-top:0;min-width:unset;width:100%}
+  #det-name{font-size:26px;letter-spacing:1px}
+  #det-tagline{font-size:12px}
+  #det-chips{gap:5px}
+  .chip{font-size:11px;padding:3px 9px}
+  #det-overview{font-size:12.5px;line-height:1.65}
+  .seasons-grid{gap:5px}
+  .season-chip{padding:5px 9px;min-width:70px}
+  #det-trailer iframe{max-width:100%}
+  #det-cast-section{padding:0 12px 40px}
+  #det-cast{grid-template-columns:repeat(auto-fill,minmax(75px,1fr));gap:8px}
+
+
+  /* BACK TO TOP */
+  #bktop{bottom:14px;right:14px;width:36px;height:36px;font-size:15px}
+
+  /* PROGRESS BAR */
+  #prog-bar{height:3px}
+
+  /* PAGER */
+  #pager{padding:8px 10px 20px;gap:4px}
+  .pg{padding:5px 9px;font-size:11px}
+
+}
+
+/* ── Very small (≤360px) ── */
+@media(max-width:360px){
+  #grid{grid-template-columns:repeat(2,1fr);gap:6px;padding:8px 8px 80px}
+  #logo-text{font-size:13px;letter-spacing:0}
+  #srch-mobile{max-width:120px}
+  #cart-btn{font-size:10px;padding:4px 8px}
+}
+
+/* ===== RECIÉN ACTUALIZADOS ===== */
+#carousel-wrap{
+  background:rgba(8,8,16,.95);
+  border-bottom:1px solid rgba(var(--cr),.12);
+  padding:12px 18px 18px;
+}
+#carousel-header{
+  display:flex;align-items:center;
+  margin-bottom:12px;
+}
+#carousel-title{
+  font-family:var(--fh);font-size:13px;letter-spacing:1.5px;
+  color:var(--cyan);text-transform:uppercase;opacity:.85;
+}
+#carousel-dots{display:none}
+#carousel-track-wrap{width:100%;overflow:hidden}
+#carousel-track{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  justify-content:center;
+}
+.cr-card{
+  flex:0 0 130px;
+  position:relative;
+  border-radius:8px;overflow:hidden;
+  cursor:pointer;
+  border:1px solid rgba(255,255,255,.07);
+  transition:transform .2s,box-shadow .2s;
+}
+.cr-card:hover{transform:scale(1.05);box-shadow:0 0 18px rgba(var(--cr),.4)}
+.cr-card img{
+  width:100%;height:195px;object-fit:cover;display:block;
+  background:#111;
+}
+.cr-card-label{
+  position:absolute;bottom:0;left:0;right:0;
+  padding:22px 6px 5px;
+  background:linear-gradient(0deg,rgba(0,0,0,.88) 0%,transparent 100%);
+  font-size:10px;color:#fff;font-weight:600;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.cr-card-cat{
+  position:absolute;top:5px;left:5px;
+  font-size:8px;padding:2px 5px;border-radius:8px;
+  background:rgba(var(--cr),.85);color:#000;font-weight:700;letter-spacing:.4px;
+}
+/* cr-card mobile overrides handled in @media(max-width:768px) above */
+
+/* ══ HALLOWEEN (se activa con window.HW_ON=true; quitar = ponerlo en false) ══ */
+.hw-deco{display:none}
+body.hw{background:var(--bg) linear-gradient(180deg,rgba(var(--pr),.14) 0,var(--bg) 460px) no-repeat}
+body.hw:not(.th-halloween) .hw-halo{display:none}
+body.hw ::selection{background:rgba(var(--cr),.35)}
+body.hw .hw-deco{display:block}
+body.hw #nav{border-bottom-color:rgba(var(--cr),.28)}
+body.hw #logo-img{box-shadow:0 0 12px rgba(var(--cr),.55)}
+body.hw #logo-text{animation:hw-flicker 6s linear infinite}
+@keyframes hw-flicker{0%,90%,94%,100%{opacity:1}92%{opacity:.55}96%{opacity:.8}}
+.hw-web{position:absolute;top:100%;width:92px;height:92px;color:rgba(214,196,255,.5);pointer-events:none;z-index:1}
+.hw-web svg{width:100%;height:100%;display:block}
+.hw-web-l{left:0}
+.hw-web-r{right:0;transform:scaleX(-1)}
+.hw-spider{position:absolute;top:100%;right:130px;width:18px;height:48px;color:#c9b3ff;pointer-events:none;
+  transform-origin:50% 0;animation:hw-swing 4.5s ease-in-out infinite alternate}
+.hw-spider svg{width:100%;height:100%;display:block}
+@keyframes hw-swing{from{transform:rotate(-7deg)}to{transform:rotate(7deg)}}
+#hw-bats{position:fixed;inset:0;pointer-events:none;z-index:250;overflow:hidden}
+.hw-bat{position:absolute;left:0;width:34px;height:17px;color:#8a5be0;white-space:nowrap;opacity:.85;will-change:transform;
+  animation:hw-fly 26s linear infinite}
+.hw-bat svg{width:100%;height:100%;display:block;animation:hw-flap .38s ease-in-out infinite alternate}
+.hw-bat1{top:18%}
+.hw-bat2{top:46%;width:26px;height:13px;animation-duration:34s;animation-delay:-12s}
+.hw-bat3{top:72%;width:30px;height:15px;animation-duration:42s;animation-delay:-27s}
+@keyframes hw-fly{
+  0%{transform:translate3d(-80px,0,0)}
+  17%{transform:translate3d(25vw,-34px,0)}
+  35%{transform:translate3d(50vw,26px,0)}
+  52%{transform:translate3d(75vw,-22px,0)}
+  70%,100%{transform:translate3d(calc(100vw + 80px),8px,0)}}
+@keyframes hw-flap{from{transform:scaleY(1)}to{transform:scaleY(.45)}}
+body.hw-paused .hw-bat,body.hw-paused .hw-bat svg,body.hw-paused .hw-spider,body.hw-paused #logo-text{animation-play-state:paused}
+@media(max-width:700px){
+  .hw-web{width:60px;height:60px}
+  .hw-spider{right:70px;height:36px;width:13px}
+  .hw-bat3{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+  body.hw .hw-bat,body.hw .hw-bat svg,body.hw .hw-spider,body.hw #logo-text{animation:none}
+  body.hw #hw-bats{display:none}
+}
+
+/* ══ TEMPORADA: emojis voladores (no-halloween) ══ */
+body.hw:not(.th-halloween) .hw-bat{width:auto;height:auto;font-size:22px;line-height:1}
+/* ══ WHATSAPP FLOTANTE ══ */
+#wa-fab{position:fixed;right:16px;bottom:68px;width:52px;height:52px;border-radius:50%;background:#25d366;z-index:220;
+  display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.45);text-decoration:none}
+#wa-fab svg{width:28px;height:28px;fill:#fff}
+#wa-fab::after{content:"";position:absolute;inset:0;border-radius:50%;border:2px solid #25d366;animation:wa-ring 2.8s ease-out infinite}
+@keyframes wa-ring{0%{transform:scale(1);opacity:.7}70%,100%{transform:scale(1.55);opacity:0}}
+/* ══ ANIMACIÓN CARRITO ══ */
+.bump{animation:cart-bump .5s cubic-bezier(.3,1.6,.5,1)}
+@keyframes cart-bump{0%{transform:scale(1)}35%{transform:scale(1.4)}100%{transform:scale(1)}}
+/* ══ SKELETON ══ */
+.card.sk{pointer-events:none;border-color:var(--border)}
+.card.sk:hover{transform:none;box-shadow:none}
+.sk .poster,.sk-l{background:var(--s2);position:relative;overflow:hidden}
+.sk-l{height:10px;margin:9px 10px 0;border-radius:4px}.sk-l.s{width:55%;margin-bottom:12px}
+.sk .poster::after,.sk-l::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.06) 50%,transparent 70%);
+  transform:translateX(-100%);animation:sk-sh 1.4s infinite}
+@keyframes sk-sh{to{transform:translateX(100%)}}
+/* ══ COLECCIONES / MÁS PEDIDOS ══ */
+#col-bar{display:flex;gap:8px;overflow-x:auto;padding:12px 18px 2px;scrollbar-width:none}
+#col-bar::-webkit-scrollbar{display:none}
+.col-chip{flex:0 0 auto;font-family:var(--fb);font-size:12px;font-weight:600;color:#bbb;background:var(--s2);
+  border:1px solid var(--border);border-radius:20px;padding:7px 14px;cursor:pointer;white-space:nowrap;transition:background .15s,border-color .15s,color .15s}
+.col-chip:hover{border-color:var(--cyan);color:#fff}
+.col-chip b{font-weight:600;opacity:.55;margin-left:4px}
+.col-chip.hot{background:linear-gradient(135deg,rgba(var(--cr),.22),rgba(var(--pr),.22));border-color:rgba(var(--cr),.5);color:#fff}
+.col-chip.on{background:linear-gradient(135deg,var(--cyan),var(--pink));border-color:transparent;color:#fff}
+@media(prefers-reduced-motion:reduce){#wa-fab::after,.sk .poster::after,.sk-l::after,.bump{animation:none}}
+
+/* ══ CARPETAS DE SAGAS ══ */
+#pk{position:fixed;inset:0;z-index:550;background:var(--bg) linear-gradient(180deg,rgba(var(--pr),.14) 0,var(--bg) 360px) no-repeat;overflow-y:auto;display:none}
+#pk.open{display:block}
+#pk-head{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(10,10,18,.96);border-bottom:1px solid rgba(var(--cr),.25)}
+#pk-title{flex:1;font-family:var(--fh);font-size:15px;font-weight:700;letter-spacing:1px;color:var(--cyan);text-align:center}
+.pk-b{background:var(--s2);color:#ddd;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font:600 12px var(--fb);cursor:pointer;white-space:nowrap}
+.pk-b:hover{border-color:var(--cyan)}
+.pk-hint{margin:14px 18px 0;color:#9a9aa8;font-size:13px}
+.pk-folders{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;padding:14px 18px 40px}
+.pk-f{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;background:var(--s2);border:1px solid var(--border);border-radius:14px;padding:18px 10px;color:#eee;font-family:var(--fb);cursor:pointer;transition:border-color .15s,transform .15s}
+.pk-f:hover{border-color:var(--cyan);transform:translateY(-3px)}
+.pk-e{font-size:34px;line-height:1}.pk-f b{font-size:13px;font-weight:700}.pk-f small{font-size:11px;color:#8d8da0}
+.pk-bar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:14px 18px 0}
+.pk-add{background:linear-gradient(135deg,var(--cyan),var(--pink));color:#fff;border:0;border-radius:10px;padding:11px 18px;font:700 13px var(--fb);cursor:pointer}
+.pk-add:disabled{opacity:.45;cursor:default}.pk-cnt{font-size:12px;color:#8d8da0}
+.pk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:12px;padding:14px 18px 40px}
+/* ══ MANO ZOMBIE ══ */
+#zb{position:fixed;inset:0;z-index:950;background:rgba(0,0,0,.82);display:none;align-items:center;justify-content:center;padding:16px}
+#zb.open{display:flex}
+.zb-card{width:min(340px,100%);text-align:center;background:#0e1410;border:1px solid #3d6b2f;border-radius:18px;padding:22px 18px;box-shadow:0 0 40px rgba(110,200,80,.25);animation:zb-shake .45s}
+.zb-t{font:700 22px var(--fh);letter-spacing:2px;color:#9be36f}.zb-s{font-size:12px;color:#9a9aa8;margin-top:2px}
+.zb-h{width:170px;margin:10px auto 0;overflow:hidden}.zb-hand{width:100%;display:block;animation:zb-rise .9s cubic-bezier(.2,1.4,.4,1) both}
+.zb-n{font:700 18px var(--fb);color:#fff;margin-top:6px}.zb-p{font:700 34px var(--fh);color:#9be36f;margin:2px 0 8px}
+.zb-c{font-size:11px;color:#8d8da0;line-height:1.5}.zb-c b{color:#cfe9c0;letter-spacing:1px}
+.zb-x{margin-top:14px;background:#2c4a21;color:#fff;border:0;border-radius:10px;padding:10px 26px;font:700 13px var(--fb);cursor:pointer}
+.zb-fn{transform-box:fill-box;transform-origin:50% 100%;animation:zb-tw 1.1s ease-in-out infinite alternate}
+@keyframes zb-rise{from{transform:translateY(70%) rotate(-8deg);opacity:0}to{transform:none;opacity:1}}
+@keyframes zb-tw{to{transform:rotate(7deg)}}
+@keyframes zb-shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+@media(prefers-reduced-motion:reduce){.zb-card,.zb-hand,.zb-fn{animation:none}}
+</style>
+</head>
+<body>
+<script>
+/* ===== TEMAS POR FECHA (automático). Fuera de estas fechas el sitio se ve normal ===== */
+(function(){
+  /* emo = [películas, series, animes, animados, doramas, novelas, juegos] */
+  var TH={
+   halloween:{c:['#ff8a1f','#d96a0a','#8e44ff','255,138,31','142,68,255'],emo:['💀','🕷️','🦇','🧙','🕸️','🧛','🧟'],cart:'🎃',hot:'🕯️',fly:[]},
+   navidad:{c:['#ef4444','#c53030','#22c55e','239,68,68','34,197,94'],emo:['🎄','⛄','🔔','🎅','❄️','🎁','🦌'],cart:'🎁',hot:'⭐',fly:['❄️','🛷','⭐']},
+   reyes:{c:['#f5c518','#d9a90a','#3b82f6','245,197,24','59,130,246'],emo:['👑','⭐','🐪','🎁','🌟','💎','🎯'],cart:'🎁',hot:'⭐',fly:['⭐','🐪','✨']},
+   sanvalentin:{c:['#ff4d8d','#d63a73','#e11d48','255,77,141','225,29,72'],emo:['💘','💌','💕','🌹','💞','💋','🧸'],cart:'💝',hot:'💖',fly:['💕','❤️','💘']},
+   verano:{c:['#ffb703','#e09f00','#00b4d8','255,183,3','0,180,216'],emo:['🏖️','🍉','🌴','🍦','🐚','🕶️','🏄'],cart:'🍹',hot:'☀️',fly:['☀️','🏐','🍉']},
+   madres:{c:['#ff6fae','#e0568f','#b266ff','255,111,174','178,102,255'],emo:['🌷','🌸','🌼','🎀','💐','🌺','🦋'],cart:'💐',hot:'🌹',fly:['🌸','🦋','🌷']}
+  };
+  var t='auto', d=new Date(), mo=d.getMonth()+1, dy=d.getDate();
+  if(t==='auto') t=(mo===10||(mo===11&&dy<=2))?'halloween':(mo===12&&dy<=26)?'navidad':(mo===1&&dy<=6)?'reyes':(mo===2&&dy>=7&&dy<=14)?'sanvalentin':(mo===5&&dy<=15)?'madres':(mo>=6&&mo<=8)?'verano':'ninguno';
+  var T=TH[t]||null; window.TH=T; window.TH_NAME=T?t:'';
+  if(T){
+    var b=document.body, s=b.style;
+    b.className+=' hw th-'+t;
+    s.setProperty('--cyan',T.c[0]); s.setProperty('--dark-cyan',T.c[1]); s.setProperty('--pink',T.c[2]);
+    s.setProperty('--cr',T.c[3]); s.setProperty('--pr',T.c[4]);
+  }
+})();
+</script>
+
+<nav id="nav">
+<div class="hw-deco hw-halo hw-web hw-web-l" aria-hidden="true"><svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width=".9" stroke-linecap="round"><path d="M0 0L100.0 0.0M0 0L92.4 38.3M0 0L70.7 70.7M0 0L38.3 92.4M0 0L0.0 100.0M28.0 0.0Q21.0 4.2 25.9 10.7M25.9 10.7Q17.8 11.9 19.8 19.8M19.8 19.8Q11.9 17.8 10.7 25.9M10.7 25.9Q4.2 21.0 0.0 28.0M52.0 0.0Q39.0 7.8 48.0 19.9M48.0 19.9Q33.1 22.1 36.8 36.8M36.8 36.8Q22.1 33.1 19.9 48.0M19.9 48.0Q7.8 39.0 0.0 52.0M78.0 0.0Q58.5 11.6 72.1 29.8M72.1 29.8Q49.6 33.2 55.2 55.2M55.2 55.2Q33.2 49.6 29.8 72.1M29.8 72.1Q11.6 58.5 0.0 78.0"/></svg></div><div class="hw-deco hw-halo hw-web hw-web-r" aria-hidden="true"><svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width=".9" stroke-linecap="round"><path d="M0 0L100.0 0.0M0 0L92.4 38.3M0 0L70.7 70.7M0 0L38.3 92.4M0 0L0.0 100.0M28.0 0.0Q21.0 4.2 25.9 10.7M25.9 10.7Q17.8 11.9 19.8 19.8M19.8 19.8Q11.9 17.8 10.7 25.9M10.7 25.9Q4.2 21.0 0.0 28.0M52.0 0.0Q39.0 7.8 48.0 19.9M48.0 19.9Q33.1 22.1 36.8 36.8M36.8 36.8Q22.1 33.1 19.9 48.0M19.9 48.0Q7.8 39.0 0.0 52.0M78.0 0.0Q58.5 11.6 72.1 29.8M72.1 29.8Q49.6 33.2 55.2 55.2M55.2 55.2Q33.2 49.6 29.8 72.1M29.8 72.1Q11.6 58.5 0.0 78.0"/></svg></div><div class="hw-deco hw-halo hw-spider" aria-hidden="true"><svg viewBox="0 0 24 64" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><path d="M12 0V40"/><ellipse cx="12" cy="48" rx="5" ry="6" fill="currentColor" stroke="none"/><circle cx="12" cy="41.5" r="3" fill="currentColor" stroke="none"/><path d="M7.5 46L1 42M7 49L0 50M7.5 52L2 58M16.5 46L23 42M17 49L24 50M16.5 52L22 58"/></svg></div>
+  <div id="nav-top">
+  <a id="logo-wrap" href="#">
+    <img id="logo-img" src="logo.webp" width="38" height="38" alt="Cloud Rider" alt="Cloud Rider" >
+    <span id="logo-text">CLOUD RIDER</span>
+  </a>
+  <button id="info-btn" title="Información">INFORMACIÓN</button>
+  <input id="srch-mobile" type="search" placeholder="🔍 Buscar..." autocomplete="off">
+  </div><!-- /nav-top -->
+  <div id="nav-menu">
+    <!-- FILA 1: INICIO, PELÍCULAS, SERIES, ANIMES, ANIMADOS -->
+    <div class="nav-row nav-row-1">
+      <button class="nm on" data-f="todas">INICIO</button>
+      <button class="nm" data-f="peliculas">🎬 PELÍCULAS</button>
+      <button class="nm" data-f="series">📺 SERIES</button>
+      <button class="nm" data-f="animes">⛩ ANIMES</button>
+      <button class="nm" data-f="animados">🎨 ANIMADOS</button>
+      <!-- Solo visibles en desktop (fila 1 desktop también tiene el resto) -->
+      <button class="nm nm-desktop-only" data-f="doramas">🌸 DORAMAS</button>
+      <button class="nm nm-desktop-only" data-f="novelas">💋 NOVELAS</button>
+      <button class="nm nm-desktop-only" data-f="juegos">🎮 JUEGOS PC</button>
+    </div>
+    <!-- FILA 2: DORAMAS, NOVELAS, JUEGOS PC, GÉNEROS, AÑO (solo móvil), + filtros activos en desktop -->
+    <div class="nav-row nav-row-2">
+      <button class="nm nm-mobile-only" data-f="doramas">🌸 DORAMAS</button>
+      <button class="nm nm-mobile-only" data-f="novelas">💋 NOVELAS</button>
+      <button class="nm nm-mobile-only" data-f="juegos">🎮 JUEGOS PC</button>
+    <div class="nm-drop">
+      <button class="nm-drop-btn">GÉNEROS ▾</button>
+      <div class="dmenu">
+        <a href="#" data-g="accion">⚔️ Acción</a>
+        <a href="#" data-g="comedia">😂 Comedia</a>
+        <a href="#" data-g="drama">🎭 Drama</a>
+        <a href="#" data-g="terror">👻 Terror</a>
+        <a href="#" data-g="fantasia">🔮 Ciencia Ficción</a>
+      </div>
+    </div>
+    <div class="nm-drop">
+      <button class="nm-drop-btn">AÑO ▾</button>
+      <div class="dmenu scrollable" id="year-drop">
+        <a href="#" data-y="">Todos</a>
+      </div>
+    </div>
+      <div id="active-filters"></div>
+    </div><!-- /nav-row-2 -->
+    <!-- FILA 3: chips (solo móvil) -->
+    <div class="nav-row nav-row-3">
+      <div id="active-filters-mobile"></div>
+    </div><!-- /nav-row-3 -->
+  </div>
+  <!-- hamburger only shown on mobile via CSS -->
+  <div id="nav-right">
+    <button id="hamburger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+    <input id="srch" type="search" placeholder="🔍 Buscar..." autocomplete="off">
+    <button id="cart-btn">🛒 PEDIDO <span id="cart-count">0</span></button>
+  </div>
+</nav>
+
+
+
+<!-- CAROUSEL RECIENTES -->
+<div id="col-bar" aria-label="Sagas" style="display:none"></div>
+<div id="carousel-wrap">
+  <div id="carousel-header">
+    <span id="carousel-title">🔥 Recién Actualizados</span>
+    <div id="carousel-dots"></div>
+  </div>
+  <div id="carousel-track-wrap">
+    <div id="carousel-track"></div>
+  </div>
+</div>
+
+<!-- MOBILE MENU -->
+<div id="mobile-menu">
+  <div class="mm-sub">Categorías</div>
+  <button class="mm-item on" data-f="todas">🏠 INICIO</button>
+  <button class="mm-item" data-f="peliculas">🎬 PELÍCULAS</button>
+  <button class="mm-item" data-f="series">📺 SERIES</button>
+  <button class="mm-item" data-f="animes">⛩ ANIMES</button>
+  <button class="mm-item" data-f="animados">🎨 ANIMADOS</button>
+  <button class="mm-item" data-f="doramas">🌸 DORAMAS</button>
+  <button class="mm-item" data-f="novelas">💋 NOVELAS</button>
+  <button class="mm-item" data-f="juegos">🎮 JUEGOS PC</button>
+  <div class="mm-sep"></div>
+  <div class="mm-sub">Géneros</div>
+  <button class="mm-item" data-g="accion">⚔️ Acción</button>
+  <button class="mm-item" data-g="comedia">😂 Comedia</button>
+  <button class="mm-item" data-g="drama">🎭 Drama</button>
+  <button class="mm-item" data-g="terror">👻 Terror</button>
+  <button class="mm-item" data-g="fantasia">🔮 Ciencia Ficción</button>
+</div>
+
+
+
+
+<div id="sbar">
+  <div style="display:flex;gap:12px;flex-wrap:wrap">
+    <span class="sc cy">Total: <b id="st">-</b></span>
+    <span class="sc">📋 Mostrando: <b id="cnt">-</b></span>
+  </div>
+  <select id="srt">
+    <option value="az">A → Z</option>
+    <option value="za">Z → A</option>
+    <option value="new">Más reciente</option>
+    <option value="old">Más antiguo</option>
+  </select>
+</div>
+
+<div id="grid"></div>
+<div id="pager"></div>
+<div id="prog-bar"><div id="prog-fill"></div></div>
+
+<!-- DETAIL -->
+<div id="detail">
+  <div id="det-nav">
+    <button id="det-back">← Volver</button>
+    <span id="det-tit-nav"></span>
+    <button id="det-add-cart">🛒 Añadir al pedido</button>
+    <button id="det-view-cart">📋 PEDIDO <span id="det-cart-count">0</span></button>
+  </div>
+  <div id="det-backdrop"></div>
+  <div id="det-body">
+    <div id="det-poster"></div>
+    <div id="det-info"></div>
+  </div>
+  <div id="det-cast-section"></div>
+</div>
+
+<!-- CART PANEL -->
+<div id="cart-overlay"></div>
+<div id="cart-panel">
+  <div id="cart-head">
+    <h2>🛒 MI PEDIDO</h2>
+    <button id="cart-close">✕</button>
+  </div>
+  <div id="cart-items">
+    <div id="cart-empty">Tu pedido está vacío.<br>Añade películas, series o juegos.</div>
+  </div>
+  <div id="cart-foot">
+    <div id="cart-count-label">Tienes <b id="cart-total">0</b> título(s) en tu pedido</div>
+    <div id="cart-price-total">Precio estimado: <b id="cart-price-val">0</b> CUP</div>
+    <div id="cart-weight-total">Peso estimado: <b id="cart-weight-val">0</b> GB</div>
+    <button id="cart-send" disabled>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      ENVIAR PEDIDO POR WHATSAPP
+    </button>
+  </div>
+</div>
+
+<button id="bktop">↑</button>
+
+<!-- ══ INFO MODAL (Ofertas Cloud Rider) ══ -->
+<div id="info-modal">
+  <div id="info-box">
+    <button id="info-close">✕</button>
+    <h2>🔔 OFERTAS CLOUD RIDER 🔔</h2>
+    <div class="info-text">▫️▪️▫️▪️▫️▪️▫️▪️▫️▪️
+
+<b>Descargas y Copias:</b>
+Películas FullHD 50 cup
+Series 10 cup cada capítulo
+Novelas 5 cup cada capítulo
+Doramas 10 cup cada capítulo
+Animes 5 cup cada capítulo
+Animados 5 cup cada capítulo
+Juegos de PC a 10 cup el GB
+
+<i>(Los precios anteriores de los capítulos son por temporada completa. Los capítulos individuales cuestan el doble del precio mostrado)</i>
+
+Tenemos un gran almacén con mucha información a elegir por usted.
+
+Whatsapp 📲 <a href="https://wa.me/55213690" target="_blank" rel="noopener">wa.me/55213690</a>
+Grupo de Whatsapp <a href="https://chat.whatsapp.com/Le6fX8TThs9FyOtbU236fy" target="_blank" rel="noopener">chat.whatsapp.com/Le6fX8TThs9FyOtbU236fy</a>
+
+Matanzas. Calle Río entre Ayuntamiento y Jovellanos.
+
+El Pago puede ser x Transferencia ☑️
+Hacemos Domicilio ☑️
+
+<b>Ofertas</b>
+• Por cada 1000 cup de compra de series, películas y demás te regalamos 300 cup en lo que desees copiar de nuestro almacén
+• El Tera (1000gb) de series, películas y demás puede comprarlo por 10000 cup (sin incluir el domicilio)
+
+<b>Servicios</b>
+• Reinstalación de Windows e instalación de programas a computadoras y Laptops
+• Activación de Juegos que no tienen crack
+• Descarga de otros contenidos a 20 cup gb
+• Descarga y actualización de juegos online</div>
+  </div>
+</div>
+
+<script id="D" type="application/json">W10=</script>
+<script>
+(function(){
+'use strict';
+
+/* ══════════════════════════════════════════════════
+   CLOUD RIDER — CATÁLOGO (modo CSV-only, sin TMDB)
+══════════════════════════════════════════════════ */
+
+/* ── OPTIMIZACIÓN DE IMÁGENES TMDB ──
+   Las URLs del CSV vienen como .../t/p/original/xxxx.jpg (resolución completa,
+   pesan cientos de KB e incluso varios MB). Para celular/conexiones lentas,
+   pedimos un tamaño mucho más liviano sin tocar el resto de la URL.
+   w342 es nítido de sobra para tarjetas/pósters; w780 alcanza para los
+   backdrops grandes de la ficha de detalle. */
+function tmdbResize(url, size){
+  if(!url) return url;
+  return url.replace('/t/p/original/', '/t/p/'+size+'/');
+}
+function posterUrl(url){ return tmdbResize(url,'w342'); }
+function backdropUrl(url){ return tmdbResize(url,'w780'); }
+
+var DB = JSON.parse(atob(document.getElementById('D').textContent));
+rebuildKeyIndex(); /* por si loadCSVsFromGitHub nunca llega a correr (sin red) */
+var WA = '5355213690';
+var PER = (typeof window!=='undefined' && window.innerWidth<=600) ? 24 : 50;
+
+/* Exponer al scope global para que el carrusel "Recién Actualizados"
+   (que vive en su propio IIFE más abajo) pueda acceder siempre al
+   valor más actual, sin importar si se reasignan luego. */
+Object.defineProperty(window,'DB',{get:function(){ return DB; },configurable:true});
+Object.defineProperty(window,'overrides',{get:function(){ return overrides; },configurable:true});
+window.openDetail = function(i){ openDetail(i); };
+
+var page=1, catF='todas', genreF=null, yearF=null, q='', sort='az', statusF='todas';
+var uState={}, cart=[];
+var detIdx=-1;
+
+/* ── OVERRIDES — datos de CSV ── */
+var OVER_KEY = 'cr_overrides';
+var overrides = {};
+/* Los datos vienen de los CSV en cada carga (rebuildDB los reconstruye), así que ya
+   no se guardan en localStorage: serializar miles de fichas en cada render era lento. */
+function loadOverrides(){ try{ localStorage.removeItem(OVER_KEY); }catch(e){} }
+function saveOverrides(){}
+
+/* Devuelve los datos del CSV  para el índice i */
+function getData(i){
+  return (overrides[i] && typeof overrides[i]==='object') ? overrides[i]
+       : {p:null,b:null,g:[],r:null,ov:null,eps:null,seas:null,src:null,url:null};
+}
+
+/* ── ETIQUETAS ── */
+var CL = {peliculas:'Película',series:'Serie',animes:'Anime',animados:'Animado',
+          doramas:'Dorama',novelas:'Novela',juegos:'Juego PC'};
+var CAT_EMOJI_WA = {peliculas:'🎬',series:'📺',animes:'⛩',animados:'🎨',
+                 doramas:'🌸',novelas:'💋',juegos:'🎮'}; /* el mensaje de WhatsApp conserva los emojis originales */
+var CAT_EMOJI = window.TH ? {peliculas:TH.emo[0],series:TH.emo[1],animes:TH.emo[2],animados:TH.emo[3],
+                 doramas:TH.emo[4],novelas:TH.emo[5],juegos:TH.emo[6]} : CAT_EMOJI_WA;
+
+/* ── STORAGE ── */
+function LS(k,v){
+  try{
+    if(v===undefined) return JSON.parse(localStorage.getItem(k));
+    localStorage.setItem(k, JSON.stringify(v));
+  }catch(e){ return null; }
+}
+function load(){
+  var VER='cr_v9';
+  if(!LS(VER)){
+    try{
+      ['cr_s4','cr_c4','cr_c3','cr_c2','cr_s3','cr_cart','cr_overrides']
+        .forEach(function(k){ localStorage.removeItem(k); });
+      LS(VER,'1');
+    }catch(e){}
+  }
+  var s=LS('cr_s4'), ct=LS('cr_cart');
+  if(s && typeof s==='object') uState=s;
+  if(ct && Array.isArray(ct)) cart=ct;
+}
+function saveS(){ LS('cr_s4', uState); }
+function saveCart(){ LS('cr_cart', cart); }
+
+function ck(t,y){ return t+'§'+y; }
+
+/* ── BUILD YEAR DROPDOWN ── */
+function buildYears(){
+  var years={};
+  DB.forEach(function(m){ if(m.y) years[m.y]=1; });
+  var sorted=Object.keys(years).sort(function(a,b){ return parseInt(b)-parseInt(a); });
+  var drop=document.getElementById('year-drop');
+  drop.innerHTML=''; /* evita duplicar años si buildYears() se llama más de una vez */
+  sorted.forEach(function(y){
+    var a=document.createElement('a'); a.href='#'; a.dataset.y=y; a.textContent=y;
+    drop.appendChild(a);
+  });
+  drop.querySelectorAll('[data-y]').forEach(function(a){
+    a.addEventListener('click',function(e){
+      e.preventDefault();
+      yearF = a.dataset.y||null;
+      document.querySelectorAll('[data-y]').forEach(function(x){ x.classList.remove('on'); x.style.color=''; });
+      if(yearF){ a.classList.add('on'); a.style.color='var(--cyan)'; }
+      /* Cerrar el dropdown completo (antes no se cerraba en absoluto) */
+      document.querySelectorAll('.dmenu').forEach(function(m){ m.style.display='none'; m.classList.remove('open'); });
+      document.querySelectorAll('.nm-drop-btn').forEach(function(b){ b.classList.remove('open-active'); });
+      page=1; renderGrid();
+    });
+  });
+}
+
+/* ── PROGRESS BAR — completo desde el inicio (no hay fetch API) ── */
+function progDone(){
+  var fill=document.getElementById('prog-fill');
+  if(fill){ fill.style.width='100%'; setTimeout(function(){ document.getElementById('prog-bar').style.opacity='0'; },800); }
+}
+
+/* ── STATS ── */
+function updateStats(){
+  document.getElementById('st').textContent=DB.length;
+}
+
+/* ── FILTER ── */
+/* Normaliza texto: minúsculas + sin tildes + sin puntuación especial
+   Permite buscar "101 dalmatas" y encontrar "101 dálmatas",
+   "espanol" → "español", "canibal" → "caníbal", etc. */
+function normSearch(s){
+  if(!s) return '';
+  return String(s)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g,'')
+    .replace(/[^a-z0-9 ]/g,' ')
+    .replace(/[ ]+/g,' ')
+    .trim();
+}
+
+function filtered(){
+  if(!DB||!DB.length) return [];
+  var items=DB.map(function(m,i){ return {t:m.t,y:m.y,c:m.c,i:i,sk:m.sk||''}; });
+  if(q){
+    var lq=normSearch(q);
+    items=items.filter(function(m){
+      var dbItem=DB[m.i];
+      if(!dbItem) return false;
+      /* Título (ya normalizado al cargar, no se recalcula en cada tecla) */
+      if(dbItem.tn && dbItem.tn.indexOf(lq)!==-1) return true;
+      /* Título original/alterno */
+      if(dbItem.an && dbItem.an.indexOf(lq)!==-1) return true;
+      if(m.y&&m.y.indexOf(lq)!==-1) return true;
+      /* Géneros */
+      if(dbItem.gn && dbItem.gn.indexOf(lq)!==-1) return true;
+      /* Sinopsis — se normaliza la primera vez que se necesita (no al cargar
+         la página) y se guarda en caché para que la próxima búsqueda en esta
+         misma sesión sea instantánea. */
+      var d=getData(m.i);
+      if(d.ov){
+        if(d.ovn===undefined) d.ovn=normSearch(d.ov);
+        if(d.ovn && d.ovn.indexOf(lq)!==-1) return true;
+      }
+      return false;
+    });
+  }
+  if(catF!=='todas'){
+    items=items.filter(function(m){ return m.c===catF; });
+  }
+  if(genreF){
+    var gfName=genreF.toLowerCase().trim();
+    /*
+      5 GÉNEROS AMPLIOS — cubren todas las categorías (series, animes, doramas, etc.)
+      Cada clave coincide con el data-g del menú.
+      Los aliases normalizan tildes, inglés/español y variantes de escritura.
+    */
+    var gfAliases={
+      /* ⚔️ ACCIÓN — combate, aventura, crimen, bélica, artes marciales */
+      'accion':[
+        'accion','acción','action',
+        'aventura','adventure',
+        'lucha','fight','fighting','combat',
+        'shooter','fps','tps',
+        'beat em up','hack and slash','hack & slash',
+        'belica','bélica','war','guerra','military',
+        'artes marciales','martial','kung fu',
+        'superhero','superheroe','superhéroe','super heroe',
+        'crimen','crime','criminal','policial','police',
+        'spy','espionaje','espionage',
+        'western','samurai','ninja'
+      ],
+      /* 😂 COMEDIA — humor, slice of life, musical, comedia romántica */
+      'comedia':[
+        'comedia','comedy','humor','humoristico','humorístico',
+        'satira','sátira','satire',
+        'parodia','parody',
+        'slice of life','vida cotidiana','cotidiano',
+        'musical','musica','música',
+        'comedia romantica','romantic comedy','romcom',
+        'sitcom','sketch','gag'
+      ],
+      /* 🎭 DRAMA — romance, historia, documental, familia, deportes */
+      'drama':[
+        'drama',
+        'romance','romantico','romántico','romantic','amor',
+        'historia','history','historico','histórico','historical','period','epoca','época',
+        'documental','documentary','docu',
+        'familia','familiar','family',
+        'deportes','sports','sport','futbol','fútbol','basketball','beisbol','béisbol',
+        'social','politico','político','political',
+        'seinen','josei','melodrama',
+        'coming of age','crecimiento',
+        'biografia','biográfica','biographic','biopic',
+        'realidad','vida real','true story'
+      ],
+      /* 👻 TERROR — misterio, thriller, psicológico, sobrenatural, dark */
+      'terror':[
+        'terror','horror',
+        'misterio','mystery','misterioso',
+        'thriller','suspense','suspense',
+        'psicologico','psicológico','psychological',
+        'sobrenatural','supernatural','paranormal',
+        'gotico','gótico','gothic',
+        'slasher','gore',
+        'oscuro','dark','noir',
+        'survival','supervivencia',
+        'zombie','demonio','demon','fantasma','ghost','espiritu','espíritu',
+        'true crime','crimen real',
+        'investigacion','investigación','detective','policial oscuro'
+      ],
+      /* 🔮 CIENCIA FICCIÓN — sci-fi, fantasía, magia, isekai, mecha, rpg, cyber */
+      'fantasia':[
+        'fantasia','fantasía','fantasy',
+        'ciencia ficcion','ciencia ficción','sci-fi','sci fi','science fiction','scifi','sf',
+        'magia','magic','magical','mágico','magico',
+        'isekai','shonen','shounen','shojo','shoujo',
+        'mecha','mech','robot','monstruo','monster',
+        'space','espacial','space opera','galactic','galaxia','cosmo',
+        'distopia','distopía','dystopia','dystopian',
+        'postapocaliptico','postapocalíptico','post-apocalyptic','apocalipsis','apocalypse',
+        'steampunk','cyberpunk','futurista','futuristic','futuro',
+        'rpg','rol','role playing',
+        'strategy','estrategia','estratégico',
+        'simulacion','simulación','simulation','sim',
+        'sandbox','open world','mundo abierto',
+        'superhero','superheroe','superhéroe',
+        'mitologia','mitología','mythology','mitico','mítico',
+        'sobrenatural claro','mahou','isekai','xuanhuan','xianxia','wuxia'
+      ]
+    };
+    var terms = gfAliases[gfName] ? gfAliases[gfName] : [gfName];
+    items=items.filter(function(m){
+      /* CORRECCIÓN: usar m.i (no m._idx) — m._idx es undefined en este contexto */
+      var d=getData(m.i);
+      /* Géneros del DB base (cargados del CSV en entry.g) + override (d.g) */
+      var allG=[];
+      var dbItem=DB[m.i];
+      if(dbItem&&dbItem.g&&dbItem.g.length) allG=allG.concat(Array.isArray(dbItem.g)?dbItem.g:[dbItem.g]);
+      if(d.g&&d.g.length) allG=allG.concat(Array.isArray(d.g)?d.g:[d.g]);
+      if(!allG.length) return false;
+      /* Normalizar: quitar tildes para que 'accion' == 'acción' */
+      var gs=allG.join(' ').toLowerCase()
+               .normalize('NFD').replace(/[̀-ͯ]/g,'');
+      return terms.some(function(t){
+        var tn=t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+        return gs.indexOf(tn)!==-1;
+      });
+    });
+  }
+  if(yearF){
+    items=items.filter(function(m){
+      if(!m.y||!m.y.trim()) return false;
+      var y=m.y.trim();
+      if(y===yearF||y.substring(0,4)===yearF) return true;
+      var rng=y.match(/(\d{4})\s*-\s*(\d{4})/);
+      if(rng){var y1=parseInt(rng[1]),y2=parseInt(rng[2]),yf=parseInt(yearF);
+        if(yf>=y1&&yf<=y2) return true;}
+      return y.indexOf(yearF)!==-1;
+    });
+  }
+  if(sort==='az')  items.sort(function(a,b){ return a.sk<b.sk?-1:a.sk>b.sk?1:0; });
+  else if(sort==='za') items.sort(function(a,b){ return b.sk<a.sk?-1:b.sk>a.sk?1:0; });
+  else if(sort==='new') items.sort(function(a,b){ return (b.y||'0')>(a.y||'0')?1:-1; });
+  else items.sort(function(a,b){ return (a.y||'9999')>(b.y||'9999')?1:-1; });
+  return items;
+}
+
+/* ── CARD ── */
+var ICON_ORIG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="2" y="2" width="20" height="20" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg>';
+var ICON=window.TH_NAME==='halloween' ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M5 21V11a7 7 0 0 1 14 0v10l-2.33-2-2.34 2-2.33-2-2.33 2-2.34-2z"/><circle cx="9.5" cy="11" r="1" fill="currentColor"/><circle cx="14.5" cy="11" r="1" fill="currentColor"/></svg>' : ICON_ORIG;
+function esc(s){ return(''+s).replace(/[<>&"]/g,function(c){ return c==='<'?'&lt;':c==='>'?'&gt;':c==='&'?'&amp;':'&quot;'; }); }
+
+function makeCard(m){
+  if(!m||m.i===undefined) return document.createElement('div');
+  var i=m.i, cd=getData(i);
+  var inCart=cart.some(function(x){ return resolveIndex(x)===i; });
+  var card=document.createElement('div'); card.className='card';
+  card.addEventListener('click',function(e){ if(!e.target.closest('.card-acts')) openDetail(i); });
+
+  /* poster */
+  var pw=document.createElement('div'); pw.className='poster';
+  var ph=document.createElement('div'); ph.className='poster-ph';
+  ph.innerHTML=ICON+'<span>'+esc(m.t.substring(0,35))+'</span>';
+  pw.appendChild(ph);
+
+  if(cd && cd.p){
+    var img=document.createElement('img');
+    img.alt=m.t; img.loading='lazy'; img.decoding='async';
+    img.onload=function(){ img.classList.add('ok'); ph.style.display='none'; };
+    img.onerror=function(){ img.remove(); };
+    img.dataset.src=cd.p;
+    pw.appendChild(img);
+    imgObserver.observe(img);
+  }
+
+  var cb2=document.createElement('span'); cb2.className='cat-badge cat-'+m.c;
+  cb2.textContent=(CAT_EMOJI[m.c]||'')+' '+(CL[m.c]||m.c);
+  pw.appendChild(cb2);
+
+  var ov=document.createElement('div'); ov.className='card-ov';
+  ov.innerHTML='<div class="ov-t">'+esc(m.t)+'</div><div class="ov-m">'+(m.y||'')+(cd&&cd.r?' · ⭐'+cd.r:'')+'</div>';
+  pw.appendChild(ov);
+  card.appendChild(pw);
+
+  var ci=document.createElement('div'); ci.className='card-info';
+  var ct=document.createElement('div'); ct.className='card-title'; ct.textContent=m.t; ci.appendChild(ct);
+  var cy=document.createElement('div'); cy.className='card-year'; cy.textContent=m.y||'—'; ci.appendChild(cy);
+
+  if(cd&&cd.g&&cd.g.length){
+    var cg=document.createElement('div'); cg.className='card-genres';
+    cg.textContent=cd.g.slice(0,2).map(function(g){ return String(g); }).filter(Boolean).join(' · ');
+    ci.appendChild(cg);
+  }
+
+  var ca=document.createElement('div'); ca.className='card-acts';
+
+  var cartBtn=document.createElement('button');
+  cartBtn.className='ca ca-order'+(inCart?' ac':'');
+  cartBtn.textContent=inCart?'✔ En el pedido':'🛒 Añadir al pedido';
+  cartBtn.title='Añadir al pedido';
+  cartBtn.addEventListener('click',function(e){ e.stopPropagation(); toggleCart(i); });
+  ca.appendChild(cartBtn);
+
+  ci.appendChild(ca); card.appendChild(ci);
+  return card;
+}
+
+/* ── GRID + PAGER ── */
+function renderActiveFilters(){
+  var wrap=document.getElementById('active-filters');
+  if(!wrap) return;
+  wrap.innerHTML='';
+  var chips=[];
+
+  /* Category chip */
+  var catLabels={todas:'INICIO',peliculas:'🎬 PELÍCULAS',series:'📺 SERIES',
+    animes:'⛩ ANIMES',animados:'🎨 ANIMADOS',doramas:'🌸 DORAMAS',
+    novelas:'💋 NOVELAS',juegos:'🎮 JUEGOS PC'};
+  if(catF && catF!=='todas'){
+    chips.push({label: catLabels[catF]||catF, remove:function(){
+      catF='todas'; statusF='todas'; page=1;
+      document.querySelectorAll('.nm').forEach(function(b){
+        b.classList.remove('on');
+        if(b.dataset.f==='todas') b.classList.add('on');
+      });
+      renderGrid();
+    }});
+  }
+
+  /* Genre chip */
+  if(genreF){
+    var genreLabels={
+      'accion':'⚔️ Acción',
+      'comedia':'😂 Comedia',
+      'drama':'🎭 Drama',
+      'terror':'👻 Terror',
+      'fantasia':'🔮 Ciencia Ficción'
+    };
+    var gLabel=genreLabels[genreF]||('🏷 '+genreF);
+    chips.push({label:gLabel, remove:function(){genreF=null;page=1;renderGrid();}});
+  }
+
+  /* Year chip */
+  if(yearF){
+    chips.push({label:'📅 '+yearF, remove:function(){
+      yearF=null;
+      document.querySelectorAll('[data-y]').forEach(function(x){x.classList.remove('on');x.style.color='';});
+      page=1;renderGrid();
+    }});
+  }
+
+  /* Search chip */
+  if(q){
+    chips.push({label:'🔍 "'+q+'"', remove:function(){
+      q=''; page=1;
+      var srch=document.getElementById('srch');
+      if(srch) srch.value='';
+      renderGrid();
+    }});
+  }
+
+  if(chips.length===0){
+    var mw=document.getElementById('active-filters-mobile');
+    if(mw) mw.innerHTML='';
+    return;
+  }
+
+  chips.forEach(function(ch){
+    var el=document.createElement('span');
+    el.className='af-chip';
+    el.innerHTML=ch.label+' <span class="af-x">✕</span>';
+    el.addEventListener('click', ch.remove);
+    wrap.appendChild(el);
+  });
+
+  /* Clear all button */
+  var clr=document.createElement('span');
+  clr.className='af-clear';
+  clr.textContent='✕ Limpiar';
+  clr.addEventListener('click',function(){
+    catF='todas'; statusF='todas'; genreF=null; yearF=null; q=''; page=1;
+    document.querySelectorAll('[data-y]').forEach(function(x){x.classList.remove('on');x.style.color='';});
+    document.querySelectorAll('.nm').forEach(function(b){
+      b.classList.remove('on');
+      if(b.dataset.f==='todas') b.classList.add('on');
+    });
+    var srch=document.getElementById('srch');
+    if(srch) srch.value='';
+    renderGrid();
+  });
+  wrap.appendChild(clr);
+
+  /* Sincronizar chips en fila 3 móvil */
+  var mWrap=document.getElementById('active-filters-mobile');
+  if(mWrap) mWrap.innerHTML=wrap.innerHTML;
+  if(mWrap) mWrap.querySelectorAll('.af-chip').forEach(function(el,i){
+    if(chips[i]) el.addEventListener('click',chips[i].remove);
+  });
+  if(mWrap){
+    var mClr=mWrap.querySelector('.af-clear');
+    if(mClr) mClr.addEventListener('click',function(){
+      catF='todas';statusF='todas';genreF=null;yearF=null;q='';page=1;
+      document.querySelectorAll('[data-y]').forEach(function(x){x.classList.remove('on');x.style.color='';});
+      document.querySelectorAll('.nm').forEach(function(b){b.classList.remove('on');if(b.dataset.f==='todas')b.classList.add('on');});
+      var srch=document.getElementById('srch');if(srch)srch.value='';
+      var sm=document.getElementById('srch-mobile');if(sm)sm.value='';
+      renderGrid();
+    });
+  }
+}
+
+function renderGrid(){
+  renderActiveFilters();
+  /* Mostrar carrusel solo en inicio sin búsqueda ni filtros */
+  var carouselWrap = document.getElementById('carousel-wrap');
+  if(carouselWrap){
+    var isHome = (catF==='todas') && !genreF && !yearF && (!q || q==='');
+    carouselWrap.style.display = isHome ? '' : 'none';
+  }
+  if(typeof placeCartButton==='function') placeCartButton();
+  var all=filtered(), total=all.length;
+  if(!total && q && typeof ensureSynopses==='function' && JSON_MODE && !SYN.loaded){
+    var qNow=q;
+    ensureSynopses().then(function(ok){ if(ok && q===qNow) renderGrid(); });
+  }
+  var maxPg=Math.max(1,Math.ceil(total/PER));
+  if(page>maxPg) page=1;
+  var slice=all.slice((page-1)*PER, page*PER);
+  document.getElementById('cnt').textContent=total;
+  var grid=document.getElementById('grid'); grid.innerHTML='';
+  if(!slice.length){
+    var e=document.createElement('div'); e.id='empty';
+    e.innerHTML='<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#1a1a2a" stroke-width="1"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><p>Sin resultados. Prueba otro filtro.</p>';
+    grid.appendChild(e); document.getElementById('pager').innerHTML=''; return;
+  }
+  var f=document.createDocumentFragment();
+  slice.forEach(function(m){ f.appendChild(makeCard(m)); });
+  grid.appendChild(f); renderPager(maxPg);
+}
+
+function renderPager(max){
+  var pg=document.getElementById('pager'); pg.innerHTML='';
+  if(max<=1) return;
+  function mk(lbl,t,dis,on){
+    var b=document.createElement('button');
+    b.className='pg'+(on?' on':''); b.textContent=lbl; b.disabled=!!dis;
+    b.addEventListener('click',function(){ page=t; renderGrid(); window.scrollTo({top:0,behavior:'smooth'}); });
+    return b;
+  }
+  pg.appendChild(mk('‹',page-1,page<=1));
+  var s=Math.max(1,page-2), e=Math.min(max,page+2);
+  if(s>1){
+    pg.appendChild(mk(1,1,false,false));
+    if(s>2){ var d=document.createElement('span'); d.className='pg-dots'; d.textContent='…'; pg.appendChild(d); }
+  }
+  for(var p2=s;p2<=e;p2++) pg.appendChild(mk(p2,p2,false,p2===page));
+  if(e<max){
+    if(e<max-1){ var d2=document.createElement('span'); d2.className='pg-dots'; d2.textContent='…'; pg.appendChild(d2); }
+    pg.appendChild(mk(max,max,false,false));
+  }
+  pg.appendChild(mk('›',page+1,page>=max));
+}
+
+/* ── CART ── */
+var SEASON_CATS = {series:1, novelas:1, doramas:1, animados:1, animes:1};
+var cartSeasOpen = {}; /* recuerda qué items tienen el desplegable de temporadas abierto */
+var PRICE_RATES = {series:10, doramas:10, novelas:5, animes:5, animados:5}; /* CUP por capítulo (precio de temporada completa; el capítulo individual cuesta el doble) */
+var PRICE_MOVIE = 50; /* CUP fijo — películas normales, animadas o anime */
+var PRICE_GB_NORMAL = 10; /* CUP por GB de juego (tarifa única, sin importar el peso) */
+function computeItemPrice(item){
+  if(item.c==='peliculas') return PRICE_MOVIE;
+  if(item.c==='juegos'){
+    var cdj = getData(resolveIndex(item));
+    var gb = (cdj && cdj.pesoGB!=null) ? cdj.pesoGB : null;
+    if(gb==null) return null; /* aún sin peso cargado en el CSV */
+    return Math.round(gb*PRICE_GB_NORMAL);
+  }
+  var rate = PRICE_RATES[item.c];
+  if(!rate) return null;
+  var eps = null;
+  if(item.seasSel && item.seasEpMap){
+    eps = item.seasSel.reduce(function(sum,n){ return sum + (item.seasEpMap[n]||0); }, 0);
+  } else {
+    var cd = getData(resolveIndex(item));
+    eps = (cd && cd.eps) ? cd.eps : null;
+  }
+  if(!eps || eps<=0) return PRICE_MOVIE; /* ej: película animada dentro de "animados", sin episodios */
+  return eps*rate;
+}
+function toggleCart(i){
+  var idx=cart.findIndex(function(x){ return resolveIndex(x)===i; });
+  if(idx>=0){ delete cartSeasOpen[stableKey(cart[idx].c, cart[idx].tn||normSearch(cart[idx].t), cart[idx].y)]; cart.splice(idx,1); }
+  else{
+    var m=DB[i], cd=getData(i);
+    var entry={i:i,t:m.t,y:m.y,c:m.c,tn:m.tn};
+    if(SEASON_CATS[m.c] && cd && cd.seasDetail && cd.seasDetail.length>1){
+      entry.seasTotal = cd.seasDetail.map(function(s){ return s.n; });
+      entry.seasSel = entry.seasTotal.slice(); /* todas seleccionadas por defecto */
+      entry.seasEpMap = {};
+      cd.seasDetail.forEach(function(s){ entry.seasEpMap[s.n] = s.eps; });
+    }
+    cart.push(entry);
+  }
+  saveCart(); updateCartUI(); renderGrid();
+  if(detIdx===i) updateDetCartBtn();
+}
+function toggleCartSeason(item, seasonNum){
+  if(!item || !item.seasSel) return;
+  var pos = item.seasSel.indexOf(seasonNum);
+  if(pos>=0){
+    if(item.seasSel.length===1) return; /* no dejar el pedido sin ninguna temporada */
+    item.seasSel.splice(pos,1);
+  } else {
+    item.seasSel.push(seasonNum); item.seasSel.sort(function(a,b){return a-b;});
+  }
+  saveCart(); updateCartUI();
+}
+function removeCartItem(item){
+  var pos = cart.indexOf(item);
+  if(pos<0) return;
+  delete cartSeasOpen[stableKey(item.c, item.tn||normSearch(item.t), item.y)];
+  cart.splice(pos,1);
+  saveCart(); updateCartUI(); renderGrid();
+  if(detIdx>=0) updateDetCartBtn();
+}
+function updateCartUI(){
+  var n=cart.length;
+  var cc=document.getElementById('cart-count');
+  cc.textContent=n; cc.classList.toggle('show',n>0);
+  var dcc=document.getElementById('det-cart-count');
+  if(dcc) dcc.textContent=n;
+  document.getElementById('cart-total').textContent=n;
+  var totalPrice = cart.reduce(function(sum,item){ var p=computeItemPrice(item); return sum + (p||0); }, 0);
+  document.getElementById('cart-price-val').textContent = totalPrice;
+  var totalWeight = cart.reduce(function(sum,item){
+    var cd=getData(resolveIndex(item));
+    return sum + ((cd && cd.pesoGB!=null) ? cd.pesoGB : 0);
+  }, 0);
+  document.getElementById('cart-weight-val').textContent = (Math.round(totalWeight*100)/100);
+  document.getElementById('cart-send').disabled=n===0;
+  var ci=document.getElementById('cart-items');
+  var empty=document.getElementById('cart-empty');
+  if(!n){ if(empty) empty.style.display='block'; ci.querySelectorAll('.cart-item-wrap').forEach(function(x){x.remove();}); return; }
+  if(empty) empty.style.display='none';
+  ci.querySelectorAll('.cart-item-wrap').forEach(function(x){x.remove();});
+  var f=document.createDocumentFragment();
+  cart.forEach(function(item){
+    var cd=getData(resolveIndex(item));
+    var wrap=document.createElement('div'); wrap.className='cart-item-wrap';
+    var div=document.createElement('div'); div.className='cart-item';
+    if(cd&&cd.p){
+      var img2=document.createElement('img'); img2.className='cart-item-img';
+      img2.src=cd.p; img2.alt=item.t; div.appendChild(img2);
+    } else {
+      var ph2=document.createElement('div'); ph2.className='cart-item-img'; div.appendChild(ph2);
+    }
+    var info=document.createElement('div'); info.className='cart-item-info';
+    var tt=document.createElement('div'); tt.className='cart-item-title'; tt.textContent=item.t; info.appendChild(tt);
+    var cat=document.createElement('div'); cat.className='cart-item-cat';
+    cat.textContent=(CAT_EMOJI[item.c]||'')+' '+(CL[item.c]||item.c)+(item.y?' · '+item.y:'');
+    info.appendChild(cat);
+
+    var price = computeItemPrice(item);
+    if(price!=null){
+      var priceDiv=document.createElement('div'); priceDiv.className='cart-item-price';
+      priceDiv.textContent=price+' CUP';
+      info.appendChild(priceDiv);
+    }
+
+    if(cd&&cd.pesoGB!=null){
+      var weightDiv=document.createElement('div'); weightDiv.className='cart-item-weight';
+      weightDiv.textContent='💾 '+cd.pesoGB+' GB';
+      info.appendChild(weightDiv);
+    }
+
+    if(item.seasTotal && item.seasTotal.length>1){
+      var itemKey = stableKey(item.c, item.tn||normSearch(item.t), item.y);
+      var isOpen = !!cartSeasOpen[itemKey];
+      var seasToggle=document.createElement('button'); seasToggle.className='cart-seas-toggle';
+      seasToggle.textContent='🗓 Temporadas ('+item.seasSel.length+'/'+item.seasTotal.length+') '+(isOpen?'▴':'▾');
+      info.appendChild(seasToggle);
+    }
+    div.appendChild(info);
+    var del=document.createElement('button'); del.className='cart-item-del'; del.textContent='✕'; del.title='Quitar';
+    (function(it){ del.addEventListener('click',function(){ removeCartItem(it); }); })(item);
+    div.appendChild(del);
+    wrap.appendChild(div);
+
+    if(item.seasTotal && item.seasTotal.length>1){
+      var seasBox=document.createElement('div'); seasBox.className='cart-seasons';
+      seasBox.style.display = isOpen ? 'flex' : 'none';
+      item.seasTotal.forEach(function(n){
+        var lbl=document.createElement('label'); lbl.className='cart-seas-chk'+(item.seasSel.indexOf(n)<0?' off':'');
+        var chk=document.createElement('input'); chk.type='checkbox'; chk.checked=item.seasSel.indexOf(n)>=0;
+        (function(it,nn){ chk.addEventListener('change',function(){ toggleCartSeason(it,nn); }); })(item,n);
+        var span=document.createElement('span'); span.textContent='T'+n;
+        lbl.appendChild(chk); lbl.appendChild(span);
+        seasBox.appendChild(lbl);
+      });
+      wrap.appendChild(seasBox);
+      (function(kk){
+        seasToggle.addEventListener('click',function(){
+          cartSeasOpen[kk] = !cartSeasOpen[kk];
+          var nowOpen = cartSeasOpen[kk];
+          seasBox.style.display = nowOpen?'flex':'none';
+          seasToggle.textContent='🗓 Temporadas ('+item.seasSel.length+'/'+item.seasTotal.length+') '+(nowOpen?'▴':'▾');
+        });
+      })(itemKey);
+    }
+    f.appendChild(wrap);
+  });
+  ci.appendChild(f);
+}
+function openCart(){ document.getElementById('cart-panel').classList.add('open'); document.getElementById('cart-overlay').classList.add('show'); history.pushState({panel:'cart'},''); }
+function closeCart(){ document.getElementById('cart-panel').classList.remove('open'); document.getElementById('cart-overlay').classList.remove('show'); }
+
+/* ── BOTÓN ATRÁS MÓVIL + GESTO DESLIZAR DESDE BORDE ── */
+window.addEventListener('popstate', function(e){
+  if(document.getElementById('detail').classList.contains('open')){ closeDetail(); return; }
+  if(document.getElementById('cart-panel').classList.contains('open')){ closeCart(); return; }
+});
+
+(function(){
+  var startX=0, startY=0, tracking=false;
+  document.addEventListener('touchstart',function(e){
+    startX=e.touches[0].clientX;
+    startY=e.touches[0].clientY;
+    tracking = startX < 30;
+  },{passive:true});
+  document.addEventListener('touchend',function(e){
+    if(!tracking) return;
+    var dx=e.changedTouches[0].clientX - startX;
+    var dy=Math.abs(e.changedTouches[0].clientY - startY);
+    if(dx > 60 && dy < 80){
+      if(document.getElementById('detail').classList.contains('open')){ closeDetail(); }
+      else if(document.getElementById('cart-panel').classList.contains('open')){ closeCart(); }
+    }
+    tracking=false;
+  },{passive:true});
+})();
+function sendWhatsApp(){
+  if(!cart.length) return;
+  var lines=['🎬 *PEDIDO CLOUD RIDER*',''];
+  var groups={};
+  cart.forEach(function(item){ if(!groups[item.c]) groups[item.c]=[]; groups[item.c].push(item); });
+  var total=0;
+  var totalWeight=0;
+  Object.keys(groups).forEach(function(cat){
+    lines.push('*'+(CAT_EMOJI_WA[cat]||'')+' '+(CL[cat]||cat).toUpperCase()+'S:*');
+    groups[cat].forEach(function(item){
+      var price = computeItemPrice(item);
+      if(price!=null) total += price;
+      var cd = getData(resolveIndex(item));
+      var pesoTxt = (cd && cd.pesoGB!=null) ? ' [💾 '+cd.pesoGB+' GB]' : '';
+      if(cd && cd.pesoGB!=null) totalWeight += cd.pesoGB;
+      lines.push('• '+item.t+(item.y?' ('+item.y+')':'')+pesoTxt+(price!=null?' — '+price+' CUP':''));
+      if(item.seasSel && item.seasTotal && item.seasSel.length < item.seasTotal.length){
+        item.seasSel.forEach(function(n){ lines.push('   · Temporada '+n); });
+      }
+    });
+    lines.push('');
+  });
+  lines.push('💰 *Precio estimado: '+total+' CUP*');
+  lines.push('📦 *Peso estimado: '+(Math.round(totalWeight*100)/100)+' GB*');
+  lines.push('');
+  var zh=zombieRoll(total);
+  if(zh){ lines.push('🧟 *MANO ZOMBIE: '+zh.fingers+(zh.fingers>1?' dedos':' dedo')+' = '+zh.prize+' CUP*'); lines.push('🔑 Código: '+zh.code); lines.push(''); }
+  lines.push('_Enviado desde Cloud Rider Catálogo_');
+  window.open('https://wa.me/'+WA+'?text='+encodeURIComponent(lines.join('\n')),'_blank');
+  if(zh) zombieShow(zh);
+}
+function updateDetCartBtn(){
+  var btn=document.getElementById('det-add-cart'); if(!btn) return;
+  var inCart=cart.some(function(x){ return resolveIndex(x)===detIdx; });
+  btn.textContent=inCart?'✔ En el pedido':'🛒 Añadir al pedido';
+  btn.classList.toggle('added',inCart);
+}
+
+/* ── DETAIL ── */
+function renderDetail(i, refresh){
+  detIdx=i;
+  if(!DB[i]) return;
+  var m=DB[i], cd=getData(i);
+  var det=document.getElementById('detail');
+  det.classList.add('open'); document.body.style.overflow='hidden';
+  if(!refresh){ det.scrollTop=0; history.pushState({panel:'detail', idx:i}, ''); }
+  document.getElementById('det-tit-nav').textContent=m.t;
+  document.getElementById('det-backdrop').style.backgroundImage=(cd&&cd.b)?'url('+cd.b+')':'none';
+  updateDetCartBtn();
+
+  /* Poster */
+  var pp=document.getElementById('det-poster'); pp.innerHTML='';
+  if(cd&&cd.p){
+    var pi=document.createElement('img'); pi.src=cd.p; pi.alt=m.t; pp.appendChild(pi);
+  } else {
+    pp.innerHTML='<div id="det-poster-ph">'+ICON+'</div>';
+  }
+
+  /* Info panel */
+  var info=document.getElementById('det-info'); info.innerHTML='';
+  document.getElementById('det-cast-section').innerHTML='';
+
+  var nm=document.createElement('div'); nm.id='det-name'; nm.textContent=m.t; info.appendChild(nm);
+
+  /* Chips: año, categoría, rating, temporadas, episodios */
+  var chips=document.createElement('div'); chips.id='det-chips';
+  function chip(txt,cls){
+    var sp=document.createElement('span'); sp.className='chip '+(cls||''); sp.textContent=txt; chips.appendChild(sp);
+  }
+  if(m.y) chip(m.y,'');
+  chip((CAT_EMOJI[m.c]||'')+' '+(CL[m.c]||m.c),'tp');
+  if(cd&&cd.r) chip('⭐ '+cd.r+' / 10','rat');
+  if(cd&&cd.seas&&cd.seas>0) chip(cd.seas+(cd.seas===1?' temporada':' temporadas'),'tp');
+  if(cd&&cd.eps &&cd.eps>0)  chip(cd.eps+' episodios','');
+  if(cd&&cd.pesoGB!=null) chip('💾 '+cd.pesoGB+' GB','');
+  info.appendChild(chips);
+
+  /* Peso por temporada (solo si el CSV lo trae). Con una sola temporada basta el peso total. */
+  if(cd && cd.seasWeights && (cd.seasWeights.length>1 || (cd.seasWeights.length===1 && cd.seas>1))){
+    var swBox=document.createElement('div'); swBox.id='det-seasw';
+    var swLbl=document.createElement('span'); swLbl.className='swl'; swLbl.textContent='💾 Peso por temporada'; swBox.appendChild(swLbl);
+    cd.seasWeights.forEach(function(s){
+      var sp=document.createElement('span'); sp.className='chip'; sp.textContent='T'+s.n+' · '+s.gb+' GB'; swBox.appendChild(sp);
+    });
+    info.appendChild(swBox);
+  }
+
+  /* Precio estimado (mismo cálculo que usa el carrito) */
+  var priceNow = computeItemPrice({c:m.c, i:i, t:m.t, y:m.y, tn:m.tn});
+  if(priceNow!=null){
+    var priceLine=document.createElement('div'); priceLine.id='det-price';
+    priceLine.style.cssText='font-family:var(--fh);font-size:15px;letter-spacing:.5px;color:var(--cyan);margin:-6px 0 14px';
+    priceLine.textContent='💰 '+priceNow+' CUP';
+    info.appendChild(priceLine);
+  }
+
+  /* Géneros */
+  if(cd&&cd.g&&cd.g.length){
+    var gd=document.createElement('div'); gd.id='det-genres';
+    cd.g.forEach(function(gn){
+      var sp=document.createElement('span'); sp.className='dg'; sp.textContent=String(gn); gd.appendChild(sp);
+    });
+    info.appendChild(gd);
+  }
+
+  /* Sinopsis */
+  var ovDiv=document.createElement('div'); ovDiv.id='det-overview';
+  ovDiv.textContent=(cd&&cd.ov)?cd.ov:((cd&&cd.dl===false&&!cd.dfail)?'Cargando información…':'Sinopsis no disponible.');
+  info.appendChild(ovDiv);
+
+  /* Temporadas detalladas (episodios por temporada) */
+  if(cd&&cd.seasDetail&&cd.seasDetail.length){
+    var seasWrap=document.createElement('div'); seasWrap.id='det-seasons';
+    var seasTitle=document.createElement('div'); seasTitle.className='seasons-title'; seasTitle.textContent='Temporadas';
+    seasWrap.appendChild(seasTitle);
+    var seasGrid=document.createElement('div'); seasGrid.className='seasons-grid';
+    cd.seasDetail.forEach(function(s){
+      var chip=document.createElement('div'); chip.className='season-chip';
+      var b=document.createElement('b'); b.textContent='Temporada '+s.n;
+      var sp=document.createElement('span'); sp.textContent=s.eps+(s.eps===1?' episodio':' episodios');
+      chip.appendChild(b); chip.appendChild(sp);
+      seasGrid.appendChild(chip);
+    });
+    seasWrap.appendChild(seasGrid);
+    info.appendChild(seasWrap);
+  }
+
+  /* Requisitos de PC (solo juegos) */
+  if(cd&&(cd.reqMin||cd.reqRec)){
+    var reqWrap=document.createElement('div'); reqWrap.id='det-requisitos';
+    reqWrap.style.cssText='margin-bottom:14px';
+    if(cd.reqMin){
+      var rmTitle=document.createElement('div'); rmTitle.style.cssText='font-family:var(--fh);font-size:13px;letter-spacing:.5px;color:var(--cyan);margin-top:10px';
+      rmTitle.textContent='Requisitos mínimos';
+      var rmText=document.createElement('div'); rmText.style.cssText='font-size:11.5px;color:#e5e5e5;margin-top:3px;line-height:1.5';
+      rmText.textContent=cd.reqMin;
+      reqWrap.appendChild(rmTitle); reqWrap.appendChild(rmText);
+    }
+    if(cd.reqRec){
+      var rrTitle=document.createElement('div'); rrTitle.style.cssText='font-family:var(--fh);font-size:13px;letter-spacing:.5px;color:var(--cyan);margin-top:10px';
+      rrTitle.textContent='Requisitos recomendados';
+      var rrText=document.createElement('div'); rrText.style.cssText='font-size:11.5px;color:#e5e5e5;margin-top:3px;line-height:1.5';
+      rrText.textContent=cd.reqRec;
+      reqWrap.appendChild(rrTitle); reqWrap.appendChild(rrText);
+    }
+    info.appendChild(reqWrap);
+  }
+
+  /* Equipo (creador/director) */
+  if(cd&&cd.crew){
+    var crewDiv=document.createElement('div'); crewDiv.id='det-crew';
+    crewDiv.style.cssText='font-size:11.5px;color:#ddd;margin-top:6px;margin-bottom:2px';
+    crewDiv.textContent=cd.crew;
+    info.appendChild(crewDiv);
+  }
+
+  /* Trailer (YouTube para TMDB, mp4 directo para juegos vía RAWG) */
+  if(cd&&cd.trailer){
+    var trailerBtn=document.createElement('button');
+    trailerBtn.className='trailer-btn'; trailerBtn.innerHTML='&#9654; Ver trailer';
+    var trailerBox=document.createElement('div'); trailerBox.id='det-trailer'; trailerBox.style.display='none';
+    trailerBtn.addEventListener('click', function(){
+      if(trailerBox.style.display==='none'){
+        if(!trailerBox.dataset.loaded){
+          var ytMatch = cd.trailer.match(/(?:v=|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
+          if(ytMatch){
+            var ifr=document.createElement('iframe');
+            ifr.src='https://www.youtube.com/embed/'+ytMatch[1]+'?autoplay=1';
+            ifr.allow='autoplay; encrypted-media; picture-in-picture';
+            ifr.allowFullscreen=true;
+            trailerBox.appendChild(ifr);
+          } else {
+            var vid=document.createElement('video');
+            vid.src=cd.trailer; vid.controls=true; vid.autoplay=true;
+            vid.style.cssText='width:100%;max-width:520px;border-radius:9px';
+            trailerBox.appendChild(vid);
+          }
+          trailerBox.dataset.loaded='1';
+        }
+        trailerBox.style.display='block';
+        trailerBtn.innerHTML='&#10005; Cerrar trailer';
+      } else {
+        trailerBox.style.display='none';
+        trailerBox.innerHTML=''; trailerBox.dataset.loaded='';
+        trailerBtn.innerHTML='&#9654; Ver trailer';
+      }
+    });
+    info.appendChild(trailerBtn);
+    info.appendChild(trailerBox);
+  }
+
+  /* Botón URL externa si existe */
+  if(cd&&cd.url){
+    var link=document.createElement('a');
+    link.className='trailer-btn'; link.href=cd.url;
+    link.target='_blank'; link.rel='noopener noreferrer';
+    link.innerHTML='&#9654; Ver más información';
+    info.appendChild(link);
+  }
+
+  /* Reparto + Recomendaciones (sección inferior) */
+  var castSection=document.getElementById('det-cast-section');
+  if(cd&&cd.cast&&cd.cast.length){
+    var h3=document.createElement('h3'); h3.textContent='Reparto';
+    castSection.appendChild(h3);
+    var castGrid=document.createElement('div'); castGrid.id='det-cast';
+    cd.cast.forEach(function(actor){
+      var cc=document.createElement('div'); cc.className='cc';
+      if(actor.photo){
+        var img=document.createElement('img'); img.className='cc-img'; img.loading='lazy';
+        img.src=actor.photo; img.alt=actor.name;
+        img.onerror=function(){ /* si la foto no carga, cae a la máscara */
+          var ph2=document.createElement('div'); ph2.className='cc-ph'; ph2.textContent='🎭';
+          img.replaceWith(ph2);
+        };
+        cc.appendChild(img);
+      } else {
+        var ph=document.createElement('div'); ph.className='cc-ph'; ph.textContent='🎭';
+        cc.appendChild(ph);
+      }
+      var nm2=document.createElement('div'); nm2.className='cc-name'; nm2.textContent=actor.name;
+      cc.appendChild(nm2);
+      if(actor.char){ var ch=document.createElement('div'); ch.className='cc-char'; ch.textContent=actor.char; cc.appendChild(ch); }
+      castGrid.appendChild(cc);
+    });
+    castSection.appendChild(castGrid);
+  }
+
+  if(cd&&cd.recs&&cd.recs.length){
+    /* Solo mostrar recomendaciones que SÍ existen en el catálogo (evita
+       clicks que no llevan a ningún lado). Se resuelve el índice acá para
+       no tener que buscar de nuevo al hacer clic. */
+    var recsFound = [];
+    cd.recs.forEach(function(recTitle){
+      var nt=normSearch(recTitle);
+      for(var k=0;k<DB.length;k++){
+        if(DB[k].tn===nt || DB[k].an===nt){ recsFound.push({title:recTitle, idx:k}); break; }
+      }
+    });
+    if(recsFound.length){
+      var h3r=document.createElement('h3'); h3r.style.marginTop='28px'; h3r.textContent='Recomendados para ti';
+      castSection.appendChild(h3r);
+      var recGrid=document.createElement('div'); recGrid.style.cssText='display:flex;flex-wrap:wrap;gap:8px';
+      recsFound.forEach(function(rec){
+        var chip=document.createElement('button');
+        chip.textContent=rec.title;
+        chip.style.cssText='background:rgba(var(--cr),.06);border:1px solid rgba(var(--cr),.18);color:#9ad;border-radius:20px;padding:7px 14px;font-size:11.5px;cursor:pointer;font-family:var(--fb);transition:background .15s;';
+        chip.addEventListener('mouseenter',function(){ chip.style.background='rgba(var(--cr),.18)'; });
+        chip.addEventListener('mouseleave',function(){ chip.style.background='rgba(var(--cr),.06)'; });
+        chip.addEventListener('click',function(){ openDetail(rec.idx); });
+        recGrid.appendChild(chip);
+      });
+      castSection.appendChild(recGrid);
+    }
+  }
+}
+
+/* Abre la ficha al instante con lo que ya hay (lista) y, si hace falta, baja el
+   bloque de detalle de ese título y vuelve a pintar (sinopsis, reparto, trailer…). */
+function openDetail(i){
+  renderDetail(i, false);
+  if(typeof ensureDetail === 'function'){
+    ensureDetail(i).then(function(changed){ if(changed && detIdx===i) renderDetail(i, true); });
+  }
+}
+
+function closeDetail(){
+  document.getElementById('detail').classList.remove('open');
+  document.body.style.overflow=''; detIdx=-1;
+}
+
+/* ── EVENTS ── */
+document.getElementById('det-back').addEventListener('click',closeDetail);
+document.getElementById('det-add-cart').addEventListener('click',function(){ if(detIdx>=0) toggleCart(detIdx); });
+document.getElementById('det-view-cart').addEventListener('click',openCart);
+document.addEventListener('keydown',function(e){ if(e.key==='Escape'){ closeDetail(); closeCart(); } });
+document.getElementById('cart-btn').addEventListener('click',openCart);
+document.getElementById('cart-close').addEventListener('click',closeCart);
+document.getElementById('cart-overlay').addEventListener('click',closeCart);
+document.getElementById('cart-send').addEventListener('click',sendWhatsApp);
+
+/* Nav category */
+document.querySelectorAll('[data-f]').forEach(function(b){
+  b.addEventListener('click',function(){
+    var statuses=['vista','favorita','pendiente','sin'];
+    var isStatusBtn = statuses.indexOf(b.dataset.f)>=0;
+
+    /* Toggle: si ya estaba activo este mismo filtro (vista/favorita/pendiente),
+       tocarlo otra vez lo deselecciona y vuelve a INICIO */
+    if(isStatusBtn && catF===b.dataset.f){
+      document.querySelectorAll('[data-f]').forEach(function(x){ x.classList.remove('on'); });
+      document.querySelectorAll('[data-f="todas"]').forEach(function(x){ x.classList.add('on'); });
+      catF='todas'; statusF='todas';
+      var gd=document.querySelector('.nm-drop');
+      if(gd) gd.classList.remove('disabled');
+      page=1; renderGrid();
+      return;
+    }
+
+    document.querySelectorAll('[data-f]').forEach(function(x){ x.classList.remove('on'); });
+    document.querySelectorAll('[data-f="'+b.dataset.f+'"]').forEach(function(x){ x.classList.add('on'); });
+    catF=b.dataset.f;
+    statusF=isStatusBtn?b.dataset.f:'todas';
+    if(!isStatusBtn) catF=b.dataset.f;
+
+    /* Si es juegos: limpiar y bloquear géneros */
+    var genreDrop=document.querySelector('.nm-drop');
+    if(catF==='juegos'){
+      genreF=null;
+      document.querySelectorAll('[data-g]').forEach(function(x){ x.classList.remove('on'); x.style.color=''; });
+      if(genreDrop) genreDrop.classList.add('disabled');
+    } else {
+      if(genreDrop) genreDrop.classList.remove('disabled');
+    }
+
+    page=1; renderGrid();
+  });
+});
+
+/* Dropdowns géneros y año — inline style bypasses all CSS conflicts */
+(function(){
+  function closeAll(){
+    document.querySelectorAll('.dmenu').forEach(function(m){
+      m.style.display = 'none';
+      m.classList.remove('open');
+    });
+    document.querySelectorAll('.nm-drop-btn').forEach(function(b){
+      b.classList.remove('open-active');
+    });
+  }
+
+  document.querySelectorAll('.nm-drop').forEach(function(wrap){
+    var btn  = wrap.querySelector('.nm-drop-btn');
+    var menu = wrap.querySelector('.dmenu');
+    if(!btn || !menu) return;
+
+    // hide on init
+    menu.style.display = 'none';
+
+    btn.addEventListener('click', function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      var isOpen = menu.style.display === 'block';
+      closeAll();
+      if(!isOpen){
+        menu.style.display = 'block';
+        menu.classList.add('open');
+        btn.classList.add('open-active');
+      }
+    });
+
+    menu.addEventListener('click', function(e){ e.stopPropagation(); });
+    menu.addEventListener('touchstart', function(e){ e.stopPropagation(); },{passive:true});
+  });
+
+  document.addEventListener('click', closeAll);
+  document.addEventListener('touchstart', function(e){
+    if(!e.target.closest('.nm-drop')) closeAll();
+  },{passive:true});
+})();
+
+document.querySelectorAll('[data-g]').forEach(function(a){
+  a.addEventListener('click',function(e){
+    e.preventDefault(); e.stopPropagation();
+    /* Usar data-g como clave ('accion','comedia',...) en lugar del textContent */
+    var gKey=a.dataset.g;
+    genreF=(genreF===gKey)?null:gKey;
+    document.querySelectorAll('[data-g]').forEach(function(x){ x.classList.remove('on'); x.style.color=''; });
+    if(genreF){ a.classList.add('on'); a.style.color='var(--cyan)'; }
+    /* Cerrar el dropdown completo (antes solo se quitaba la clase 'open'
+       pero el display:block puesto al abrirlo se quedaba activo) */
+    document.querySelectorAll('.dmenu').forEach(function(m){ m.style.display='none'; m.classList.remove('open'); });
+    document.querySelectorAll('.nm-drop-btn').forEach(function(b){ b.classList.remove('open-active'); });
+    page=1; renderGrid();
+  });
+});
+
+var st2;
+document.getElementById('srch').addEventListener('input',function(e){
+  clearTimeout(st2); st2=setTimeout(function(){
+    q=e.target.value.trim(); page=1; renderGrid();
+    /* Ocultar/mostrar carrusel según si hay búsqueda */
+    var wrap=document.getElementById('carousel-wrap');
+    if(wrap) wrap.style.display=(q===''&&catF==='todas')?'':'none';
+  },200);
+});
+document.getElementById('srt').addEventListener('change',function(e){
+  sort=e.target.value; page=1; renderGrid();
+});
+/* Sincronizar buscador móvil con el principal */
+(function(){
+  var sm=document.getElementById('srch-mobile');
+  var sd=document.getElementById('srch');
+  if(sm&&sd){
+    sm.addEventListener('input',function(){
+      sd.value=sm.value;
+      sd.dispatchEvent(new Event('input'));
+    });
+  }
+})();
+
+
+window.addEventListener('scroll',function(){
+  document.getElementById('bktop').classList.toggle('show',window.scrollY>500);
+});
+document.getElementById('bktop').addEventListener('click',function(){
+  window.scrollTo({top:0,behavior:'smooth'});
+});
+
+/* ── INFO MODAL (Ofertas Cloud Rider) ── */
+document.getElementById('info-btn').addEventListener('click',function(){
+  document.getElementById('info-modal').classList.add('open');
+});
+document.getElementById('info-close').addEventListener('click',function(){
+  document.getElementById('info-modal').classList.remove('open');
+});
+document.getElementById('info-modal').addEventListener('click',function(e){
+  if(e.target===this) this.classList.remove('open');
+});
+
+/* IntersectionObserver para carga lazy de imágenes */
+var imgObserver=new IntersectionObserver(function(entries){
+  entries.forEach(function(entry){
+    if(entry.isIntersecting){
+      var img=entry.target;
+      if(img.dataset.src){ img.src=img.dataset.src; delete img.dataset.src; imgObserver.unobserve(img); }
+    }
+  });
+},{rootMargin:'200px'});
+
+/* ── HAMBURGER (móvil) ── */
+var hamburger=document.getElementById('hamburger');
+var mobileMenu=document.getElementById('mobile-menu');
+if(hamburger){
+  hamburger.addEventListener('click',function(){ hamburger.classList.toggle('open'); mobileMenu.classList.toggle('open'); });
+}
+if(mobileMenu){
+  mobileMenu.querySelectorAll('.mm-item').forEach(function(b){
+    b.addEventListener('click',function(){
+      /* Cerrar menú */
+      hamburger.classList.remove('open');
+      mobileMenu.classList.remove('open');
+
+      /* Actualizar estado activo en mobile-menu */
+      mobileMenu.querySelectorAll('.mm-item').forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on');
+
+      /* Disparar el filtro correspondiente */
+      var f = b.getAttribute('data-f');
+      var g = b.getAttribute('data-g');
+
+      if(f){
+        /* Simular click en cualquier botón [data-f] del nav (funciona en desktop y mobile) */
+        var target = document.querySelector('.nm[data-f="'+f+'"]');
+        if(target){ target.click(); }
+        else {
+          /* fallback directo con las variables reales del catálogo */
+          catF = f;
+          var statuses=['vista','favorita','pendiente','sin'];
+          statusF = statuses.indexOf(f)>=0 ? f : 'todas';
+          genreF = null;
+          page = 1;
+          renderGrid();
+        }
+      } else if(g){
+        /* Simular click en enlace de género */
+        var gTarget = document.querySelector('a[data-g="'+g+'"], button[data-g="'+g+'"]:not(.mm-item)');
+        if(gTarget){ gTarget.click(); }
+        else {
+          /* fallback directo */
+          genreF = (genreF === g) ? null : g;
+          page = 1;
+          renderGrid();
+        }
+      }
+
+      /* Scroll al top */
+      window.scrollTo({top:0, behavior:'smooth'});
+    });
+  });
+}
+
+/* ══════════════════════════════════════════════════
+   CARGA DE CSV DESDE GITHUB
+══════════════════════════════════════════════════ */
+var GITHUB_RAW_BASE = './'; /* ← MODO LOCAL: lee los CSV de esta misma carpeta, no de GitHub */
+var CSV_CAT_MAP = {
+  'series_data.csv'             : 'series',
+  'peliculas_data_avanzado.csv' : 'peliculas',
+  'peliculas_data_avanzado2.csv': 'peliculas',
+  'animes_data.csv'             : 'animes',
+  'animados_data.csv'           : 'animados',
+  'doramas_data.csv'            : 'doramas',
+  'novelas_data.csv'            : 'novelas',
+  'juegos_data.csv'             : 'juegos'
+};
+
+/*
+  Esquema de columnas por categoría (ajustado a tus CSVs reales):
+  animados : Original ; Titulo     ; Anio ; Sinopsis ; Link_Imagen  ; Generos ; Puntuacion_IMDb  ; Temporadas ; Episodios
+  animes   : Titulo_original ; Titulo_encontrado ; Fuente ; Sinopsis ; Poster_URL ; Generos ; Puntuacion ; Episodios ; URL_Externa
+  doramas  : Titulo_original ; Titulo_encontrado ; Fuente ; Anio ; Sinopsis ; Poster_URL ; Generos ; Puntuacion_TMDB ; Temporadas ; Episodios ; URL_Externa
+  juegos   : Titulo_original ; Titulo_encontrado ; Fuente ; Anio ; Sinopsis ; Poster_URL ; Generos ; Desarrolladores ; Editores ; Puntuacion_Usuario ; Metascore ; URL_Slug
+  novelas  : Titulo_original ; Titulo_encontrado ; Fuente ; Anio ; Sinopsis ; Poster_URL ; Backdrop_URL ; Generos ; Puntuacion_TMDB ; Temporadas ; Episodios ; URL_TMDB
+  peliculas: Titulo_original ; Titulo_encontrado ; Fuente ; Anio ; Sinopsis ; Poster_URL ; Generos ; Puntuacion ; Duracion_min ; URL_Externa ; Peso_GB
+  series   : Titulo ; Anio ; Sinopsis ; Link_Imagen ; Generos ; Puntuacion_IMDb ; Temporadas ; Capitulos
+*/
+var CSV_SCHEMA = {
+  animados  : { keyClean:'Titulo',           keyOrig:'Original',         sinopsis:'Sinopsis', poster:'Link_Imagen', backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion_IMDb',  temporadas:'Temporadas', episodios:'Episodios', url:'URL_TMDB',    anio:'Anio', temporadasDet:'Temporadas_Detalle', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones', trailer:'Trailer_URL', peso:'Peso_GB', pesoTemp:'Peso_Temporadas_Detalle' },
+  animes    : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion',       temporadas:null,         episodios:'Episodios', url:'URL_Externa', anio:null,   temporadasDet:'Temporadas_Detalle', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones', trailer:'Trailer_URL', peso:'Peso_GB', pesoTemp:'Peso_Temporadas_Detalle' },
+  doramas   : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion_TMDB',  temporadas:'Temporadas', episodios:'Episodios', url:'URL_Externa', anio:'Anio', temporadasDet:'Temporadas_Detalle', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones', trailer:'Trailer_URL', peso:'Peso_GB', pesoTemp:'Peso_Temporadas_Detalle' },
+  juegos    : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion_Usuario',temporadas:null,        episodios:null,        url:'URL_Slug',    anio:'Anio', recomendaciones:'Recomendaciones', reqMin:'Requisitos_Minimos', reqRec:'Requisitos_Recomendados', trailer:'Trailer_URL', peso:'Peso_GB' },
+  novelas   : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion_TMDB',  temporadas:'Temporadas', episodios:'Episodios', url:'URL_TMDB',    anio:'Anio', temporadasDet:'Temporadas_Detalle', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones', trailer:'Trailer_URL', peso:'Peso_GB', pesoTemp:'Peso_Temporadas_Detalle' },
+  peliculas : { keyClean:'Titulo_encontrado', keyOrig:'Titulo_original',  sinopsis:'Sinopsis', poster:'Poster_URL',  backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion',       temporadas:null,         episodios:null,        url:'URL_Externa', anio:'Anio', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones', trailer:'Trailer_URL', peso:'Peso_GB' },
+  series    : { keyClean:'Titulo',            keyOrig:null,               sinopsis:'Sinopsis', poster:'Link_Imagen', backdrop:'Backdrop_URL',generos:'Generos', puntuacion:'Puntuacion_IMDb',  temporadas:'Temporadas', episodios:'Capitulos', url:'URL_TMDB',    anio:'Anio', temporadasDet:'Temporadas_Detalle', reparto:'Reparto', repartoFotos:'Reparto_Fotos', equipo:'Equipo', recomendaciones:'Recomendaciones', trailer:'Trailer_URL', peso:'Peso_GB', pesoTemp:'Peso_Temporadas_Detalle' }
+};
+
+function parseCSV(text){
+  text=text.replace(/^\uFEFF/,'');
+  var lines=text.split(/\r?\n/).filter(function(l){ return l.trim(); });
+  if(!lines.length) return [];
+  var h0=lines[0];
+  var tabCount  = h0.split('\t').length - 1;
+  var semiCount = h0.split(';').length  - 1;
+  var commaCount= h0.split(',').length  - 1;
+  var sep = tabCount >= semiCount && tabCount >= commaCount ? '\t'
+          : semiCount >= commaCount ? ';' : ',';
+  var headers=h0.split(sep).map(function(h){ return h.trim(); });
+  var rows=[];
+  for(var i=1;i<lines.length;i++){
+    var cells=[], cur='', inQ=false;
+    for(var j=0;j<lines[i].length;j++){
+      var ch=lines[i][j];
+      if(ch==='"'){ inQ=!inQ; }
+      else if(ch===sep&&!inQ){ cells.push(cur); cur=''; }
+      else cur+=ch;
+    }
+    cells.push(cur);
+    if(cells.length<2) continue;
+    var row={};
+    headers.forEach(function(h,idx){ row[h]=(cells[idx]||'').trim(); });
+    rows.push(row);
+  }
+  return rows;
+}
+
+function normCSV(s){
+  if(!s) return '';
+  return s
+    .replace(/\[.*?\]/g,'')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9]/g,'')
+    .trim();
+}
+
+/* Clave de orden: minúsculas + sin tildes, PERO conservando espacios/orden de
+   palabras (a diferencia de normCSV, que es para detectar duplicados).
+   Se calcula una sola vez por título al construir el DB, así el ordenamiento
+   alfabético no tiene que llamar a localeCompare (lento) en cada comparación
+   — esto es lo que causaba la traba al cambiar a la categoría de Películas
+   (la más grande) en celulares con CPU más lenta que una PC. */
+function sortKey(s){
+  return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
+
+function applyCSVRows(rows, cat){
+  var schema=CSV_SCHEMA[cat];
+  if(!schema||!rows.length) return 0;
+
+  // Build lookup by normalized title
+  var byClean={}, byOrig={};
+  rows.forEach(function(row){
+    var clean=schema.keyClean?(row[schema.keyClean]||''):'';
+    var orig =schema.keyOrig ?(row[schema.keyOrig] ||''):'';
+    if(clean) byClean[normCSV(clean)]=row;
+    if(orig)  byOrig [normCSV(orig)] =row;
+  });
+
+  // Build DB entries for this category from CSV rows (deduplicated by normalized title)
+  var newEntries = [];
+  var seenTitles = {};
+  rows.forEach(function(row){
+    var clean=schema.keyClean?(row[schema.keyClean]||''):'';
+    var orig =schema.keyOrig ?(row[schema.keyOrig] ||''):clean;
+    var title = clean || orig;
+    if(!title) return;
+
+    /* Skip duplicates within this category */
+    var nKey = normCSV(title);
+    if(seenTitles[nKey]) return;
+    seenTitles[nKey] = true;
+
+    /* Also skip if already in DB for this category */
+    var alreadyInDB = false;
+    for(var di = 0; di < DB.length; di++){
+      if(DB[di].c === cat && normCSV(DB[di].t) === nKey){ alreadyInDB = true; break; }
+    }
+    if(alreadyInDB) return;
+
+    var anioRaw = schema.anio?(row[schema.anio]||''):'';
+    var year = '';
+    if(anioRaw){
+      var ym = anioRaw.match(/(\d{4})/);
+      if(ym) year = ym[1];
+      else year = anioRaw.trim();
+    }
+
+    var generos = schema.generos?(row[schema.generos]||''):'';
+    var gArr = generos?generos.split(/[,|;]|\. |\s\/\s/).map(function(g){ return g.trim(); }).filter(Boolean):[];
+
+    var entry = { t: title, y: year, c: cat, g: gArr, a: orig!==title?orig:undefined, sk: sortKey(title),
+                  tn: normSearch(title), an: (orig!==title)?normSearch(orig):'', gn: gArr.length?normSearch(gArr.join(' ')):'' };
+    newEntries.push(entry);
+  });
+
+  // Assign indices and add to DB
+  var mapped = 0;
+  newEntries.forEach(function(entry){
+    var i = DB.length;
+    entry._idx = i;
+    DB.push(entry);
+
+    // Also apply enriched data (poster, synopsis, etc.)
+    var key = normCSV(entry.t);
+    var row = byClean[key]||byOrig[key];
+    if(!row) return;
+
+    var ov={};
+    var sinopsis   = schema.sinopsis   ?(row[schema.sinopsis]   ||''):'';
+    var poster     = schema.poster     ?(row[schema.poster]     ||''):'';
+    var backdrop   = schema.backdrop   ?(row[schema.backdrop]   ||''):'';
+    var puntuacion = schema.puntuacion ?(row[schema.puntuacion] ||''):'';
+    var temporadas = schema.temporadas ?(row[schema.temporadas] ||''):'';
+    var episodios  = schema.episodios  ?(row[schema.episodios]  ||''):'';
+    var urlExt     = schema.url        ?(row[schema.url]        ||''):'';
+
+    if(sinopsis)   ov.ov=sinopsis; /* la versión normalizada para búsqueda (ovn) se calcula perezosamente, solo si alguien busca — ver filtered() */
+    if(poster   && poster.indexOf('http')===0)   ov.p=posterUrl(poster);
+    if(backdrop && backdrop.indexOf('http')===0) ov.b=backdropUrl(backdrop);
+    if(entry.g && entry.g.length) ov.g=entry.g;
+    if(puntuacion){ try{ ov.r=String(Math.round(parseFloat(puntuacion)*10)/10); }catch(e){} }
+    if(temporadas){ try{ var t=parseInt(temporadas); if(!isNaN(t)&&t>0) ov.seas=t; }catch(e){} }
+    if(episodios) { try{ var ep=parseInt(episodios); if(!isNaN(ep)&&ep>0) ov.eps=ep; }catch(e){} }
+    if(urlExt && urlExt.indexOf('http')===0) ov.url=urlExt;
+
+    /* Temporadas_Detalle: "T1:9|T2:16|T3:10" → [{n:1,eps:9},{n:2,eps:16},...] */
+    var temporadasDet = schema.temporadasDet ? (row[schema.temporadasDet]||'') : '';
+    if(temporadasDet){
+      var sd = temporadasDet.split('|').map(function(part){
+        var m = part.trim().match(/^T(\d+):(\d+)$/i);
+        return m ? { n:parseInt(m[1],10), eps:parseInt(m[2],10) } : null;
+      }).filter(Boolean);
+      if(sd.length) ov.seasDetail = sd;
+    }
+
+    /* Reparto: "Actor Uno (Personaje), Actor Dos (Personaje), ..." → [{name,char}] */
+    var reparto = schema.reparto ? (row[schema.reparto]||'') : '';
+    if(reparto){
+      var cast = reparto.split(',').map(function(part){
+        part = part.trim(); if(!part) return null;
+        /* Se usa indexOf/lastIndexOf en vez de una sola regex porque el
+           personaje a veces trae sus propios paréntesis, ej: "Seth Green
+           (Leonardo (voice))" — con regex simple eso rompe el match. */
+        var pOpen = part.indexOf('(');
+        var pClose = part.lastIndexOf(')');
+        if(pOpen > -1 && pClose > pOpen){
+          return { name: part.slice(0, pOpen).trim(), char: part.slice(pOpen+1, pClose).trim() };
+        }
+        return { name: part, char: '' };
+      }).filter(Boolean);
+      /* Reparto_Fotos viene alineado por posición con Reparto (misma
+         cantidad de elementos, separados igual por coma); string vacío
+         significa que ese actor no tiene foto en TMDB. */
+      var repartoFotos = schema.repartoFotos ? (row[schema.repartoFotos]||'') : '';
+      if(repartoFotos){
+        var fotos = repartoFotos.split(',').map(function(s){ return s.trim(); });
+        if(fotos.length === cast.length){
+          cast.forEach(function(actor, idx){ if(fotos[idx]) actor.photo = fotos[idx]; });
+        }
+      }
+      if(cast.length) ov.cast = cast;
+    }
+
+    /* Equipo: "Creador: Fulano | Director: Mengano" — texto libre */
+    var equipo = schema.equipo ? (row[schema.equipo]||'') : '';
+    if(equipo) ov.crew = equipo;
+
+    /* Recomendaciones: "Titulo A, Titulo B, Titulo C" → [titulos] */
+    var recomendaciones = schema.recomendaciones ? (row[schema.recomendaciones]||'') : '';
+    if(recomendaciones){
+      var recs = recomendaciones.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+      if(recs.length) ov.recs = recs;
+    }
+
+    /* Requisitos de PC (solo juegos) — texto libre */
+    var reqMin = schema.reqMin ? (row[schema.reqMin]||'') : '';
+    if(reqMin) ov.reqMin = reqMin;
+    var reqRec = schema.reqRec ? (row[schema.reqRec]||'') : '';
+    if(reqRec) ov.reqRec = reqRec;
+
+    /* Peso en GB — se muestra en la ficha y en el pedido (en juegos también define el precio) */
+    var peso = schema.peso ? (row[schema.peso]||'') : '';
+    if(peso){
+      var pesoNum = parseFloat(String(peso).replace(',','.'));
+      if(!isNaN(pesoNum) && pesoNum>0) ov.pesoGB = pesoNum;
+    }
+    /* Peso por temporada, formato 'T1:2.84|T2:6.42' */
+    var pTemp = schema.pesoTemp ? (row[schema.pesoTemp]||'') : '';
+    if(pTemp){
+      var sw = [];
+      pTemp.split('|').forEach(function(part){
+        var mm = part.trim().match(/^T(\d+):(\d+(?:[.,]\d+)?)$/i);
+        if(mm){ var gbv = parseFloat(mm[2].replace(',','.')); if(gbv>0) sw.push({n:parseInt(mm[1],10), gb:gbv}); }
+      });
+      if(sw.length) ov.seasWeights = sw;
+    }
+
+    /* Trailer: URL de YouTube (TMDB) o mp4 directo (RAWG en juegos) */
+    var trailer = schema.trailer ? (row[schema.trailer]||'') : '';
+    if(trailer && trailer.indexOf('http')===0) ov.trailer = trailer;
+
+    ov.src='csv';
+
+    overrides[i]=ov;
+    mapped++;
+  });
+  return mapped;
+}
+
+/* Reconstruye el DB completo (y los overrides) a partir de un mapa
+   { 'archivo.csv': textoCSV } — se usa tanto para el render instantáneo
+   desde caché como para el render con datos frescos. */
+function rebuildDB(textsByFile){
+  DB.length = 0;
+  Object.keys(overrides).forEach(function(k){ delete overrides[k]; });
+  Object.keys(CSV_CAT_MAP).forEach(function(file){
+    var text = textsByFile[file];
+    if(!text) return;
+    var cat = CSV_CAT_MAP[file];
+    var n = applyCSVRows(parseCSV(text), cat);
+    console.log('[CSV] '+file+' → '+n+' ('+cat+')');
+  });
+  rebuildKeyIndex();
+}
+/* Índice título+año+categoría → posición actual en DB. La posición cambia
+   cada vez que se reconstruye DB (carga inicial, actualización en caliente,
+   etc.), así que nada que deba sobrevivir entre recargas (carrito,
+   favoritos) puede confiar en la posición numérica sola — se resuelve
+   siempre a través de esta clave estable. */
+var DB_KEY_INDEX = {};
+function stableKey(c, tn, y){ return c+'|'+tn+'|'+(y||''); }
+function rebuildKeyIndex(){
+  DB_KEY_INDEX = {};
+  DB.forEach(function(e,idx){ DB_KEY_INDEX[stableKey(e.c, e.tn, e.y)] = idx; });
+}
+/* Resuelve la posición ACTUAL en DB de un item guardado (carrito, etc.),
+   sin importar cuántas veces se haya reconstruido DB desde que se guardó. */
+function resolveIndex(savedItem){
+  var tn = savedItem.tn || normSearch(savedItem.t);
+  var idx = DB_KEY_INDEX[stableKey(savedItem.c, tn, savedItem.y)];
+  return (idx!=null && DB[idx]) ? idx : savedItem.i;
+}
+
+/* ── CACHÉ DE CSV EN INDEXEDDB ──
+   Antes esto se guardaba en localStorage, pero localStorage tiene un
+   límite de ~5MB por sitio en la mayoría de navegadores — y solo
+   peliculas_data_avanzado.csv ya pesa casi 5MB, así que el guardado
+   fallaba en silencio y la caché nunca se actualizaba (el catálogo
+   siempre mostraba una copia vieja al abrir, hasta que llegaba la
+   respuesta de red). IndexedDB no tiene ese límite tan bajo. */
+var IDB_NAME='cr_csv_cache', IDB_STORE='csv';
+function idbOpen(){
+  return new Promise(function(resolve,reject){
+    if(!window.indexedDB){ reject(new Error('no indexedDB')); return; }
+    var req=indexedDB.open(IDB_NAME,1);
+    req.onupgradeneeded=function(){ req.result.createObjectStore(IDB_STORE); };
+    req.onsuccess=function(){ resolve(req.result); };
+    req.onerror=function(){ reject(req.error); };
+  });
+}
+function idbGet(key){
+  return idbOpen().then(function(db){
+    return new Promise(function(resolve){
+      var tx=db.transaction(IDB_STORE,'readonly');
+      var req=tx.objectStore(IDB_STORE).get(key);
+      req.onsuccess=function(){ resolve(req.result||null); };
+      req.onerror=function(){ resolve(null); };
+    });
+  }).catch(function(){ return null; });
+}
+function idbSet(key,val){
+  return idbOpen().then(function(db){
+    return new Promise(function(resolve){
+      var tx=db.transaction(IDB_STORE,'readwrite');
+      tx.objectStore(IDB_STORE).put(val,key);
+      tx.oncomplete=function(){ resolve(true); };
+      tx.onerror=function(){ resolve(false); };
+    });
+  }).catch(function(){ return false; });
+}
+/* Limpieza única de la caché vieja en localStorage/sessionStorage
+   (ya no se usa, pero podía estar ocupando cuota innecesariamente) */
+(function(){
+  try{
+    Object.keys(CSV_CAT_MAP).forEach(function(file){
+      localStorage.removeItem('csvdata_'+file);
+      sessionStorage.removeItem('csvdata_'+file);
+    });
+  }catch(e){}
+})();
+
+function loadCSVsFromGitHub(){
+  if(!GITHUB_RAW_BASE) return Promise.resolve();
+
+  /*
+    Estrategia stale-while-revalidate:
+    1. Si hay datos guardados en localStorage de una visita anterior,
+       se pinta el catálogo CON ESO de inmediato (cero espera de red).
+    2. En paralelo (sin bloquear lo anterior) se piden los CSV reales,
+       sin cache-buster, para que el navegador pueda aprovechar su
+       caché HTTP normal (ETag / 304) cuando el archivo no cambió.
+    3. Si el contenido descargado es distinto al que ya se mostró,
+       se reconstruye el catálogo con los datos frescos y se guardan
+       en caché para la próxima visita.
+    Ya no se usa la API de commits de GitHub (evita el límite de 60
+    peticiones/hora y la ronda de red extra que eso costaba).
+  */
+  var files = Object.keys(CSV_CAT_MAP);
+  var cachedTexts = {};
+  var haveAnyCache = false;
+
+  return Promise.all(files.map(function(file){
+    return idbGet('csvdata_'+file).then(function(t){
+      if(t){ cachedTexts[file] = t; haveAnyCache = true; }
+    });
+  })).then(function(){
+    if(haveAnyCache){
+      rebuildDB(cachedTexts);
+      buildYears(); updateStats(); renderGrid(); updateCartUI(); progDone();
+      setTimeout(function(){ if(typeof window._buildCarousel === 'function') window._buildCarousel(cachedTexts); },0);
+      console.log('[CSV] Render instantáneo desde caché (IndexedDB). Verificando actualizaciones…');
+    }
+    return fetchFreshCSVs(cachedTexts, haveAnyCache);
+  });
+}
+
+/* Revalida un CSV contra el servidor (Vercel/GitHub). Si el ETag no cambió, devuelve
+   {same:true} SIN leer el cuerpo, SIN comparar textos y SIN reescribir IndexedDB.
+   Si cambió (o no hay ETag), lee el texto y solo lo guarda si realmente es distinto. */
+function revalidateCSV(file, force){
+  var url = GITHUB_RAW_BASE + file;
+  return idbGet('csvmeta_'+file).then(function(oldTag){
+    return fetch(url, {cache:'no-cache'}).then(function(r){
+      if(!r.ok) throw new Error(r.status);
+      var tag = r.headers.get('ETag') || r.headers.get('Last-Modified') || '';
+      if(!force && tag && tag === oldTag) return {same:true};
+      return r.text().then(function(text){
+        return idbGet('csvdata_'+file).then(function(prev){
+          var same = (prev === text);
+          var p = same ? Promise.resolve(true) : idbSet('csvdata_'+file, text);
+          return p.then(function(){
+            if(tag && tag !== oldTag) return idbSet('csvmeta_'+file, tag); /* meta después de los datos */
+          }).then(function(){ return {same:same, text:text}; });
+        });
+      });
+    });
+  });
+}
+
+function fetchFreshCSVs(cachedTexts, haveAnyCache){
+  var files = Object.keys(CSV_CAT_MAP);
+  var freshTexts = {};
+  var changed = false;
+
+  var promises = files.map(function(file){
+    return revalidateCSV(file, !cachedTexts[file]).then(function(res){
+      if(res.same){ freshTexts[file] = cachedTexts[file]; }
+      else { freshTexts[file] = res.text; changed = true; }
+    }).catch(function(e){
+      /* Sin red o falló la descarga → usar lo que ya teníamos en caché, si hay */
+      if(cachedTexts[file]) freshTexts[file] = cachedTexts[file];
+      console.warn('[CSV] Sin datos frescos para '+file+':', e);
+    });
+  });
+
+  return Promise.all(promises).then(function(){
+    if(!haveAnyCache || changed){
+      rebuildDB(freshTexts);
+      buildYears(); updateStats(); renderGrid(); updateCartUI(); progDone();
+      console.log('[CSV] ✓ DB:', DB.length, ' overrides:', Object.keys(overrides).length, changed?'[actualizado]':'[primera carga]');
+      setTimeout(function(){ if(typeof window._buildCarousel === 'function') window._buildCarousel(freshTexts); },0);
+    } else {
+      console.log('[CSV] Sin cambios, se mantiene la versión en caché.');
+    }
+  });
+}
+
+/* ── REVISIÓN PERIÓDICA EN SEGUNDO PLANO ──
+   Solo pide los 8 archivos con revalidación (respuestas 304 de pocos bytes). Únicamente
+   si alguno cambió se leen los textos y se reconstruye el catálogo. */
+var _checkingUpdates = false, _lastCheck = Date.now();
+var CHECK_EVERY = 10*60*1000;
+function checkForUpdatesCSV(){
+  if(_checkingUpdates) return;
+  if(!GITHUB_RAW_BASE) return;
+  _checkingUpdates = true; _lastCheck = Date.now();
+  var files = Object.keys(CSV_CAT_MAP);
+
+  Promise.all(files.map(function(file){
+    return revalidateCSV(file, false).then(function(res){ res.file = file; return res; })
+      .catch(function(e){ console.warn('[CSV] Revisión periódica: sin datos frescos para '+file, e); return {file:file, same:true}; });
+  })).then(function(results){
+    if(!results.some(function(r){ return !r.same; })){
+      console.log('[CSV] Revisión periódica: sin cambios.');
+      return;
+    }
+    var texts = {};
+    return Promise.all(results.map(function(res){
+      if(!res.same){ texts[res.file] = res.text; return null; }
+      return idbGet('csvdata_'+res.file).then(function(t){ if(t) texts[res.file] = t; });
+    })).then(function(){
+      /* Se preserva la página/filtros actuales del visitante */
+      rebuildDB(texts);
+      buildYears(); updateStats(); renderGrid(); updateCartUI(); progDone();
+      console.log('[CSV] ✓ Catálogo actualizado automáticamente en segundo plano.');
+      setTimeout(function(){ if(typeof window._buildCarousel === 'function') window._buildCarousel(texts); },0);
+    });
+  }).then(function(){ _checkingUpdates = false; },
+          function(){ _checkingUpdates = false; });
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   MODO JSON — lista + detalle  (carga rápida)
+   Generado por build_data.py a partir de los CSV:
+     data/manifest.json        versiones por categoría + "Recién actualizados"
+     data/lista_<cat>.json     lo mínimo para el grid, filtros, búsqueda y carrito
+     data/d/<cat>_<n>.json     detalle (sinopsis, reparto, trailer…) en bloques de 40
+     data/s/<cat>.json         sinopsis sueltas (solo si una búsqueda no halla nada por título)
+   Si data/ no existe o falla, se usa el camino antiguo de los CSV.
+   ══════════════════════════════════════════════════════════════════ */
+var DATA_BASE = GITHUB_RAW_BASE + 'data/';
+var JSON_MODE = false;
+var DATA_CATS = ['series','peliculas','animes','animados','doramas','novelas','juegos'];
+var DETAIL_SHARD = 40;
+var CAT_VER = {};            /* versión de cada categoría que está en pantalla */
+var CAT_IDX = {};            /* cat → [índice en DB, por posición en su lista] */
+var SYN = { loaded:false, loading:null };
+var _shardCache = {};
+
+function buildFromLists(lists){
+  DB.length = 0;
+  Object.keys(overrides).forEach(function(k){ delete overrides[k]; });
+  CAT_IDX = {}; SYN.loaded = false; SYN.loading = null; _shardCache = {};
+  DATA_CATS.forEach(function(cat){
+    var L = lists[cat]; if(!L) return;
+    var idxs = CAT_IDX[cat] = [];
+    for(var ci=0; ci<L.length; ci++){
+      var l = L[ci], i = DB.length, g = l.g || [];
+      DB.push({ t:l.t, y:l.y||'', c:cat, g:g, a:l.a, sk:sortKey(l.t),
+                tn:normSearch(l.t), an:l.a?normSearch(l.a):'', gn:g.length?normSearch(g.join(' ')):'',
+                _idx:i, _ci:ci });
+      idxs.push(i);
+      var ov = { src:'csv', dl:false };
+      if(l.p) ov.p = posterUrl(l.p);
+      if(g.length) ov.g = g;
+      if(l.r) ov.r = l.r;
+      if(l.s) ov.seas = l.s;
+      if(l.e) ov.eps = l.e;
+      if(l.w) ov.pesoGB = l.w;
+      if(l.pw) ov.seasWeights = l.pw.map(function(s){ return { n:s[0], gb:s[1] }; });
+      if(l.sd) ov.seasDetail = l.sd.map(function(s){ return { n:s[0], eps:s[1] }; });
+      overrides[i] = ov;
+    }
+  });
+  rebuildKeyIndex();
+}
+
+function afterBuild(){ buildYears(); updateStats(); renderGrid(); updateCartUI(); progDone(); }
+
+function fetchManifest(){
+  return fetch(DATA_BASE+'manifest.json', {cache:'no-cache'}).then(function(r){
+    if(!r.ok) throw new Error('manifest '+r.status);
+    return r.json();
+  }).then(function(man){
+    if(!man || !man.cats) throw new Error('manifest inválido');
+    return man;
+  });
+}
+function fetchList(cat, v){
+  return fetch(DATA_BASE+'lista_'+cat+'.json?v='+v).then(function(r){
+    if(!r.ok) throw new Error('lista '+cat+' '+r.status);
+    return r.text();
+  }).then(function(txt){
+    var L = JSON.parse(txt);
+    idbSet('jl_'+cat, { v:v, t:txt });
+    return L;
+  });
+}
+
+/* Stale-while-revalidate: pinta al instante desde IndexedDB, luego pide solo el manifest
+   (unos pocos KB) y baja únicamente las categorías cuya versión cambió. */
+function loadCatalogJSON(){
+  return Promise.all(DATA_CATS.map(function(c){ return idbGet('jl_'+c); }).concat([idbGet('jman')]))
+  .then(function(arr){
+    var lists = {}, haveAny = false, cachedRec = '';
+    DATA_CATS.forEach(function(c, k){
+      var o = arr[k];
+      if(o && o.v && o.t){
+        try{ lists[c] = JSON.parse(o.t); CAT_VER[c] = o.v; haveAny = true; }catch(e){}
+      }
+    });
+    var jm = arr[DATA_CATS.length];
+    if(jm && jm.shard) DETAIL_SHARD = jm.shard;
+    if(haveAny){
+      JSON_MODE = true;
+      buildFromLists(lists); afterBuild();
+      if(jm && jm.rec){ cachedRec = JSON.stringify(jm.rec); setTimeout(function(){ if(window._buildCarousel) window._buildCarousel(jm.rec); },0); }
+      console.log('[DATA] Render instantáneo desde caché. Verificando actualizaciones…');
+    }
+    return fetchManifest().then(function(man){
+      JSON_MODE = true;
+      idbSet('jman', man);
+      if(man.shard) DETAIL_SHARD = man.shard;
+      var need = DATA_CATS.filter(function(c){ return man.cats[c] && CAT_VER[c] !== man.cats[c].v; });
+      var gone = DATA_CATS.filter(function(c){ return !man.cats[c] && lists[c]; });
+      var failed = false;
+      return Promise.all(need.map(function(c){
+        return fetchList(c, man.cats[c].v).then(function(L){ lists[c] = L; CAT_VER[c] = man.cats[c].v; })
+          .catch(function(e){ console.warn('[DATA] No se pudo bajar '+c, e); if(!lists[c]) failed = true; });
+      })).then(function(){
+        if(failed && !haveAny) throw new Error('listas incompletas');
+        gone.forEach(function(c){ delete lists[c]; delete CAT_VER[c]; });
+        if(need.length || gone.length || !haveAny){
+          buildFromLists(lists); afterBuild();
+          console.log('[DATA] ✓ DB:', DB.length, need.length ? '[actualizado: '+need.join(', ')+']' : '[primera carga]');
+        } else {
+          console.log('[DATA] Sin cambios, se mantiene la versión en caché.');
+        }
+        var recStr = JSON.stringify(man.rec || []);
+        if(recStr !== cachedRec){ setTimeout(function(){ if(window._buildCarousel) window._buildCarousel(man.rec || []); },0); }
+      });
+    }).catch(function(e){
+      if(haveAny){ console.warn('[DATA] Sin red; se muestra la copia guardada.', e); return; }
+      throw e;
+    });
+  });
+}
+
+/* Detalle de UN título: baja solo su bloque (~40 títulos, unos pocos KB). */
+function loadShard(cat, k){
+  var key = cat+'_'+k+'_'+CAT_VER[cat];
+  if(_shardCache[key]) return _shardCache[key];
+  var p = fetch(DATA_BASE+'d/'+cat+'_'+k+'.json?v='+CAT_VER[cat]).then(function(r){
+    if(!r.ok) throw new Error('detalle '+r.status);
+    return r.json();
+  });
+  p.catch(function(){ delete _shardCache[key]; });
+  return (_shardCache[key] = p);
+}
+function applyDetail(i, d){
+  var ov = overrides[i]; if(!ov) return;
+  if(d.ov) ov.ov = d.ov;
+  if(d.b) ov.b = backdropUrl(d.b);
+  if(d.u) ov.url = d.u;
+  if(d.cast && d.cast.length){
+    ov.cast = d.cast.map(function(a){ var o = { name:a.n, char:a.c||'' }; if(a.f) o.photo = a.f; return o; });
+  }
+  if(d.crew) ov.crew = d.crew;
+  if(d.recs && d.recs.length) ov.recs = d.recs;
+  if(d.rq) ov.reqMin = d.rq;
+  if(d.rr) ov.reqRec = d.rr;
+  if(d.tr) ov.trailer = d.tr;
+  ov.ovn = undefined;
+  ov.dl = true;
+}
+/* Devuelve una promesa → true si hay algo nuevo que pintar */
+function ensureDetail(i){
+  var e = DB[i], ov = overrides[i];
+  if(!JSON_MODE || !e || e._ci===undefined || !ov || ov.dl) return Promise.resolve(false);
+  var k = Math.floor(e._ci / DETAIL_SHARD);
+  return loadShard(e.c, k).then(function(arr){
+    if(DB[i] !== e) return false;                 /* el catálogo se reconstruyó mientras tanto */
+    var d = arr[e._ci - k*DETAIL_SHARD];
+    if(d && d.t === e.t) applyDetail(i, d); else ov.dl = true;
+    return true;
+  }).catch(function(err){
+    console.warn('[DATA] Detalle no disponible', err);
+    if(overrides[i]){ overrides[i].dfail = true; }
+    return true;
+  });
+}
+
+/* Búsqueda por sinopsis: solo se activa si el título no dio resultados. */
+function ensureSynopses(){
+  if(!JSON_MODE || SYN.loaded) return Promise.resolve(false);
+  if(SYN.loading) return SYN.loading;
+  SYN.loading = Promise.all(DATA_CATS.map(function(c){
+    if(!CAT_VER[c]) return null;
+    return fetch(DATA_BASE+'s/'+c+'.json?v='+CAT_VER[c]).then(function(r){ return r.ok ? r.json() : []; })
+      .then(function(arr){
+        var idxs = CAT_IDX[c] || [];
+        for(var k=0; k<arr.length && k<idxs.length; k++){
+          var o = overrides[idxs[k]];
+          if(o && arr[k] && !o.ov){ o.ov = arr[k]; o.ovn = undefined; }
+        }
+      }).catch(function(){});
+  })).then(function(){ SYN.loaded = true; return true; });
+  return SYN.loading;
+}
+
+/* Revisión periódica (modo JSON): solo el manifest; si una categoría cambió, se baja esa. */
+function checkJSON(){
+  if(_checkingUpdates) return;
+  _checkingUpdates = true; _lastCheck = Date.now();
+  fetchManifest().then(function(man){
+    idbSet('jman', man);
+    if(man.shard) DETAIL_SHARD = man.shard;
+    var need = DATA_CATS.filter(function(c){ return man.cats[c] && CAT_VER[c] !== man.cats[c].v; });
+    if(!need.length){ console.log('[DATA] Revisión periódica: sin cambios.'); return; }
+    if(detIdx >= 0) return;            /* no reconstruir con una ficha abierta; se reintenta luego */
+    var lists = {};
+    return Promise.all(DATA_CATS.map(function(c){
+      if(!man.cats[c]) return null;
+      if(need.indexOf(c) >= 0){
+        return fetchList(c, man.cats[c].v).then(function(L){ lists[c] = L; CAT_VER[c] = man.cats[c].v; });
+      }
+      return idbGet('jl_'+c).then(function(o){ if(o && o.t) lists[c] = JSON.parse(o.t); });
+    })).then(function(){
+      buildFromLists(lists); afterBuild();
+      if(window._buildCarousel) window._buildCarousel(man.rec || []);
+      console.log('[DATA] ✓ Catálogo actualizado en segundo plano:', need.join(', '));
+    });
+  }).catch(function(e){ console.warn('[DATA] Revisión periódica falló', e); })
+    .then(function(){ _checkingUpdates = false; });
+}
+function checkForUpdates(){ return JSON_MODE ? checkJSON() : checkForUpdatesCSV(); }
+
+/* Arranque: JSON primero; si no está disponible, el camino antiguo de los CSV */
+function startCatalog(){
+  loadCatalogJSON().catch(function(e){
+    console.warn('[DATA] Modo JSON no disponible, usando CSV:', e);
+    JSON_MODE = false;
+    return loadCSVsFromGitHub();
+  });
+}
+
+/* ── ARRANQUE ── */
+load();
+loadOverrides();
+updateCartUI();
+
+/* PEDIDO se reubica solo en celular:
+   - En INICIO (sin filtros): junto a "Recién Actualizados".
+   - En cualquier otra sección: junto a PENDIENTES (para que nunca desaparezca
+     al estar dentro del carrusel, que se oculta fuera de inicio).
+   En desktop siempre queda en su lugar original de la barra de arriba.
+   Es función global (no IIFE) para poder llamarla también desde renderGrid(). */
+/* El botón PEDIDO se queda siempre dentro de #nav-right, que es parte
+   de la barra superior (#nav) con position:sticky — así nunca se pierde
+   al hacer scroll, en Inicio o en cualquier categoría (películas, series,
+   animes, animados, doramas, novelas, juegos), en escritorio o en móvil. */
+function placeCartButton(){
+  var cartBtn = document.getElementById('cart-btn');
+  var navRight = document.getElementById('nav-right');
+  if(!cartBtn || !navRight) return;
+  if(cartBtn.parentNode !== navRight) navRight.appendChild(cartBtn);
+}
+placeCartButton();
+(function(){
+  var resizeTimer;
+  window.addEventListener('resize', function(){
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(placeCartButton, 150);
+  });
+})();
+
+// DB se construye desde los CSVs; mostrar loading
+(function(){
+  var grid = document.getElementById('grid');
+  if(grid){
+    grid.setAttribute('aria-busy','true'); grid.innerHTML = new Array(19).join('<div class="card sk"><div class="poster"></div><div class="sk-l"></div><div class="sk-l s"></div></div>');
+  }
+})();
+startCatalog();
+
+/* Revisar cambios cada 10 minutos mientras la pestaña esté abierta,
+   y también justo cuando la persona vuelve a la pestaña (por ejemplo
+   si estuvo un rato en otra app/ventana) — así nadie necesita recargar
+   manualmente para ver el catálogo actualizado. */
+setInterval(checkForUpdates, CHECK_EVERY);
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState === 'visible' && Date.now()-_lastCheck > 5*60*1000) checkForUpdates();
+});
+/* Caso importante en celulares: si el navegador restaura la página desde
+   su "caché de memoria" (bfcache) — por ejemplo al volver de otra app o
+   tocar "atrás" — la página reaparece tal cual estaba congelada, SIN
+   volver a correr nada de este script. event.persisted===true detecta
+   justo ese caso y fuerza una revisión, que es la causa más probable de
+   "hay que recargar manualmente para ver lo nuevo" en usuarios que
+   vuelven después de un rato. */
+window.addEventListener('pageshow', function(e){
+  if(e.persisted && Date.now()-_lastCheck > 5*60*1000) checkForUpdates();
+});
+
+/* ===== Sagas por temporada + Mano Zombie (dentro del scope del catálogo) ===== */
+var ready=false, last=cart.length;
+setTimeout(function(){ ready=true; last=cart.length; },1500);
+function bump(id){ var e=document.getElementById(id); if(!e) return; e.classList.remove('bump'); void e.offsetWidth; e.classList.add('bump'); }
+var _uc=updateCartUI;
+updateCartUI=function(){
+  _uc.apply(this,arguments);
+  var n=cart.length;
+  if(ready && n>last){ bump('cart-count'); bump('cart-btn'); bump('det-cart-count'); }
+  last=n;
+};
+
+/* ---------- Carpetas de sagas (editables) ----------
+   Cada carpeta: [emoji, nombre, palabras que debe tener el título, palabras que lo excluyen]
+   Se buscan en películas y animados, sin tildes ni mayúsculas. Una carpeta con menos de 2 títulos no se muestra. */
+var nz=function(s){ return ' '+String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim()+' '; };
+var CATS_PK={peliculas:1,animados:1};
+var F_HP=['🧙','Harry Potter',['harry potter']], F_NA=['🦁','Las crónicas de Narnia',['narnia']],
+    F_LR=['💍','El Señor de los Anillos y El Hobbit',['senor de los anillos','hobbit']], F_TOY=['🧸','Toy Story',['toy story']],
+    F_SH=['🧌','Shrek',['shrek']], F_ICE=['🧊','La era de hielo',['la era de hielo','ice age']], F_PI=['🏴‍☠️','Piratas del Caribe',['piratas del caribe']],
+    F_IN=['🤠','Indiana Jones',['indiana jones']], F_JU=['🦖','Jurassic Park y Jurassic World',['jurassic','parque jurasico']],
+    F_CR=['🌅','Crepúsculo',['crepusculo']], F_MM=['🎶','Mamma Mia',['mamma mia']], F_AT=['💌','A todos los chicos',['a todos los chicos']];
+var SECS={
+  halloween:{emoji:'👻',label:'Sagas de terror',folders:[
+    ['😱','Scream',['scream'],['queens']],['🪚','Saw',['saw'],['glow']],['🔪','Pesadilla en Elm Street',['pesadilla en elm street','nueva pesadilla']],
+    ['🏒','Viernes 13',['viernes 13']],['🎃','Halloween',['halloween'],['hubie','pesadillas']],
+    ['🕯️','Expediente Warren y La Monja',['expediente warren','annabelle','la monja','conjuring'],['guerrera']],['🚪','Insidious',['insidious']],
+    ['🧟','Resident Evil',['resident evil']],['☠️','Destino final',['destino final']],['🤡','Terrifier',['terrifier']],['🎈','It (Eso)',['it eso','it capitulo']],
+    ['🪆','Chucky y Muñeco diabólico',['chucky','muneco diabolico']],['📖','Posesión infernal',['posesion infernal','evil dead']],
+    ['🚨','La purga',['purga','noche de las bestias']],['⛓️','Hellraiser',['hellraiser','hellbound']],['👽','Alien',['alien','aliens','prometheus']],
+    ['👹','Depredador',['predator','depredador'],['sevilla']],['🐺','Underworld',['underworld']],['🧠','Zombis',['zombieland','28 dias despues','28 semanas despues']],
+    ['🤫','Un lugar tranquilo',['un lugar tranquilo']],['🏚️','La calle del terror',['la calle del terror']],['🪓','Camino sangriento',['wrong turn','camino sangriento','km 666']],
+    ['😈','El exorcista y La profecía',['el exorcista','la profecia','primera profecia'],['mothman','wishmaster','dune']],['👻','Ouija',['ouija']],
+    ['😁','Smile',['smile']],['🏔️','Las colinas tienen ojos',['las colinas tienen ojos','el retorno de los malditos']],
+    ['🍷','Hannibal Lecter',['hannibal','silencio de los corderos']],['🎭','Scary Movie',['scary movie']]]},
+  navidad:{emoji:'🎄',label:'Sagas navideñas y de fantasía',folders:[
+    ['🏠','Solo en casa',['solo en casa']],['💚','El Grinch',['grinch']],['🎄','Películas navideñas',['navidad','navideno','navidena','christmas','papa noel','santa claus']],
+    F_HP,F_NA,F_LR,['❄️','Frozen',['frozen']],F_TOY,F_SH,F_ICE]},
+  reyes:{emoji:'👑',label:'Sagas para los Reyes',folders:[
+    F_HP,F_NA,F_LR,F_PI,F_IN,F_JU,F_TOY,F_SH,F_ICE,['🦒','Madagascar',['madagascar']],['🐼','Kung Fu Panda',['kung fu panda']],
+    ['🍌','Mi villano favorito y Minions',['villano favorito','minions']],['🧛','Hotel Transilvania',['hotel transilvania']],['🚗','Cars',['cars']]]},
+  sanvalentin:{emoji:'💘',label:'Sagas de amor',folders:[
+    F_CR,['🖤','Cincuenta sombras',['cincuenta sombras']],F_AT,F_MM,['📔','Bridget Jones',['bridget jones']]]},
+  madres:{emoji:'🌷',label:'Sagas para mamá',folders:[F_MM,F_AT,F_CR,['📔','Bridget Jones',['bridget jones']],F_HP,F_NA]},
+  verano:{emoji:'🏖️',label:'Sagas de verano',folders:[
+    F_JU,['🦈','Tiburón y Megalodón',['tiburon','megalodon']],['🏎️','Rápidos y Furiosos',['fast furious','rapidos y furiosos','rapido y furioso']],F_PI,
+    ['🕵️','Misión imposible',['mision imposible']],F_IN,['🕷️','Spider-Man',['spider man','hombre arana']],['💊','Matrix',['matrix']],['🦒','Madagascar',['madagascar']],
+    ['🏝️','Verano y playa',['verano','playa','vacaciones','summer','beach'],['hicisteis','infierno']]]}
+};
+var SEC=SECS[window.TH_NAME]||null, PK={open:false,view:'root',list:[],f:null};
+var hasAny=function(s,l){ for(var i=0;i<l.length;i++) if(s.indexOf(l[i])!==-1) return true; return false; };
+var yr=function(it){ return parseInt(it.y,10)||9999; };
+function buildFolders(){
+  var res=[];
+  SEC.folders.forEach(function(f){
+    var kw=f[2].map(nz), ex=(f[3]||[]).map(nz), items=[];
+    for(var i=0;i<DB.length;i++){
+      var d=DB[i]; if(!d||!CATS_PK[d.c]) continue;
+      var s=d._nz||(d._nz=nz(d.t+' '+(d.an||'')));
+      if(hasAny(s,kw) && !hasAny(s,ex)) items.push({i:i,t:d.t,y:d.y,c:d.c,sk:d.sk||''});
+    }
+    if(items.length>=2){ items.sort(function(a,b){ return yr(a)-yr(b) || (a.t<b.t?-1:1); }); res.push({e:f[0],n:f[1],items:items}); }
+  });
+  return res;
+}
+var inCart=function(i){ return cart.some(function(x){ return resolveIndex(x)===i; }); };
+function addMany(list){ /* añade varias de una vez, sin repintar cada vez */
+  var added=0;
+  list.forEach(function(m){
+    var i=m.i; if(inCart(i)) return;
+    var d=DB[i], cd=getData(i), entry={i:i,t:d.t,y:d.y,c:d.c,tn:d.tn};
+    if(SEASON_CATS[d.c] && cd && cd.seasDetail && cd.seasDetail.length>1){
+      entry.seasTotal=cd.seasDetail.map(function(s){ return s.n; }); entry.seasSel=entry.seasTotal.slice();
+      entry.seasEpMap={}; cd.seasDetail.forEach(function(s){ entry.seasEpMap[s.n]=s.eps; });
+    }
+    cart.push(entry); added++;
+  });
+  if(added){ saveCart(); updateCartUI(); renderGrid(); }
+}
+var pkEl=null;
+function pkInit(){
+  if(pkEl) return; pkEl=document.createElement('div'); pkEl.id='pk';
+  pkEl.innerHTML='<div id="pk-head"><button id="pk-back" class="pk-b"></button><span id="pk-title"></span><button id="pk-exit" class="pk-b">✕ Salir</button></div><div id="pk-body"></div>';
+  document.body.appendChild(pkEl);
+  document.getElementById('pk-exit').onclick=closePk;
+  document.getElementById('pk-back').onclick=function(){ if(PK.view==='folder'){ PK.view='root'; pkRender(); pkEl.scrollTop=0; } else closePk(); };
+}
+function pkRender(){
+  var body=document.getElementById('pk-body'), back=document.getElementById('pk-back'), title=document.getElementById('pk-title'), st=pkEl.scrollTop;
+  body.innerHTML='';
+  if(PK.view==='root'){
+    back.textContent='← Volver'; title.textContent=SEC.emoji+' '+SEC.label;
+    var hint=document.createElement('p'); hint.className='pk-hint'; hint.textContent='Elige una carpeta. Puedes añadir una por una o toda la saga al pedido.'; body.appendChild(hint);
+    var wrap=document.createElement('div'); wrap.className='pk-folders';
+    PK.list.forEach(function(f,k){
+      var inc=f.items.filter(function(m){ return inCart(m.i); }).length, b=document.createElement('button'); b.className='pk-f';
+      b.innerHTML='<span class="pk-e">'+f.e+'</span><b>'+f.n+'</b><small>'+f.items.length+' películas'+(inc?' · '+inc+' en pedido':'')+'</small>';
+      b.onclick=function(){ PK.view='folder'; PK.f=k; pkRender(); pkEl.scrollTop=0; };
+      wrap.appendChild(b);
+    });
+    body.appendChild(wrap);
+  } else {
+    var f=PK.list[PK.f], miss=f.items.filter(function(m){ return !inCart(m.i); });
+    back.textContent='← Carpetas'; title.textContent=f.e+' '+f.n;
+    var bar=document.createElement('div'); bar.className='pk-bar';
+    var add=document.createElement('button'); add.className='pk-add'; add.disabled=!miss.length;
+    add.textContent=miss.length?('🛒 Añadir '+(miss.length===f.items.length?'las '+miss.length:'las '+miss.length+' que faltan')+' al pedido'):'✓ Todas están en el pedido';
+    add.onclick=function(){ addMany(f.items); };
+    var cnt=document.createElement('span'); cnt.className='pk-cnt'; cnt.textContent=f.items.length+' títulos · o añade una por una ↓';
+    bar.appendChild(add); bar.appendChild(cnt); body.appendChild(bar);
+    var g=document.createElement('div'); g.className='pk-grid'; f.items.forEach(function(m){ g.appendChild(makeCard(m)); }); body.appendChild(g);
+  }
+  pkEl.scrollTop=st;
+}
+function openPk(){
+  if(!SEC) return; pkInit(); PK.list=buildFolders(); if(!PK.list.length) return;
+  PK.open=true; PK.view='root'; pkRender(); pkEl.classList.add('open'); pkEl.scrollTop=0; document.body.style.overflow='hidden';
+}
+function closePk(){ PK.open=false; if(pkEl) pkEl.classList.remove('open'); document.body.style.overflow=''; }
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Escape'||!PK.open) return;
+  if(document.getElementById('detail').classList.contains('open')||document.getElementById('cart-panel').classList.contains('open')) return;
+  if(PK.view==='folder'){ PK.view='root'; pkRender(); } else closePk();
+});
+var _rg=renderGrid;
+renderGrid=function(){
+  _rg.apply(this,arguments);
+  var g=document.getElementById('grid'); if(g) g.removeAttribute('aria-busy');
+  if(PK.open) pkRender();
+};
+var colBar=document.getElementById('col-bar'), chip=null;
+function chipInit(){
+  if(!SEC||!colBar) return;
+  var n=buildFolders().length; if(!n) return;
+  if(!chip){ chip=document.createElement('button'); chip.className='col-chip hot'; chip.innerHTML=SEC.emoji+' '+SEC.label+' <b></b>'; chip.onclick=openPk; colBar.appendChild(chip); }
+  chip.lastChild.textContent=n+' carpetas'; colBar.style.display='';
+}
+if(SEC){ var tries=0, iv=setInterval(function(){ tries++; if(typeof DB!=='undefined'&&DB.length>0){ clearInterval(iv); chipInit(); } else if(tries>120) clearInterval(iv); },500); }
+
+/* ---------- Mano Zombie (pedidos de más de 1000 CUP) ---------- */
+var ZOMBIE_MIN=1000;              /* el pedido debe superar esto (CUP) */
+var ZOMBIE_PROBS=[50,28,14,6,2];  /* % de salir con 1,2,3,4 o 5 dedos (suman 100). Premio = dedos × 100 CUP */
+var ZOMBIE_LOCK=5*60*1000, ZOMBIE_SALT='cr-z0mb1e';
+var rnd=function(){ return (window.crypto&&crypto.getRandomValues)? crypto.getRandomValues(new Uint32Array(1))[0]/4294967296 : Math.random(); };
+function zhash(s){ var h=5381; for(var i=0;i<s.length;i++) h=(((h<<5)+h)+s.charCodeAt(i))>>>0; return h; }
+function zombieRoll(total,fresh){
+  if(!(total>ZOMBIE_MIN)) return null;
+  var now=Date.now(), saved=null;
+  try{ saved=JSON.parse(localStorage.getItem('cr_zombie')); }catch(e){}
+  if(!fresh && saved && saved.code && now-saved.t<ZOMBIE_LOCK) return saved;
+  var r=rnd()*100, acc=0, n=1;
+  for(var k=0;k<ZOMBIE_PROBS.length;k++){ acc+=ZOMBIE_PROBS[k]; if(r<acc){ n=k+1; break; } }
+  var idx=[0,1,2,3,4]; for(var a=4;a>0;a--){ var b=Math.floor(rnd()*(a+1)), tmp=idx[a]; idx[a]=idx[b]; idx[b]=tmp; }
+  var mask=0; idx.slice(0,n).forEach(function(f){ mask|=(1<<f); });
+  var pay=Math.floor(now/1000).toString(36)+mask.toString(36);
+  var chk=('0'+(zhash(pay+ZOMBIE_SALT)%1296).toString(36)).slice(-2);
+  var z={t:now,mask:mask,fingers:n,prize:n*100,code:('ZB-'+pay+chk).toUpperCase()};
+  try{ localStorage.setItem('cr_zombie',JSON.stringify(z)); }catch(e){}
+  return z;
+}
+function handSVG(mask){
+  var F=[[30,44,30,-10],[44,30,44,-4],[59,22,52,0],[74,32,42,6],[94,76,34,50]], s='<svg viewBox="-6 0 140 150" class="zb-hand">';
+  F.forEach(function(f,k){
+    var x=f[0],y=f[1],h=f[2];
+    s+='<g transform="rotate('+f[3]+' '+(x+6)+' '+(y+h)+')">';
+    if(mask&(1<<k)) s+='<g class="zb-fn" style="animation-delay:'+(k*.15)+'s"><rect x="'+x+'" y="'+y+'" width="12" height="'+h+'" rx="6" fill="#86b36b"/><ellipse cx="'+(x+6)+'" cy="'+(y+4)+'" rx="4" ry="3.5" fill="#3d4a2f"/></g>';
+    else s+='<rect x="'+x+'" y="'+(y+h-9)+'" width="12" height="9" rx="3" fill="#7a2323"/><circle cx="'+(x+6)+'" cy="'+(y+h-9)+'" r="4.5" fill="#b3261e"/>';
+    s+='</g>';
+  });
+  return s+'<rect x="26" y="70" width="68" height="62" rx="26" fill="#86b36b"/><path d="M40 92q8 6 14 0M62 100q10 4 16-2" stroke="#4d6b3a" stroke-width="2" fill="none" stroke-linecap="round"/><rect x="38" y="128" width="44" height="20" rx="4" fill="#5b7a49"/></svg>';
+}
+function zombieShow(z){
+  var go=function(){
+    var m=document.getElementById('zb');
+    if(!m){ m=document.createElement('div'); m.id='zb'; m.innerHTML='<div class="zb-card"><div class="zb-t">🧟 ¡MANO ZOMBIE!</div><div class="zb-s"></div><div class="zb-h"></div><div class="zb-n"></div><div class="zb-p"></div><div class="zb-c"></div><button class="zb-x">Cerrar</button></div>'; document.body.appendChild(m);
+      m.querySelector('.zb-x').onclick=function(){ m.classList.remove('open'); }; }
+    m.querySelector('.zb-s').textContent='Tu pedido pasó de '+ZOMBIE_MIN+' CUP';
+    m.querySelector('.zb-h').innerHTML=handSVG(z.mask);
+    m.querySelector('.zb-n').textContent=z.fingers+(z.fingers>1?' dedos':' dedo');
+    m.querySelector('.zb-c').innerHTML='Código <b>'+z.code+'</b><br>Mano fijada por 5 min. El premio es válido si tu pedido llegó a nuestro chat.';
+    var p=m.querySelector('.zb-p'), t0=null; m.classList.add('open');
+    (function step(ts){ t0=t0||ts; var k=Math.min(1,(ts-t0)/800); p.textContent='+'+Math.round(z.prize*k)+' CUP'; if(k<1) requestAnimationFrame(step); })(performance.now());
+  };
+  if(document.hidden){ var h=function(){ if(!document.hidden){ document.removeEventListener('visibilitychange',h); setTimeout(go,400); } }; document.addEventListener('visibilitychange',h); }
+  else setTimeout(go,700);
+}
+/* PV_HOOK */
+
+})();
+
+/* ===== RECIÉN ACTUALIZADOS =====
+   Ya NO descarga los CSV por su cuenta — antes pedía los 7 archivos
+   completos otra vez (duplicando, entre otras cosas, los ~2MB de
+   peliculas_data_avanzado.csv en cada carga de página). Ahora reutiliza
+   el texto que ya descargó loadCSVsFromGitHub() vía window._buildCarousel(). */
+(function(){
+
+  var FILES = [
+    { f:'peliculas_data_avanzado2.csv',c:'peliculas', t:'Titulo_encontrado', p:'Poster_URL'  },
+    { f:'series_data.csv',             c:'series',    t:'Titulo',            p:'Link_Imagen' },
+    { f:'animes_data.csv',             c:'animes',    t:'Titulo_encontrado', p:'Poster_URL'  },
+    { f:'animados_data.csv',           c:'animados',  t:'Titulo',            p:'Link_Imagen' },
+    { f:'doramas_data.csv',            c:'doramas',   t:'Titulo_encontrado', p:'Poster_URL'  },
+    { f:'novelas_data.csv',            c:'novelas',   t:'Titulo_encontrado', p:'Poster_URL'  },
+    { f:'juegos_data.csv',             c:'juegos',    t:'Titulo_encontrado', p:'Poster_URL'  }
+  ];
+
+  var CAT_LABEL = {peliculas:'Película',series:'Serie',animes:'Anime',
+                   animados:'Animado',doramas:'Dorama',novelas:'Novela',juegos:'Juego'};
+  var CAT_ICON  = window.TH ? {peliculas:TH.emo[0],series:TH.emo[1],animes:TH.emo[2],animados:TH.emo[3],
+                   doramas:TH.emo[4],novelas:TH.emo[5],juegos:TH.emo[6]} : {peliculas:'🎬',series:'📺',animes:'⛩',animados:'🎨',
+                   doramas:'🌸',novelas:'💋',juegos:'🎮'};
+
+  var track = document.getElementById('carousel-track');
+
+  function getSep(line){
+    var t=line.split('\t').length-1, s=line.split(';').length-1, c=line.split(',').length-1;
+    return t>=s&&t>=c?'\t':s>=c?';':',';
+  }
+
+  /* Mismo ahorro de peso que en el catálogo principal: pedir w342 en vez
+     de la imagen 'original' de TMDB (mucho más pesada). */
+  function lightImg(url){
+    return url ? url.replace('/t/p/original/', '/t/p/w342/') : url;
+  }
+
+  /* Devuelve hasta N filas finales del CSV (las más recientes primero).
+     Sigue trabajando 100% sobre texto ya descargado, sin red. */
+  function parseLastN(text, cfg, n){
+    if(!text) return [];
+    text = text.replace(/^\uFEFF/,'');
+    var lines = text.split(/\r?\n/).filter(function(l){ return l.trim(); });
+    if(lines.length < 2) return [];
+    var sep     = getSep(lines[0]);
+    var headers = lines[0].split(sep).map(function(h){ return h.trim(); });
+    var dataLines = lines.slice(1).slice(-n).reverse(); /* últimas n, más nueva primero */
+    var out = [];
+    dataLines.forEach(function(lastLine){
+      var cells = lastLine.split(sep).map(function(v){ return v.trim().replace(/^"|"$/g,''); });
+      var row = {};
+      headers.forEach(function(h,i){ row[h] = cells[i]||''; });
+      var title = row[cfg.t]||'';
+      var img   = row[cfg.p]||'';
+      if(!title || !img || img.indexOf('http')!==0) return;
+      out.push({ t:title, c:cfg.c, img:lightImg(img) });
+    });
+    return out;
+  }
+
+  function render(list){
+    if(!list||!list.length) return;
+    track.innerHTML = '';
+    list.forEach(function(it){
+      var card = document.createElement('div');
+      card.className = 'cr-card';
+
+      var img = document.createElement('img');
+      img.src = it.img; img.alt = it.t; img.loading = 'lazy'; img.decoding = 'async';
+      img.onerror = function(){ if(this.parentNode) this.parentNode.style.display='none'; };
+
+      var cat = document.createElement('span');
+      cat.className = 'cr-card-cat';
+      cat.textContent = (CAT_ICON[it.c]||'⭐')+' '+(CAT_LABEL[it.c]||it.c);
+
+      var lbl = document.createElement('div');
+      lbl.className = 'cr-card-label';
+      lbl.textContent = it.t;
+
+      card.appendChild(img);
+      card.appendChild(cat);
+      card.appendChild(lbl);
+
+      /* idx se resuelve cuando DB esté lista */
+      it.idx = -1;
+      card.addEventListener('click', (function(item){
+        return function(){
+          if(typeof openDetail!=='function') return;
+          if(item.idx >= 0){ openDetail(item.idx); return; }
+          /* DB aún no cargó: esperar */
+          var tries=0;
+          var poll=setInterval(function(){
+            tries++;
+            if(typeof DB!=='undefined' && DB.length>0){
+              clearInterval(poll);
+              item.idx = findIdx(item.t, item.c, item.img);
+              if(item.idx >= 0) openDetail(item.idx);
+            } else if(tries>40) clearInterval(poll);
+          }, 250);
+        };
+      })(it));
+
+      track.appendChild(card);
+    });
+  }
+
+  function norm(s){
+    return (s||'').toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g,'')
+      .replace(/[^a-z0-9]/g,'').trim();
+  }
+
+  /* Busca idx en DB: 1) titulo+cat exacto, 2) titulo exacto, 3) poster URL, 4) titulo alternativo */
+  function findIdx(title, cat, img){
+    if(typeof DB==='undefined') return -1;
+    var nt = norm(title);
+    for(var i=0;i<DB.length;i++){
+      if(DB[i].c===cat && norm(DB[i].t)===nt) return i;
+    }
+    for(var j=0;j<DB.length;j++){
+      if(norm(DB[j].t)===nt) return j;
+    }
+    /* Por poster URL (más fiable que el título) */
+    if(img && typeof overrides!=='undefined'){
+      var keys=Object.keys(overrides);
+      for(var k=0;k<keys.length;k++){
+        if(overrides[keys[k]] && overrides[keys[k]].p===img) return parseInt(keys[k]);
+      }
+    }
+    /* Titulo alternativo (campo 'a') */
+    for(var m=0;m<DB.length;m++){
+      if(DB[m].a && norm(DB[m].a)===nt) return m;
+    }
+    return -1;
+  }
+
+  /* ── AUTOPLAY + DOTS (solo móvil) ── */
+  var autoTimer = null;
+  var currentSlide = 0;
+  var totalCards = 0;
+
+  function isMobile(){ return window.innerWidth <= 768; }
+
+  function buildDots(n){
+    var dotsEl = document.getElementById('carousel-dots');
+    if(!dotsEl) return;
+    dotsEl.innerHTML='';
+    for(var i=0;i<n;i++){
+      var d=document.createElement('span');
+      d.className='cr-dot'+(i===0?' on':'');
+      d.setAttribute('data-i',i);
+      (function(idx){ d.addEventListener('click',function(){ goSlide(idx); }); })(i);
+      dotsEl.appendChild(d);
+    }
+  }
+
+  function goSlide(idx){
+    var wrap = document.getElementById('carousel-track-wrap');
+    var cards = document.querySelectorAll('.cr-card');
+    if(!wrap||!cards.length) return;
+    currentSlide = (idx + cards.length) % cards.length;
+    wrap.scrollTo({ left: cards[currentSlide].offsetLeft - 8, behavior:'smooth' });
+    document.querySelectorAll('.cr-dot').forEach(function(d,i){
+      d.classList.toggle('on', i===currentSlide);
+    });
+  }
+
+  function startAutoplay(){
+    if(autoTimer) clearInterval(autoTimer);
+    if(!isMobile()) return;
+    autoTimer = setInterval(function(){
+      if(document.hidden) return;
+      goSlide(currentSlide + 1);
+    }, 2000);
+  }
+
+  function stopAutoplay(){
+    if(autoTimer){ clearInterval(autoTimer); autoTimer=null; }
+  }
+
+  /* Pausar al tocar, reanudar al soltar */
+  var tw = document.getElementById('carousel-track-wrap');
+  if(tw){
+    tw.addEventListener('touchstart', stopAutoplay, {passive:true});
+    tw.addEventListener('touchend', function(){ setTimeout(startAutoplay, 3000); }, {passive:true});
+  }
+
+  /* Se llama desde loadCSVsFromGitHub() con el texto de los CSV que YA se
+     descargó ahí — así no se vuelve a pedir nada por la red. Se puede
+     llamar más de una vez (con caché, luego con datos frescos); todo
+     adentro ya es idempotente (limpia track/dots, resetea el autoplay). */
+  window._buildCarousel = function(textsByFile){
+    var PER_FILE = 3; /* cuántas de las últimas filas mostrar por cada CSV */
+    var list = [];
+    if(Array.isArray(textsByFile)){
+      /* Modo JSON: el manifest ya trae los recientes {t,c,img} */
+      list = textsByFile.map(function(it){ return { t:it.t, c:it.c, img:lightImg(it.img) }; });
+    } else {
+      FILES.forEach(function(cfg){
+        var items = parseLastN(textsByFile && textsByFile[cfg.f], cfg, PER_FILE);
+        list = list.concat(items);
+      });
+    }
+    if(!list.length) return;
+    totalCards = list.length;
+    render(list);
+    if(isMobile()){
+      buildDots(totalCards);
+      startAutoplay();
+    }
+    /* Pre-resolver índices cuando DB esté lista */
+    var att=0;
+    var pre=setInterval(function(){
+      att++;
+      if(typeof DB!=='undefined' && DB.length>0 && typeof overrides!=='undefined'){
+        clearInterval(pre);
+        list.forEach(function(it){ if(it.idx<0) it.idx=findIdx(it.t,it.c,it.img); });
+      } else if(att>60) clearInterval(pre);
+    },300);
+  };
+})();
+
+</script>
+
+
+
+<a id="wa-fab" href="https://wa.me/55213690?text=Hola%2C%20quiero%20consultar%20el%20cat%C3%A1logo" target="_blank" rel="noopener" aria-label="Escribir por WhatsApp"><svg viewBox="0 0 32 32"><path d="M16 3C9 3 3.4 8.6 3.4 15.5c0 2.3.6 4.4 1.7 6.3L3 29l7.4-2c1.8 1 3.800 1.500 5.600 1.500 7 0 12.600-5.600 12.600-12.500S23 3 16 3zm0 22.800c-1.800 0-3.500-.5-5-1.400l-.4-.2-4.400 1.200 1.200-4.300-.3-.4a10.200 10.200 0 0 1-1.600-5.500C5.500 9.900 10.200 5.300 16 5.300s10.500 4.600 10.500 10.300S21.800 25.800 16 25.800zm5.700-7.600c-.3-.2-1.900-.9-2.200-1-.3-.1-.5-.2-.7.200-.2.300-.8 1-1 1.200-.2.200-.4.200-.7.100-1.900-.9-3.100-1.700-4.300-3.700-.3-.6.300-.5.900-1.700.1-.2 0-.4 0-.5l-1-2.300c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.6.100-.9.400-.3.300-1.100 1.100-1.100 2.600s1.100 3 1.300 3.200c.2.200 2.200 3.400 5.300 4.700 2 .8 2.800.9 3.800.7.600-.1 1.900-.8 2.200-1.500.3-.7.300-1.400.2-1.500-.1-.1-.3-.2-.6-.4z"/></svg></a>
+<div class="hw-deco" id="hw-bats" aria-hidden="true"><div class="hw-bat hw-bat1"><svg viewBox="0 0 64 32"><path fill="currentColor" d="M32 10L35 13Q40 7 52 5Q59 5 64 12Q57 11 52 16Q48 12 44 16Q40 13 36 18Q34 25 32 29Q30 25 28 18Q24 13 20 16Q16 12 12 16Q7 11 0 12Q5 5 12 5Q24 7 29 13ZM29 13L28 5L31 10ZM35 13L36 5L33 10Z"/></svg></div><div class="hw-bat hw-bat2"><svg viewBox="0 0 64 32"><path fill="currentColor" d="M32 10L35 13Q40 7 52 5Q59 5 64 12Q57 11 52 16Q48 12 44 16Q40 13 36 18Q34 25 32 29Q30 25 28 18Q24 13 20 16Q16 12 12 16Q7 11 0 12Q5 5 12 5Q24 7 29 13ZM29 13L28 5L31 10ZM35 13L36 5L33 10Z"/></svg></div><div class="hw-bat hw-bat3"><svg viewBox="0 0 64 32"><path fill="currentColor" d="M32 10L35 13Q40 7 52 5Q59 5 64 12Q57 11 52 16Q48 12 44 16Q40 13 36 18Q34 25 32 29Q30 25 28 18Q24 13 20 16Q16 12 12 16Q7 11 0 12Q5 5 12 5Q24 7 29 13ZM29 13L28 5L31 10ZM35 13L36 5L33 10Z"/></svg></div></div>
+<script>
+/* ===== Temporada, colecciones y animación del carrito ===== */
+(function(){
+  /* — Emojis del menú según el tema — */
+  if(window.TH){
+    var M={'🎬':TH.emo[0],'📺':TH.emo[1],'⛩':TH.emo[2],'🎨':TH.emo[3],'🌸':TH.emo[4],'💋':TH.emo[5],'🎮':TH.emo[6],'🛒':TH.cart,'🔥':TH.hot};
+    var re=/🎬|📺|⛩\uFE0F?|🎨|🌸|💋|🎮|🛒|🔥/g;
+    document.querySelectorAll('#nav,#mobile-menu,#carousel-header,#cart-panel,#detail').forEach(function(root){
+      var w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null),n,l=[];
+      while((n=w.nextNode())) if(/🎬|📺|⛩|🎨|🌸|💋|🎮|🛒|🔥/.test(n.nodeValue)) l.push(n);
+      l.forEach(function(x){ x.nodeValue=x.nodeValue.replace(re,function(c){ return M[c.replace('\uFE0F','')]||c; }); });
+    });
+    if(TH_NAME!=='halloween') document.querySelectorAll('.hw-bat').forEach(function(el,i){ el.textContent=TH.fly[i]||''; });
+    document.addEventListener('visibilitychange',function(){ document.body.classList.toggle('hw-paused',document.hidden); });
+  }
+
+})();
+</script>
+</body>
+
+</html>
