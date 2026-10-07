@@ -7,7 +7,7 @@ button{background:#2c4a21;border:0;font-weight:700;cursor:pointer}#out{margin-to
 <h2>🧟 Verificar Mano Zombie</h2>
 <input id="k" type="password" placeholder="Clave de administrador" autocomplete="current-password">
 <input id="c" placeholder="Código (ZB-XXXXXXXX)" autocapitalize="characters">
-<button id="v">Verificar</button><button id="x" style="display:none">Marcar como canjeado</button>
+<button id="v">Verificar</button><button id="x" style="display:none">✓ Marcar como RECIBIDO</button>
 <div id="out"></div>
 <script>
 const $=i=>document.getElementById(i), out=$('out'); try{$('k').value=sessionStorage.getItem('k')||''}catch(e){}
@@ -16,9 +16,10 @@ async function call(m){
   const code=$('c').value.trim(), h={'x-admin-key':$('k').value,'Content-Type':'application/json'};
   const r=m==='GET'?await fetch('/api/verificar?code='+encodeURIComponent(code),{headers:h}):await fetch('/api/verificar',{method:'POST',headers:h,body:JSON.stringify({code,accion:'canjear'})});
   const j=await r.json().catch(()=>({error:'sin respuesta'})); out.style.display='block';
-  if(!r.ok){ out.innerHTML='<b class="mal">'+(j.error||'Error')+'</b>'; $('x').style.display='none'; return; }
-  out.innerHTML='<b class="ok">✓ Código válido</b><br>Dedos: <b>'+j.fingers+'</b> → premio <b>'+j.prize+' CUP</b><br>Pedido declarado: '+j.total+' CUP<br>Generada: '+new Date(j.t).toLocaleString()+'<br>Estado: <b>'+(j.estado==='canjeado'?'YA CANJEADO ('+new Date(j.canjeado).toLocaleString()+')':'pendiente')+'</b>';
+  if(!r.ok){ out.innerHTML='<b class="mal">'+(j.error==='ya canjeado'?'Este premio ya fue marcado como RECIBIDO':(j.error||'Error'))+'</b>'; $('x').style.display='none'; return; }
+  out.innerHTML='<b class="ok">✓ Código válido</b><br>Dedos: <b>'+j.fingers+'</b> → premio <b>'+j.prize+' CUP</b><br>Pedido al ganar: '+j.total+' CUP<br>'+(j.enviado?'Pedido enviado: <b>'+j.totalEnvio+' CUP</b> ('+new Date(j.tEnvio).toLocaleString()+')<br>':'<b class="mal">⚠ Esta mano nunca se envió en un pedido desde la web (código copiado o inventado)</b><br>')+'Generada: '+new Date(j.t).toLocaleString()+'<br>Estado: <b>'+(j.estado==='canjeado'?'✅ YA RECIBIDO ('+new Date(j.canjeado).toLocaleString()+')':'⏳ pendiente de recibir')+'</b>';
   $('x').style.display=j.estado==='canjeado'?'none':'block';
 }
-$('v').onclick=()=>call('GET'); $('x').onclick=()=>{ if(confirm('¿Marcar como canjeado?')) call('POST'); };
+function fail(){ out.style.display='block'; out.innerHTML='<b class="mal">No se pudo conectar con el servidor.</b><br>'+(location.protocol==='file:'?'Abriste una copia guardada en tu computadora. Abre la página desde <b>https://catalogo-cloud-rider.vercel.app/verificar.html</b>.':'Revisa tu conexión e inténtalo de nuevo.'); }
+$('v').onclick=()=>call('GET').catch(fail); $('x').onclick=()=>{ if(confirm('¿Marcar este premio como RECIBIDO? Ya no se podrá usar otra vez.')) call('POST').catch(fail); };
 </script></body></html>

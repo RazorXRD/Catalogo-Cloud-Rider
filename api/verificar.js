@@ -16,10 +16,11 @@ module.exports = async (req, res) => {
     if (!raw) return res.status(404).json({ error: 'no existe o ya venció (30 días)' });
     const rec = JSON.parse(raw);
     if (req.method === 'POST' && b.accion === 'canjear') {
-      if (rec.estado === 'canjeado') return res.status(409).json({ error: 'ya canjeado', rec });
+      if (rec.estado === 'canjeado') { delete rec.cid; return res.status(409).json({ error: 'ya canjeado', rec }); }
       rec.estado = 'canjeado'; rec.canjeado = Date.now();
       await redis([['SET', key, JSON.stringify(rec), 'KEEPTTL']]);
     }
+    delete rec.cid;
     return res.status(200).json(rec);
   } catch (e) {
     return res.status(500).json({ error: 'servidor' });
