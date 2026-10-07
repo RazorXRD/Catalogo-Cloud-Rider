@@ -760,6 +760,17 @@ body.hw:not(.th-halloween) .hw-bat{width:auto;height:auto;font-size:22px;line-he
 @keyframes zb-tw{to{transform:rotate(7deg)}}
 @keyframes zb-shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
 @media(prefers-reduced-motion:reduce){.zb-card,.zb-hand,.zb-fn{animation:none}}
+/* ══ PEDIDO EN CELULAR: la lista se desliza, el pie (precio, mano y botón de WhatsApp) queda fijo ══ */
+body:has(#cart-panel.open),html:has(#cart-panel.open){overflow:hidden;overscroll-behavior:none}
+#cart-items{overscroll-behavior:contain}
+#cart-foot{padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+@media(max-width:768px){
+  #cart-panel{top:0;bottom:0;height:auto}
+  #cart-foot{padding:10px 14px calc(12px + env(safe-area-inset-bottom,0px))}
+  #zb-badge{margin:6px 0;padding:8px 10px;font-size:11px;gap:8px}
+  .zbb-h{flex-basis:34px;width:34px}
+  #zb-badge small{display:none}
+}
 </style>
 </head>
 <body>
