@@ -737,6 +737,63 @@ body.hw:not(.th-halloween) .hw-bat{width:auto;height:auto;font-size:22px;line-he
 .pk-add{background:linear-gradient(135deg,var(--cyan),var(--pink));color:#fff;border:0;border-radius:10px;padding:11px 18px;font:700 13px var(--fb);cursor:pointer}
 .pk-add:disabled{opacity:.45;cursor:default}.pk-cnt{font-size:12px;color:#8d8da0}
 .pk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:12px;padding:14px 18px 40px}
+/* ══ VIDA DE TEMPORADA ══ */
+#col-bar{padding-top:18px}
+#hw-line{position:absolute;left:0;right:0;top:calc(100% - 7px);height:24px;overflow:hidden;pointer-events:none;z-index:2}
+#hw-ground{position:fixed;left:0;right:0;bottom:0;height:26px;overflow:hidden;pointer-events:none;z-index:210}
+.hw-walk{position:absolute;left:0;font-size:16px;line-height:1;white-space:nowrap;pointer-events:none;will-change:transform;animation:hw-walk 40s linear infinite}
+#hw-line .hw-walk{top:5px}#hw-ground .hw-walk{bottom:2px}
+.hw-walk.rev{animation-direction:reverse}.hw-walk.rev .hw-flip{display:inline-block;transform:scaleX(-1)}
+.hw-hop{display:inline-block;animation:hw-hop .55s ease-in-out infinite alternate}
+@keyframes hw-walk{from{transform:translate3d(-40px,0,0)}to{transform:translate3d(calc(100vw + 40px),0,0)}}
+@keyframes hw-hop{from{transform:translateY(0) rotate(-6deg)}to{transform:translateY(-4px) rotate(6deg)}}
+#grid{position:relative}#grid .card{position:relative;z-index:1}
+.hw-peek{position:absolute;z-index:0;font-size:22px;line-height:1;pointer-events:none;transform:translateY(105%);animation:hw-peek 14s ease-in-out infinite}
+@keyframes hw-peek{0%,58%{transform:translateY(105%) rotate(0)}66%{transform:translateY(-6%) rotate(-10deg)}74%{transform:translateY(-6%) rotate(10deg)}82%{transform:translateY(-6%) rotate(-6deg)}92%,100%{transform:translateY(105%) rotate(0)}}
+.hw-witch{position:absolute;left:0;top:34%;font-size:26px;line-height:1;white-space:nowrap;will-change:transform;animation:hw-fly 75s linear infinite;animation-delay:-20s}
+.hw-drip{position:absolute;z-index:3;width:4px;height:16px;border-radius:0 0 50% 50%;background:linear-gradient(#e0262d,#8f0d12);transform-origin:50% 0;transform:scaleY(0);opacity:0;pointer-events:none;animation:hw-drip 7s ease-in infinite}
+@keyframes hw-drip{0%,18%{transform:scaleY(0) translateY(0);opacity:0}30%{transform:scaleY(1) translateY(0);opacity:1}62%{transform:scaleY(1) translateY(0);opacity:1}100%{transform:scaleY(1) translateY(26px);opacity:0}}
+#hw-boo{position:fixed;z-index:240;pointer-events:none;font:400 34px 'Creepster',Impact,sans-serif;letter-spacing:2px;color:#c4161c;text-shadow:0 2px 0 #3a0407,0 0 14px rgba(196,22,28,.55);opacity:0;white-space:nowrap}
+#hw-boo.on{animation:hw-boo 3.4s ease-out both}
+@keyframes hw-boo{0%{opacity:0;transform:rotate(var(--rot,0deg)) scale(.6)}12%{opacity:.95;transform:rotate(var(--rot,0deg)) scale(1.08)}78%{opacity:.9;transform:rotate(var(--rot,0deg)) scale(1)}100%{opacity:0;transform:rotate(var(--rot,0deg)) translateY(22px) scale(1)}}
+body.th-halloween #pk-title,body.th-halloween .zb-t{font-family:'Creepster',var(--fh);color:#d1121b;letter-spacing:2px;text-shadow:0 2px 0 #3a0407}
+body.hw-paused .hw-walk,body.hw-paused .hw-hop,body.hw-paused .hw-peek,body.hw-paused .hw-witch,body.hw-paused .hw-drip{animation-play-state:paused}
+@media(prefers-reduced-motion:reduce){.hw-walk,.hw-hop,.hw-peek,.hw-witch,.hw-drip,#hw-boo{animation:none;display:none}}
+/* ══ ASISTENTE ✨ ══ */
+#ai-btn{border:0;cursor:pointer;color:#fff;font:700 12px var(--fb);letter-spacing:.3px;white-space:nowrap;background:linear-gradient(135deg,var(--pink),var(--cyan));border-radius:20px;padding:7px 14px}
+#col-bar #ai-btn{flex:0 0 auto}
+#nav-right #ai-btn{padding:4px 8px;font-size:10px;border-radius:6px;margin-left:6px}
+#col-bar{overflow:visible;flex-wrap:nowrap}
+@media(max-width:768px){
+  #col-bar{padding:10px 14px 2px;gap:8px}
+  #col-bar .col-chip{flex:1 1 0;max-width:50%;min-width:0;overflow:hidden;text-overflow:ellipsis;padding:7px 6px;font-size:11.5px;text-align:center}
+  #col-bar .col-chip b{display:none}
+  body.hw .hw-spider{left:calc(50% - 7px);right:auto;height:30px;width:13px}
+  #hw-line{top:calc(100% + 1px)}
+  #col-bar{padding-top:24px}
+}
+#ai{position:fixed;top:0;bottom:0;left:0;right:0;z-index:560;display:none;flex-direction:column;background:var(--bg) linear-gradient(180deg,rgba(var(--pr),.14) 0,var(--bg) 320px) no-repeat}
+#ai.open{display:flex}
+#ai-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid rgba(var(--cr),.25);font:700 16px var(--fh);letter-spacing:1px;color:var(--cyan);background:rgba(10,10,18,.96)}
+#ai-msgs{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.ai-m{max-width:100%;padding:10px 13px;border-radius:14px;font-size:14px;line-height:1.45;color:#e8e8f0}
+.ai-b{align-self:flex-start;background:var(--s2);border:1px solid var(--border);width:100%}
+.ai-u{align-self:flex-end;background:linear-gradient(135deg,var(--cyan),var(--pink));color:#fff;max-width:85%}
+.ai-b p{margin:0 0 4px}
+.ai-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:8px}
+.ai-grid .card{position:relative}.ai-more{margin-top:10px}
+#ai-chips{display:flex;gap:8px;overflow-x:auto;padding:6px 16px 0;scrollbar-width:none;flex:0 0 auto}
+#ai-chips::-webkit-scrollbar{display:none}
+.ai-chip{flex:0 0 auto;background:var(--s2);color:#cfcfe0;border:1px solid var(--border);border-radius:20px;padding:7px 12px;font:600 12px var(--fb);cursor:pointer;white-space:nowrap}
+.ai-chip:hover{border-color:var(--cyan);color:#fff}
+#ai-bar{display:flex;gap:8px;padding:10px 14px calc(12px + env(safe-area-inset-bottom,0px));flex:0 0 auto}
+#ai-in{flex:1;resize:none;background:var(--s2);color:#eee;border:1px solid var(--border);border-radius:14px;padding:11px 13px;font:14px var(--fb);max-height:90px}
+#ai-in:focus{outline:0;border-color:var(--cyan)}
+#ai-go{flex:0 0 46px;border:0;border-radius:14px;background:linear-gradient(135deg,var(--cyan),var(--pink));color:#fff;font-size:18px;cursor:pointer}
+.ai-dots i{display:inline-block;width:7px;height:7px;margin:0 2px;border-radius:50%;background:#9a9aa8;animation:ai-bl 1s infinite}
+.ai-dots i:nth-child(2){animation-delay:.15s}.ai-dots i:nth-child(3){animation-delay:.3s}
+@keyframes ai-bl{0%,80%,100%{opacity:.25}40%{opacity:1}}
+@media(prefers-reduced-motion:reduce){.ai-dots i{animation:none}}
 /* ══ TOP 10 ══ */
 .pk-grid .card{position:relative}
 .rk{position:absolute;left:8px;top:2px;font:900 46px/1 var(--fh);color:rgba(10,10,18,.85);-webkit-text-stroke:2px var(--cyan);z-index:4;pointer-events:none;text-shadow:0 2px 8px rgba(0,0,0,.6)}
@@ -2919,10 +2976,10 @@ var SECS={
     ['😈','El exorcista y La profecía',['el exorcista','la profecia','primera profecia'],['mothman','wishmaster','dune']],['👻','Ouija',['ouija']],
     ['😁','Smile',['smile']],['🏔️','Las colinas tienen ojos',['las colinas tienen ojos','el retorno de los malditos']],
     ['🍷','Hannibal Lecter',['hannibal','silencio de los corderos']],['🎭','Scary Movie',['scary movie']]]},
-  navidad:{emoji:'🎄',label:'Sagas navideñas y de fantasía',folders:[
+  navidad:{emoji:'🎄',label:'Sagas navideñas',folders:[
     ['🏠','Solo en casa',['solo en casa']],['💚','El Grinch',['grinch']],['🎄','Películas navideñas',['navidad','navideno','navidena','christmas','papa noel','santa claus']],
     F_HP,F_NA,F_LR,['❄️','Frozen',['frozen']],F_TOY,F_SH,F_ICE]},
-  reyes:{emoji:'👑',label:'Sagas para los Reyes',folders:[
+  reyes:{emoji:'👑',label:'Sagas de Reyes',folders:[
     F_HP,F_NA,F_LR,F_PI,F_IN,F_JU,F_TOY,F_SH,F_ICE,['🦒','Madagascar',['madagascar']],['🐼','Kung Fu Panda',['kung fu panda']],
     ['🍌','Mi villano favorito y Minions',['villano favorito','minions']],['🧛','Hotel Transilvania',['hotel transilvania']],['🚗','Cars',['cars']]]},
   sanvalentin:{emoji:'💘',label:'Sagas de amor',folders:[
@@ -3025,7 +3082,7 @@ var colBar=document.getElementById('col-bar'), chip=null;
 function chipInit(){
   if(!SEC||!colBar) return;
   var n=buildFolders().length; if(!n) return;
-  if(!chip){ chip=document.createElement('button'); chip.className='col-chip hot'; chip.innerHTML=SEC.emoji+' '+SEC.label+' <b></b>'; chip.onclick=openPk; colBar.appendChild(chip); }
+  if(!chip){ chip=document.createElement('button'); chip.className='col-chip hot'; chip.innerHTML=SEC.emoji+' '+SEC.label+' <b></b>'; chip.onclick=openPk; colBar.insertBefore(chip,aiBtn.parentNode===colBar?aiBtn:null); }
   chip.lastChild.textContent=n+' carpetas'; colBar.style.display='';
 }
 var TOP=null, TOP_MIN=2; /* un título entra al ranking real con al menos TOP_MIN pedidos */
@@ -3118,6 +3175,235 @@ function zombieShow(z){
   if(document.hidden){ var h=function(){ if(!document.hidden){ document.removeEventListener('visibilitychange',h); setTimeout(go,400); } }; document.addEventListener('visibilitychange',h); }
   else setTimeout(go,700);
 }
+
+/* ===== Asistente de sugerencias ✨ (busca SOLO en tu catálogo) ===== */
+var AI_LABEL='Sugerencias IA';   /* texto del botón. Mientras no actives una IA real (api/ia.js) funciona en modo local */
+var GENV={accion:['accion','acci n','action'],aventura:['aventura','adventure','action adventure'],'ciencia ficcion':['ciencia ficcion','sci fi','science fiction'],
+  fantasia:['fantasia','fantas a','fantasy'],terror:['terror','horror'],comedia:['comedia','comedy'],romance:['romance'],drama:['drama'],suspense:['suspense','thriller'],
+  crimen:['crimen','crime'],misterio:['misterio','mystery'],animacion:['animacion','animaci n','animation'],familia:['familia','family','kids'],belica:['belica','war'],
+  historia:['historia','history'],musica:['musica','music'],western:['western'],documental:['documental','documentary'],shooter:['shooter']};
+/* t = frases que activan el concepto · g = géneros · w = palabras que buscamos en título y sinopsis · need = el tema debe aparecer sí o sí */
+var CONC=[
+ {t:['catastrof','desastre','apocalips','fin del mundo','terremoto','tsunami','volcan','huracan','tornado','inundacion','meteorito','asteroide','extincion'],g:['accion','ciencia ficcion','aventura','drama'],
+  w:['catastrofe','desastre','terremoto','sismo','volcan','erupcion','tsunami','huracan','tornado','inundacion','diluvio','meteorito','asteroide','cometa','apocalipsis','apocaliptico','fin del mundo','extincion','supervivientes','colapso','tormenta','avalancha','naufragio','pandemia','epidemia','virus mortal'],need:1},
+ {t:['tiroteo','balacera','disparos','tiros','mucha accion','violen','sangrient'],g:['accion','crimen','suspense','belica','shooter'],
+  w:['tiroteo','disparos','balacera','mercenario','sicario','asesino a sueldo','comando','persecucion','pistola','armas','explosiones','combate','espia','secuestro','rescate','venganza','mafia','cartel','pandilla','soldado','agente'],need:0},
+ {t:['zombi','zombie','muertos vivientes','infectad'],g:['terror','accion'],w:['zombi','zombie','muertos vivientes','infectado','infeccion'],need:1},
+ {t:['vampiro'],g:['terror','fantasia'],w:['vampiro','vampiresa','sangre'],need:1},
+ {t:['terror','miedo','horror','susto','escalofrio','paranormal','fantasma'],g:['terror'],w:['fantasma','demonio','posesion','maldicion','sobrenatural','embrujad','asesino en serie','monstruo','paranormal','exorcis'],need:0},
+ {t:['comedia','reir','risa','gracios','divertid','humor'],g:['comedia'],w:['divertid','humor','gracios'],need:0},
+ {t:['romant','romance','enamor','amor'],g:['romance'],w:['amor','enamorad','boda','pareja'],need:0},
+ {t:['llorar','emotiv','triste','conmovedor'],g:['drama','romance'],w:['perdida','muerte','superacion','duelo','emocionante'],need:0},
+ {t:['ciencia ficcion','sci fi','espacio','futur','robot','alien','extraterrestre','distopi','inteligencia artificial','viaje en el tiempo','viajes en el tiempo'],g:['ciencia ficcion'],
+  w:['espacio','planeta','nave espacial','alienigena','extraterrestre','robot','futuro','distopia','inteligencia artificial','viaje en el tiempo','galaxia'],need:0},
+ {t:['misterio','suspens','intriga','detective','investigac','policial','thriller'],g:['misterio','suspense','crimen'],w:['detective','investigacion','misterio','asesinato','enigma','secreto'],need:0},
+ {t:['guerra','belica','militar','soldado'],g:['belica'],w:['guerra','soldado','batalla','ejercito','nazi','trinchera','frente','segunda guerra mundial'],need:0},
+ {t:['pelea','pelear','lucha','luchas','combate','batalla'],g:['accion'],w:['pelea','lucha','combate','batalla','torneo','luchador','guerrero','artes marciales','enfrentar'],need:0},
+ {t:['western','vaqueros','oeste'],g:['western'],w:['oeste','vaquero','pistolero','forajido'],need:0},
+ {t:['fantasia','magia','brujo','hechicer','dragon'],g:['fantasia'],w:['magia','hechicero','dragon','reino','bruja','mago'],need:0},
+ {t:['ninos','infantil','para chicos','toda la familia','en familia','para la familia'],g:['familia','animacion'],w:[],need:0},
+ {t:['superheroe','super heroe','marvel','mutante'],g:['accion','ciencia ficcion'],w:['superheroe','poderes','heroe','vengador','mutante','villano'],need:1},
+ {t:['artes marciales','kung fu','karate'],g:['accion'],w:['artes marciales','kung fu','karate','luchador','torneo','maestro'],need:1},
+ {t:['carcel','prision','presos','fuga'],g:['crimen','drama'],w:['carcel','prision','preso','fuga','penitenciar','reo'],need:1},
+ {t:['espia','espionaje','agente secreto'],g:['accion','suspense'],w:['espia','agente secreto','espionaje','cia','misi'],need:1},
+ {t:['atraco','heist','ladrones','robo'],g:['crimen','accion'],w:['atraco','robo','banco','ladron','heist','golpe','joyas'],need:1},
+ {t:['pirata','barco','oceano'],g:['aventura'],w:['pirata','barco','oceano','naufrag','tesoro','capitan'],need:1},
+ {t:['navidad','navideno'],g:[],w:['navidad','santa','papa noel','regalos'],need:1},
+ {t:['deporte','futbol','boxeo','baloncesto','beisbol','automovil'],g:[],w:['futbol','boxeo','baloncesto','beisbol','deporte','campeonato','entrenador','carreras'],need:1},
+ {t:['musical','cantante','banda de rock'],g:['musica'],w:['musical','cantante','canciones','banda','concierto'],need:0},
+ {t:['hechos reales','historia real','basada en'],g:['historia','drama'],w:['hechos reales','historia real','basada en','biografia','biografico'],need:1},
+ {t:['supervivencia','sobrevivir','isla desierta'],g:['aventura','drama'],w:['sobrevivir','supervivencia','isla','desierto','naufrago','perdido'],need:1},
+ {t:['accion','aventuras','aventura'],g:['accion','aventura'],w:[],need:0},
+ {t:['drama'],g:['drama'],w:[],need:0},
+ {t:['crimen','mafia','narco'],g:['crimen'],w:['mafia','narco','cartel','crimen','criminal','pandilla'],need:0}
+];
+var TIPOP=[['peliculas',/\b(pelicula|peliculas|film|filme|cine)\b/],['series',/\b(serie|series|miniserie)\b/],['animes',/\banimes?\b/],['animados',/\b(animad[ao]s?|dibujos|caricaturas?|cartoon)\b/],
+  ['doramas',/\b(dorama|doramas|k drama|coreana|coreanas|coreano|asiatic[ao]s?)\b/],['novelas',/\b(novelas?|telenovelas?)\b/],['juegos',/\b(juegos?|videojuegos?|game|games)\b/]];
+var STOP=' una un unos unas el la los las de del al en con sin por para que quiero quisiera busco buscar necesito dame dime algo alguna alguno algun tienes tienen hay ver mirar mucha mucho muchas muchos muy mas menos bien buena bueno buenas buenos mejor mejores como tipo estilo parecida parecido donde cuando pero tambien solo todo toda todos todas esta este esto estos estas ese esa eso porfa favor gracias hola buenas quiero y o u a e ni si no me mi mis tu tus su sus lo le les se es son ser tema trate trata sobre acerca cosa cosas ';
+var YR=new Date().getFullYear();
+var q2=function(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim(); };
+function aiParse(text){
+  var s=' '+q2(text)+' ', F={tipos:[],gen:[],kw:[],need:false,exGen:[],exKw:[],desde:null,hasta:null,minNota:null,ordenNota:false,resid:[]}, ex='';
+  s=s.replace(/ (?:sin|excepto|menos|que no tenga|que no tengan|no quiero|no me gusta|no me gustan) ((?:(?! (?:y|pero|con|para|de) ).)+)/g,function(_,x){ ex+=' '+x; return ' '; });
+  TIPOP.forEach(function(t){ if(t[1].test(s)){ F.tipos.push(t[0]); s=s.replace(t[1],' '); } });
+  var dec=s.match(/ (?:anos|de los|decada(?: de los| del)?) ((?:19)?[5-9]0|(?:20)?[0-2]0)s? /)||s.match(/ ((?:19)?[5-9]0|20[0-2]0)s /);
+  var pal={sesenta:1960,setenta:1970,ochenta:1980,noventa:1990};
+  var dw=s.match(/ (sesenta|setenta|ochenta|noventa) /);
+  if(dec){ var d=parseInt(dec[1],10); d=d<100?(d>=50?1900+d:2000+d):d; F.desde=d; F.hasta=d+9; s=s.replace(dec[0],' '); }
+  else if(dw){ F.desde=pal[dw[1]]; F.hasta=F.desde+9; s=s.replace(dw[0],' '); }
+  else { var y=s.match(/ entre (19\d\d|20[0-3]\d) y (19\d\d|20[0-3]\d) /); if(y){ F.desde=+y[1]; F.hasta=+y[2]; s=s.replace(y[0],' '); }
+    else { y=s.match(/ (?:de|del|en) (19\d\d|20[0-3]\d) /); if(y){ F.desde=F.hasta=+y[1]; s=s.replace(y[0],' '); } } }
+  if(F.desde==null){
+    if(/ (recientes?|nuevas?|nuevos?|estrenos?|actuales?|ultimas?|ultimos?|de este ano|modernas?) /.test(s)){ F.desde=YR-3; s=s.replace(/ (recientes?|nuevas?|nuevos?|estrenos?|actuales?|ultimas?|ultimos?|de este ano|modernas?) /g,' '); }
+    else if(/ (clasic[ao]s?|antigu[ao]s?|viej[ao]s?|de antes|retro) /.test(s)){ F.hasta=1995; s=s.replace(/ (clasic[ao]s?|antigu[ao]s?|viej[ao]s?|de antes|retro) /g,' '); } }
+  if(/ (mejor valorad[ao]s?|mejores|top|buenisim[ao]s?|mas populares|recomendad[ao]s?|aclamad[ao]s?|premiad[ao]s?|excelentes?) /.test(s)){ F.minNota=7.3; F.ordenNota=true; s=s.replace(/ (mejor valorad[ao]s?|mejores|top|buenisim[ao]s?|mas populares|recomendad[ao]s?|aclamad[ao]s?|premiad[ao]s?|excelentes?) /g,' '); }
+  var usados={};
+  CONC.forEach(function(c,ci){ for(var k=0;k<c.t.length;k++){ if(s.indexOf(c.t[k])!==-1){ usados[ci]=1; s=s.split(c.t[k]).join(' '); break; } } });
+  Object.keys(usados).forEach(function(ci){ var c=CONC[ci]; c.g.forEach(function(g){ if(F.gen.indexOf(g)<0) F.gen.push(g); }); c.w.forEach(function(w){ if(F.kw.indexOf(w)<0) F.kw.push(w); }); if(c.need) F.need=true; });
+  s.split(' ').forEach(function(w){ if(w.length>=4 && STOP.indexOf(' '+w+' ')<0) F.resid.push(w.replace(/(es|s)$/,'')); });
+  if(F.resid.length){ F.resid.forEach(function(w){ if(F.kw.indexOf(w)<0) F.kw.push(w); }); if(!Object.keys(usados).length) F.need=true; }
+  var e=' '+q2(ex)+' ';
+  CONC.forEach(function(c){ for(var k=0;k<c.t.length;k++){ if(e.indexOf(c.t[k])!==-1){ c.w.forEach(function(w){ F.exKw.push(w); }); if(c.t.indexOf('romance')>=0||c.t.indexOf('terror')>=0||c.t.indexOf('comedia')>=0) c.g.forEach(function(g){ F.exGen.push(g); }); break; } } });
+  e.split(' ').forEach(function(w){ if(w.length>=4 && STOP.indexOf(' '+w+' ')<0) F.exKw.push(w.replace(/(es|s)$/,'')); });
+  return F;
+}
+var SYNC={};
+function aiLoadSyn(cats){
+  return Promise.all(cats.map(function(c){
+    if(SYNC[c]) return SYNC[c];
+    if(!JSON_MODE||!CAT_VER[c]) return (SYNC[c]=Promise.resolve());
+    return (SYNC[c]=fetch(DATA_BASE+'s/'+c+'.json?v='+CAT_VER[c]).then(function(r){ return r.ok?r.json():[]; }).then(function(arr){
+      var idxs=CAT_IDX[c]||[]; for(var k=0;k<arr.length&&k<idxs.length;k++){ var o=overrides[idxs[k]]; if(o&&arr[k]&&!o.ov) o.ov=arr[k]; }
+    }).catch(function(){ delete SYNC[c]; }));
+  }));
+}
+var hasW=function(s,w){ return s.indexOf(' '+w)!==-1; };
+function genHit(d,groups){
+  if(!d._gz) d._gz=' '+q2((d.g||[]).join(' , '))+' ';
+  var n=0; groups.forEach(function(g){ var v=GENV[g]||[g]; for(var i=0;i<v.length;i++){ if(d._gz.indexOf(' '+v[i]+' ')!==-1){ n++; break; } } }); return n;
+}
+function aiSearch(F){
+  var cats=F.tipos.length?F.tipos:['peliculas','series','animes','animados','doramas','novelas'], pool=[];
+  cats.forEach(function(c){ (CAT_IDX[c]||[]).forEach(function(i){ pool.push(i); }); });
+  var run=function(strict){
+    var out=[];
+    pool.forEach(function(i){
+      var d=DB[i], ov=overrides[i]||{}, y=parseInt(d.y,10)||0, r=parseFloat(ov.r)||0;
+      if(F.desde&&(!y||y<F.desde)) return; if(F.hasta&&(!y||y>F.hasta)) return; if(F.minNota&&r<F.minNota) return;
+      var tt=d._tz||(d._tz=' '+q2(d.t)+' '), sn=ov.ov?(d._sz||(d._sz=' '+q2(ov.ov)+' ')):'';
+      if(F.exGen.length&&genHit(d,F.exGen)) return;
+      for(var x=0;x<F.exKw.length;x++){ if(hasW(tt,F.exKw[x])||hasW(sn,F.exKw[x])) return; }
+      var sc=0, kwTitle=0, kwSyn=0, gh=F.gen.length?genHit(d,F.gen):0;
+      F.kw.forEach(function(w){ if(hasW(tt,w)) kwTitle++; else if(sn&&hasW(sn,w)) kwSyn++; });
+      if(F.need&&!F.gen.length&&!(kwTitle||kwSyn)) return;
+      if(strict&&F.need&&!(kwTitle||kwSyn)) return;
+      if(strict&&F.gen.length&&!gh&&!(kwTitle||kwSyn)) return;
+      sc=gh*3+kwTitle*4+Math.min(kwSyn,4)*2+(r/10)*2;
+      if(!F.need&&!F.gen.length&&F.kw.length&&!(kwTitle||kwSyn)) return;
+      if(F.ordenNota) sc=r*10+gh;
+      out.push({i:i,t:d.t,y:d.y,c:d.c,sk:d.sk||'',sc:sc});
+    });
+    out.sort(function(a,b){ return b.sc-a.sc; }); return out;
+  };
+  var res=run(true), relaxed=false;
+  if(res.length<4 && (F.need||F.gen.length)){ var r2=run(false); if(r2.length>res.length){ res=r2; relaxed=true; } }
+  return {list:res,relaxed:relaxed,cats:cats};
+}
+var AI={open:false,el:null,busy:false,shown:0,cur:null};
+function aiMsg(cls,html){ var b=document.createElement('div'); b.className='ai-m '+cls; b.innerHTML=html; var m=document.getElementById('ai-msgs'); m.appendChild(b); m.scrollTop=m.scrollHeight; return b; }
+function aiMore(box,list){
+  var n=Math.min(12,list.length-AI.shown), g=box.querySelector('.ai-grid'); if(!g){ g=document.createElement('div'); g.className='ai-grid'; box.appendChild(g); }
+  for(var k=0;k<n;k++) g.appendChild(makeCard(list[AI.shown+k]));
+  AI.shown+=n; var mb=box.querySelector('.ai-more'); if(mb) mb.remove();
+  if(AI.shown<list.length){ mb=document.createElement('button'); mb.className='ai-more pk-b'; mb.textContent='Ver más ('+(list.length-AI.shown)+')'; mb.onclick=function(){ aiMore(box,list); }; box.appendChild(mb); }
+}
+function aiAsk(text){
+  text=String(text||'').trim(); if(!text||AI.busy) return; AI.busy=true;
+  aiMsg('ai-u',text.replace(/</g,'&lt;'));
+  var wait=aiMsg('ai-b','<span class="ai-dots"><i></i><i></i><i></i></span>');
+  var ctl=window.AbortController?new AbortController():null, to=setTimeout(function(){ if(ctl) ctl.abort(); },6500);
+  var viaIA=(typeof fetch==='function')?fetch('/api/ia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({q:text}),signal:ctl?ctl.signal:undefined})
+    .then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; }):Promise.resolve(null);
+  viaIA.then(function(j){
+    clearTimeout(to); var F, frase='';
+    if(j&&j.filtros){ F=j.filtros; F.resid=[]; frase=j.respuesta||''; } else F=aiParse(text);
+    return aiLoadSyn(F.tipos.length?F.tipos:['peliculas','series','animes','animados','doramas','novelas']).then(function(){
+      var R=aiSearch(F), list=R.list; wait.innerHTML='';
+      if(!list.length){ wait.textContent='No encontré nada así en el catálogo. Prueba con otras palabras, por ejemplo "acción y aventura" o "series de misterio".'; }
+      else {
+        var p=document.createElement('p'); p.textContent=R.relaxed?'No encontré algo exacto, pero esto se parece:':(frase||('Encontré '+list.length+' títulos. Estos son los mejores:')); wait.appendChild(p);
+        AI.shown=0; aiMore(wait,list);
+      }
+      var m=document.getElementById('ai-msgs'); m.scrollTop=Math.max(0,wait.offsetTop-10);
+    });
+  }).catch(function(){ wait.textContent='Tuve un problema buscando. Intenta de nuevo.'; }).then(function(){ AI.busy=false; });
+}
+function aiInit(){
+  if(AI.el) return; var el=AI.el=document.createElement('div'); el.id='ai';
+  el.innerHTML='<div id="ai-head"><span>✨ '+AI_LABEL+'</span><button id="ai-x" class="pk-b">✕ Cerrar</button></div><div id="ai-msgs"></div>'
+   +'<div id="ai-chips"></div><div id="ai-bar"><textarea id="ai-in" rows="1" maxlength="200" placeholder="Ej: una película de catástrofes…"></textarea><button id="ai-go" aria-label="Enviar">➤</button></div>';
+  document.body.appendChild(el);
+  document.getElementById('ai-x').onclick=aiClose;
+  var inp=document.getElementById('ai-in'), go=function(){ var v=inp.value; inp.value=''; aiAsk(v); };
+  document.getElementById('ai-go').onclick=go;
+  inp.addEventListener('keydown',function(e){ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); go(); } });
+  aiMsg('ai-b','Hola 👋 Dime qué quieres ver y lo busco en nuestro catálogo. Puedes pedirme un género, un tema, una época o "las mejor valoradas".');
+  var ch=document.getElementById('ai-chips');
+  ['Una película de catástrofes','Mucho tiroteo y acción','Terror sin zombis','Comedia para reír en familia','Series de misterio','Anime de peleas','Películas de los 90','Las mejor valoradas'].forEach(function(t){
+    var b=document.createElement('button'); b.className='ai-chip'; b.textContent=t; b.onclick=function(){ aiAsk(t); }; ch.appendChild(b); });
+}
+function aiOpen(){ aiInit(); AI.open=true; AI.el.classList.add('open'); document.body.style.overflow='hidden'; setTimeout(function(){ var i=document.getElementById('ai-in'); if(i&&!/Mobi|Android/i.test(navigator.userAgent)) i.focus(); },200); }
+function aiClose(){ AI.open=false; if(AI.el) AI.el.classList.remove('open'); document.body.style.overflow=''; }
+var aiBtn=document.createElement('button'); aiBtn.id='ai-btn'; aiBtn.innerHTML='✨ '+AI_LABEL; aiBtn.onclick=aiOpen;
+var mqAI=window.matchMedia?matchMedia('(max-width:768px)'):{matches:false};
+function aiPlace(){ /* celular: al lado de PEDIDO · computador: al lado de las carpetas (fila de botones) */
+  var cb=document.getElementById('cart-btn'), bar=document.getElementById('col-bar');
+  if(mqAI.matches&&cb&&cb.parentNode){ if(cb.nextSibling!==aiBtn) cb.parentNode.insertBefore(aiBtn,cb.nextSibling); }
+  else if(bar){ if(aiBtn.parentNode!==bar) bar.appendChild(aiBtn); bar.style.display=''; }
+}
+window.addEventListener('load',aiPlace); window.addEventListener('resize',function(){ setTimeout(aiPlace,250); });
+if(mqAI.addEventListener) mqAI.addEventListener('change',aiPlace); setTimeout(aiPlace,400); setTimeout(aiPlace,2000);
+document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&AI.open&&!document.getElementById('detail').classList.contains('open')&&!document.getElementById('cart-panel').classList.contains('open')) aiClose(); });
+
+
+/* ===== Vida de temporada: criaturas que caminan, se asoman y sorprenden (solo transform/opacity: casi no pesa) ===== */
+(function(){
+  if(!window.TH) return;
+  var LIFE={
+    halloween:{walk:['🧟','💀','🧙‍♀️'],ground:['🧟','💀'],peek:['🧟','💀','👻','🎃','👹','🦇','🕷️','🧛','👺','☠️']},
+    navidad:{walk:['🎅','⛄','🦌'],ground:['🎅','⛄'],peek:['🎄','⛄','🎅','🦌','🎁','⭐','🔔']},
+    reyes:{walk:['🐪','👑','⭐'],ground:['🐪','🤴'],peek:['👑','🐪','⭐','🎁','✨','🪄']},
+    sanvalentin:{walk:['💘','🧸','💌'],ground:['🧸','💌'],peek:['💘','💕','🧸','🌹','💌','💖']},
+    madres:{walk:['🌷','🦋','🌸'],ground:['🦋','🌷'],peek:['🌷','🌸','🦋','💐','🌼','🌺']},
+    verano:{walk:['🏄','🦀','🌴'],ground:['🦀','🏄'],peek:['🌴','🍉','🦀','🏖️','🍦','🐚','🕶️']}
+  }[TH_NAME];
+  if(!LIFE) return;
+  var mob=window.matchMedia&&matchMedia('(max-width:768px)').matches, still=window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches;
+  if(still) return;
+  var R=function(a){ return a[Math.floor(Math.random()*a.length)]; };
+  var walker=function(parent,e,k,dur){
+    var w=document.createElement('div'); w.className='hw-walk'+(k%2?' rev':''); w.setAttribute('aria-hidden','true');
+    w.style.animationDuration=dur+'s'; w.style.animationDelay=(-k*dur*.37)+'s';
+    w.innerHTML='<span class="hw-flip"><span class="hw-hop" style="animation-delay:'+(k*.13)+'s">'+e+'</span></span>'; parent.appendChild(w);
+  };
+  /* 1) caminan por la línea del menú (se ven siempre, el menú queda fijo arriba) */
+  var nav=document.getElementById('nav');
+  if(nav){ var line=document.createElement('div'); line.id='hw-line'; nav.appendChild(line); LIFE.walk.slice(0,mob?2:3).forEach(function(e,k){ walker(line,e,k,36+k*15); }); }
+  /* 2) caminan por el borde de abajo de la pantalla */
+  var gr=document.createElement('div'); gr.id='hw-ground'; document.body.appendChild(gr);
+  LIFE.ground.slice(0,mob?1:2).forEach(function(e,k){ walker(gr,e,k+1,58+k*17); });
+  /* 3) se asoman por detrás de algunos pósters (cambian de criatura en cada vuelta) */
+  var grid=document.getElementById('grid'), peekN=mob?2:4;
+  function peekers(){
+    if(!grid) return; var old=grid.querySelectorAll('.hw-peek'); for(var i=0;i<old.length;i++) old[i].remove();
+    var cards=grid.querySelectorAll('.card:not(.sk)'); if(cards.length<4) return;
+    var used={}, n=0, tries=0, lim=Math.min(cards.length,30);
+    while(n<peekN&&tries<30){ tries++; var k=Math.floor(Math.random()*lim); if(used[k]||used[k-1]||used[k+1]) continue; used[k]=1; n++;
+      var c=cards[k], p=document.createElement('span'); p.className='hw-peek'; p.setAttribute('aria-hidden','true'); p.textContent=R(LIFE.peek);
+      p.style.left=(c.offsetLeft+8+Math.random()*Math.max(10,c.offsetWidth-44))+'px'; p.style.top=(c.offsetTop-20)+'px';
+      p.style.animationDuration=(11+Math.random()*9)+'s'; p.style.animationDelay=(-Math.random()*12)+'s'; grid.appendChild(p); }
+  }
+  if(grid){
+    grid.addEventListener('animationiteration',function(e){ if(e.target.classList&&e.target.classList.contains('hw-peek')) e.target.textContent=R(LIFE.peek); });
+    var _rg3=renderGrid; renderGrid=function(){ _rg3.apply(this,arguments); setTimeout(peekers,80); };
+    var rt; window.addEventListener('resize',function(){ clearTimeout(rt); rt=setTimeout(peekers,350); });
+    setTimeout(peekers,1500);
+  }
+  if(TH_NAME!=='halloween') return;
+  /* 4) solo Halloween: la bruja cruza volando, el logo gotea sangre y aparecen letras sangrientas */
+  window.addEventListener('load',function(){ var bats=document.getElementById('hw-bats'); if(bats){ var wi=document.createElement('div'); wi.className='hw-witch'; wi.textContent='🧙‍♀️'; bats.appendChild(wi); } });
+  var lt=document.getElementById('logo-text'), op=lt&&lt.offsetParent;
+  var drips=function(){ if(!lt||!op) return; op.querySelectorAll('.hw-drip').forEach(function(d){ d.remove(); });
+    [.08,.31,.57,.82].forEach(function(f,k){ var d=document.createElement('i'); d.className='hw-drip'; d.style.left=(lt.offsetLeft+f*lt.offsetWidth)+'px'; d.style.top=(lt.offsetTop+lt.offsetHeight-7)+'px'; d.style.animationDelay=(k*1.7)+'s'; d.style.animationDuration=(6+k*1.3)+'s'; op.appendChild(d); }); };
+  setTimeout(drips,1200); setTimeout(drips,3500);
+  setTimeout(function(){ var l=document.createElement('link'); l.rel='stylesheet'; l.href='https://fonts.googleapis.com/css2?family=Creepster&display=swap'; document.head.appendChild(l); },1500);
+  var boo=document.createElement('div'); boo.id='hw-boo'; boo.setAttribute('aria-hidden','true'); document.body.appendChild(boo);
+  var WORDS=['¡BUU!','CORRE','NO MIRES','AYUDA','ESTÁN AQUÍ','¿SOLO?','DETRÁS DE TI','🩸'];
+  var showBoo=function(){ if(document.hidden) return; boo.textContent=R(WORDS); boo.style.left=(6+Math.random()*(mob?48:70))+'%'; boo.style.top=(22+Math.random()*58)+'%';
+    boo.style.setProperty('--rot',(-12+Math.random()*24)+'deg'); boo.classList.remove('on'); void boo.offsetWidth; boo.classList.add('on'); };
+  setTimeout(showBoo,8000); setInterval(showBoo,mob?40000:27000);
+})();
+
 /* PV_HOOK */
 
 })();
