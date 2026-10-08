@@ -737,6 +737,9 @@ body.hw:not(.th-halloween) .hw-bat{width:auto;height:auto;font-size:22px;line-he
 .pk-add{background:linear-gradient(135deg,var(--cyan),var(--pink));color:#fff;border:0;border-radius:10px;padding:11px 18px;font:700 13px var(--fb);cursor:pointer}
 .pk-add:disabled{opacity:.45;cursor:default}.pk-cnt{font-size:12px;color:#8d8da0}
 .pk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:12px;padding:14px 18px 40px}
+/* ══ TOP 10 ══ */
+.pk-grid .card{position:relative}
+.rk{position:absolute;left:8px;top:2px;font:900 46px/1 var(--fh);color:rgba(10,10,18,.85);-webkit-text-stroke:2px var(--cyan);z-index:4;pointer-events:none;text-shadow:0 2px 8px rgba(0,0,0,.6)}
 /* ══ MANO ZOMBIE EN EL PEDIDO ══ */
 #zb-badge{margin:10px 0;padding:10px 12px;border-radius:12px;gap:10px;align-items:center;font-size:12px;line-height:1.5;color:#ddd}
 #zb-badge.ok{background:rgba(110,200,80,.12);border:1px solid #3d6b2f}
@@ -2985,19 +2988,26 @@ function pkRender(){
   } else {
     var f=PK.list[PK.f], miss=f.items.filter(function(m){ return !inCart(m.i); });
     back.textContent=PK.single?'← Volver':'← Carpetas'; title.textContent=f.e+' '+f.n;
-    var bar=document.createElement('div'); bar.className='pk-bar';
-    var add=document.createElement('button'); add.className='pk-add'; add.disabled=!miss.length;
-    add.textContent=miss.length?('🛒 Añadir '+(miss.length===f.items.length?'las '+miss.length:'las '+miss.length+' que faltan')+' al pedido'):'✓ Todas están en el pedido';
-    add.onclick=function(){ addMany(f.items); };
-    var cnt=document.createElement('span'); cnt.className='pk-cnt'; cnt.textContent=f.items.length+' títulos · o añade una por una ↓';
-    bar.appendChild(add); bar.appendChild(cnt); body.appendChild(bar);
-    var g=document.createElement('div'); g.className='pk-grid'; f.items.forEach(function(m){ g.appendChild(makeCard(m)); }); body.appendChild(g);
+    if(PK.top){
+      var th=document.createElement('p'); th.className='pk-hint';
+      th.textContent='Los números cambian según lo que más piden los clientes.'+(TOP&&TOP.fill?' Mientras llegan más pedidos, completamos el ranking con títulos populares.':''); body.appendChild(th);
+    } else {
+      var bar=document.createElement('div'); bar.className='pk-bar';
+      var add=document.createElement('button'); add.className='pk-add'; add.disabled=!miss.length;
+      add.textContent=miss.length?('🛒 Añadir '+(miss.length===f.items.length?'las '+miss.length:'las '+miss.length+' que faltan')+' al pedido'):'✓ Todas están en el pedido';
+      add.onclick=function(){ addMany(f.items); };
+      var cnt=document.createElement('span'); cnt.className='pk-cnt'; cnt.textContent=f.items.length+' títulos · o añade una por una ↓';
+      bar.appendChild(add); bar.appendChild(cnt); body.appendChild(bar);
+    }
+    var g=document.createElement('div'); g.className='pk-grid';
+    f.items.forEach(function(m,k){ var c=makeCard(m); if(PK.top){ var r=document.createElement('span'); r.className='rk'; r.textContent=k+1; c.appendChild(r); } g.appendChild(c); });
+    body.appendChild(g);
   }
   pkEl.scrollTop=st;
 }
 function openPk(){
   if(!SEC) return; pkInit(); PK.list=buildFolders(); if(!PK.list.length) return;
-  PK.single=false; PK.open=true; PK.view='root'; pkRender(); pkEl.classList.add('open'); pkEl.scrollTop=0; document.body.style.overflow='hidden';
+  PK.single=false; PK.top=false; PK.open=true; PK.view='root'; pkRender(); pkEl.classList.add('open'); pkEl.scrollTop=0; document.body.style.overflow='hidden';
 }
 function closePk(){ PK.open=false; if(pkEl) pkEl.classList.remove('open'); document.body.style.overflow=''; }
 document.addEventListener('keydown',function(e){
@@ -3018,20 +3028,27 @@ function chipInit(){
   if(!chip){ chip=document.createElement('button'); chip.className='col-chip hot'; chip.innerHTML=SEC.emoji+' '+SEC.label+' <b></b>'; chip.onclick=openPk; colBar.appendChild(chip); }
   chip.lastChild.textContent=n+' carpetas'; colBar.style.display='';
 }
-var TOP=null, TOP_MIN=2; /* un título entra a "Lo más pedido" con al menos TOP_MIN pedidos; la lista aparece con 3 o más */
+var TOP=null, TOP_MIN=2; /* un título entra al ranking real con al menos TOP_MIN pedidos */
+/* Relleno mientras hay pocos pedidos (títulos populares de tu catálogo, por orden). EDÍTALO a tu gusto: nombre exacto del título. */
+var TOP_RELLENO=['Breaking Bad','El padrino','Stranger Things','Better Call Saul','Chernobyl','Pulp Fiction','Forrest Gump','The Last of Us','Peaky Blinders','The Boys','Dark','Origen','La casa de papel','Vengadores: Endgame','Joker','Oppenheimer','The Mandalorian','Matrix','El rey león','Vikingos'];
 var topAsked=false;
 function topInit(){
-  if(topAsked||typeof fetch!=='function') return; topAsked=true;
-  fetch('/api/pedido?top=1').then(function(r){ return r.ok?r.json():null; }).then(function(j){
-    if(!j||!j.top) return;
-    var items=[]; j.top.forEach(function(x){ var i=(DB_KEY_INDEX||{})[x.k]; if(x.n>=TOP_MIN && i!=null){ var d=DB[i]; items.push({i:i,t:d.t,y:d.y,c:d.c,sk:d.sk||''}); } });
+  if(topAsked) return; topAsked=true;
+  var real=function(j){ var o=[]; ((j&&j.top)||[]).forEach(function(x){ var i=(DB_KEY_INDEX||{})[x.k]; if(x.n>=TOP_MIN && i!=null) o.push(i); }); return o; };
+  var build=function(idx){
+    var seen={}, items=[], pick=function(i){ if(i==null||seen[i]||items.length>=10) return; seen[i]=1; var d=DB[i]; items.push({i:i,t:d.t,y:d.y,c:d.c,sk:d.sk||''}); };
+    idx.forEach(pick); var nReal=items.length;
+    var byTitle={}; for(var i=0;i<DB.length;i++){ var d=DB[i]; if(d&&(d.c==='peliculas'||d.c==='series'||d.c==='animados')){ var k=nz(d.t); if(byTitle[k]==null) byTitle[k]=i; } }
+    TOP_RELLENO.forEach(function(t){ pick(byTitle[nz(t)]); });
     if(items.length<3) return;
-    TOP={e:'🔥',n:'Lo más pedido',items:items};
-    var b=document.createElement('button'); b.className='col-chip hot'; b.textContent='🔥 Lo más pedido'; b.onclick=openTop;
+    TOP={e:'🔥',n:'Top 10 más pedidos',items:items,fill:items.length-nReal};
+    var b=document.createElement('button'); b.className='col-chip hot'; b.textContent='🔥 Top 10 más pedidos'; b.onclick=openTop;
     colBar.insertBefore(b,colBar.firstChild); colBar.style.display='';
-  }).catch(function(){});
+  };
+  (typeof fetch==='function'?fetch('/api/pedido?top=1').then(function(r){ return r.ok?r.json():null; }):Promise.resolve(null))
+    .catch(function(){ return null; }).then(function(j){ build(real(j)); });
 }
-function openTop(){ pkInit(); PK.list=[TOP]; PK.single=true; PK.open=true; PK.view='folder'; PK.f=0; pkRender(); pkEl.classList.add('open'); pkEl.scrollTop=0; document.body.style.overflow='hidden'; }
+function openTop(){ pkInit(); PK.list=[TOP]; PK.single=true; PK.top=true; PK.open=true; PK.view='folder'; PK.f=0; pkRender(); pkEl.classList.add('open'); pkEl.scrollTop=0; document.body.style.overflow='hidden'; }
 var tries=0, iv=setInterval(function(){ tries++; if(typeof DB!=='undefined'&&DB.length>0){ clearInterval(iv); chipInit(); topInit(); } else if(tries>120) clearInterval(iv); },500);
 
 /* ---------- Mano Zombie (pedidos de más de 1000 CUP) ---------- */
