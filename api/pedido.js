@@ -1,5 +1,5 @@
 // GET  /api/pedido?top=1                → los 10 títulos más pedidos del mes
-// POST /api/pedido {clientId, items:[{k}]} → suma +1 a cada título del pedido
+// POST /api/pedido {clientId, items:[{k}]} → suma +1 a cada título que el cliente AÑADE a su pedido (1 por cliente, título y día)
 const { redis, ipHash, readBody } = require('./_redis');
 
 const ym = d => d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0');
@@ -27,7 +27,7 @@ module.exports = async (req, res) => {
     const rl = 'ped:ip:' + ipHash(req) + ':' + now.toISOString().slice(0, 13);
     const [c] = await redis([['INCR', rl]]);
     if (c === 1) await redis([['EXPIRE', rl, 3600]]);
-    if (c > 20) return res.status(429).json({ error: 'demasiados' });
+    if (c > 200) return res.status(429).json({ error: 'demasiados' });
 
     const dia = now.toISOString().slice(0, 10);
     const sets = await redis(keys.map(k => ['SET', 'ped:d:' + cid + ':' + dia + ':' + k, '1', 'NX', 'EX', 86400])); // 1 voto por título/cliente/día

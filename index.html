@@ -1762,7 +1762,6 @@ function sendWhatsApp(){
     if(w){ w.location.href=url; } else if(diferido){ location.href=url; } else { window.open(url,'_blank'); }
     if(zh) zombieShow(zh);
   };
-  trackOrder(cart.map(function(it){ return {k:stableKey(it.c,it.tn||normSearch(it.t),it.y)}; }));
   if(total>ZOMBIE_MIN){ w=window.open('about:blank','_blank'); diferido=true; zombieFetch(total,{envio:true,code:ZB&&ZB.code}).then(function(z){ if(z){ ZB=null; zbSave(); zbRender(); } finish(z); }); }
   else finish(null);
 }
@@ -2951,6 +2950,7 @@ updateCartUI=function(){
   if(ready && n>last){ bump('cart-count'); bump('cart-btn'); bump('det-cart-count'); }
   last=n;
   zbSync();
+  trackAdds();
 };
 
 /* ---------- Carpetas de sagas (editables) ----------
@@ -3000,11 +3000,15 @@ function buildFolders(){
     for(var i=0;i<DB.length;i++){
       var d=DB[i]; if(!d||!CATS_PK[d.c]) continue;
       var s=d._nz||(d._nz=nz(d.t+' '+(d.an||'')));
-      if(hasAny(s,kw) && !hasAny(s,ex)) items.push({i:i,t:d.t,y:d.y,c:d.c,sk:d.sk||''});
+      if(hasAny(s,kw) && !hasAny(s,ex)) items.push({i:i,t:d.t,y:d.y,c:d.c,sk:d.sk||'',k:stableKey(d.c,d.tn,d.y)});
     }
     if(items.length>=2){ items.sort(function(a,b){ return yr(a)-yr(b) || (a.t<b.t?-1:1); }); res.push({e:f[0],n:f[1],items:items}); }
   });
   return res;
+}
+function fresh(m){ /* posición actual del título en el catálogo (las posiciones cambian cuando el catálogo se actualiza) */
+  var i=(DB_KEY_INDEX||{})[m.k]; if(i==null||!DB[i]) return null; var d=DB[i];
+  return {i:i,t:d.t,y:d.y,c:d.c,sk:d.sk||'',k:m.k};
 }
 var inCart=function(i){ return cart.some(function(x){ return resolveIndex(x)===i; }); };
 function addMany(list){ /* añade varias de una vez, sin repintar cada vez */
@@ -3036,14 +3040,14 @@ function pkRender(){
     var hint=document.createElement('p'); hint.className='pk-hint'; hint.textContent='Elige una carpeta. Puedes añadir una por una o toda la saga al pedido.'; body.appendChild(hint);
     var wrap=document.createElement('div'); wrap.className='pk-folders';
     PK.list.forEach(function(f,k){
-      var inc=f.items.filter(function(m){ return inCart(m.i); }).length, b=document.createElement('button'); b.className='pk-f';
-      b.innerHTML='<span class="pk-e">'+f.e+'</span><b>'+f.n+'</b><small>'+f.items.length+' películas'+(inc?' · '+inc+' en pedido':'')+'</small>';
+      var its=f.items.map(fresh).filter(Boolean), inc=its.filter(function(m){ return inCart(m.i); }).length, b=document.createElement('button'); b.className='pk-f';
+      b.innerHTML='<span class="pk-e">'+f.e+'</span><b>'+f.n+'</b><small>'+its.length+' películas'+(inc?' · '+inc+' en pedido':'')+'</small>';
       b.onclick=function(){ PK.view='folder'; PK.f=k; pkRender(); pkEl.scrollTop=0; };
       wrap.appendChild(b);
     });
     body.appendChild(wrap);
   } else {
-    var f=PK.list[PK.f], miss=f.items.filter(function(m){ return !inCart(m.i); });
+    var f=PK.list[PK.f], its=f.items.map(fresh).filter(Boolean), miss=its.filter(function(m){ return !inCart(m.i); });
     back.textContent=PK.single?'← Volver':'← Carpetas'; title.textContent=f.e+' '+f.n;
     if(PK.top){
       var th=document.createElement('p'); th.className='pk-hint';
@@ -3051,13 +3055,13 @@ function pkRender(){
     } else {
       var bar=document.createElement('div'); bar.className='pk-bar';
       var add=document.createElement('button'); add.className='pk-add'; add.disabled=!miss.length;
-      add.textContent=miss.length?('🛒 Añadir '+(miss.length===f.items.length?'las '+miss.length:'las '+miss.length+' que faltan')+' al pedido'):'✓ Todas están en el pedido';
-      add.onclick=function(){ addMany(f.items); };
-      var cnt=document.createElement('span'); cnt.className='pk-cnt'; cnt.textContent=f.items.length+' títulos · o añade una por una ↓';
+      add.textContent=miss.length?('🛒 Añadir '+(miss.length===its.length?'las '+miss.length:'las '+miss.length+' que faltan')+' al pedido'):'✓ Todas están en el pedido';
+      add.onclick=function(){ addMany(its); };
+      var cnt=document.createElement('span'); cnt.className='pk-cnt'; cnt.textContent=its.length+' títulos · o añade una por una ↓';
       bar.appendChild(add); bar.appendChild(cnt); body.appendChild(bar);
     }
     var g=document.createElement('div'); g.className='pk-grid';
-    f.items.forEach(function(m,k){ var c=makeCard(m); if(PK.top){ var r=document.createElement('span'); r.className='rk'; r.textContent=k+1; c.appendChild(r); } g.appendChild(c); });
+    its.forEach(function(m,k){ var c=makeCard(m); if(PK.top){ var r=document.createElement('span'); r.className='rk'; r.textContent=k+1; c.appendChild(r); } g.appendChild(c); });
     body.appendChild(g);
   }
   pkEl.scrollTop=st;
@@ -3093,7 +3097,7 @@ function topInit(){
   if(topAsked) return; topAsked=true;
   var real=function(j){ var o=[]; ((j&&j.top)||[]).forEach(function(x){ var i=(DB_KEY_INDEX||{})[x.k]; if(x.n>=TOP_MIN && i!=null) o.push(i); }); return o; };
   var build=function(idx){
-    var seen={}, items=[], pick=function(i){ if(i==null||seen[i]||items.length>=10) return; seen[i]=1; var d=DB[i]; items.push({i:i,t:d.t,y:d.y,c:d.c,sk:d.sk||''}); };
+    var seen={}, items=[], pick=function(i){ if(i==null||seen[i]||items.length>=10) return; seen[i]=1; var d=DB[i]; items.push({i:i,t:d.t,y:d.y,c:d.c,sk:d.sk||'',k:stableKey(d.c,d.tn,d.y)}); };
     idx.forEach(pick); var nReal=items.length;
     var byTitle={}; for(var i=0;i<DB.length;i++){ var d=DB[i]; if(d&&(d.c==='peliculas'||d.c==='series'||d.c==='animados')){ var k=nz(d.t); if(byTitle[k]==null) byTitle[k]=i; } }
     TOP_RELLENO.forEach(function(t){ pick(byTitle[nz(t)]); });
@@ -3146,6 +3150,16 @@ function zbSync(){
   }
   zbRender();
 }
+/* "Lo más pedido": cuenta cuando el cliente AÑADE un título al pedido (una vez por cliente, título y día; el servidor evita repeticiones) */
+var prevK=null, trKeys={}, trTimer=null;
+function cartKeys(){ var o={}; cart.forEach(function(it){ o[stableKey(it.c,it.tn||normSearch(it.t),it.y)]=1; }); return o; }
+function flushAdds(){ var cur=cartKeys(), ks=Object.keys(trKeys).filter(function(k){ return cur[k]; }); trKeys={}; if(ks.length) trackOrder(ks.map(function(k){ return {k:k}; })); }
+function trackAdds(){
+  var cur=cartKeys();
+  if(prevK&&ready){ var nuevo=false; Object.keys(cur).forEach(function(k){ if(!prevK[k]){ trKeys[k]=1; nuevo=true; } }); if(nuevo){ clearTimeout(trTimer); trTimer=setTimeout(flushAdds,3000); } }
+  prevK=cur;
+}
+document.addEventListener('visibilitychange',function(){ if(document.hidden) flushAdds(); });
 function trackOrder(items){ /* suma +1 a cada título del pedido (para "Lo más pedido") */
   try{ fetch('/api/pedido',{method:'POST',keepalive:true,headers:{'Content-Type':'application/json'},body:JSON.stringify({clientId:cid(),items:items})}).catch(function(){}); }catch(e){}
 }
@@ -3281,7 +3295,7 @@ function aiSearch(F){
       sc=gh*3+kwTitle*4+Math.min(kwSyn,4)*2+(r/10)*2;
       if(!F.need&&!F.gen.length&&F.kw.length&&!(kwTitle||kwSyn)) return;
       if(F.ordenNota) sc=r*10+gh;
-      out.push({i:i,t:d.t,y:d.y,c:d.c,sk:d.sk||'',sc:sc});
+      out.push({i:i,t:d.t,y:d.y,c:d.c,sk:d.sk||'',k:stableKey(d.c,d.tn,d.y),sc:sc});
     });
     out.sort(function(a,b){ return b.sc-a.sc; }); return out;
   };
@@ -3293,7 +3307,7 @@ var AI={open:false,el:null,busy:false,shown:0,cur:null};
 function aiMsg(cls,html){ var b=document.createElement('div'); b.className='ai-m '+cls; b.innerHTML=html; var m=document.getElementById('ai-msgs'); m.appendChild(b); m.scrollTop=m.scrollHeight; return b; }
 function aiMore(box,list){
   var n=Math.min(12,list.length-AI.shown), g=box.querySelector('.ai-grid'); if(!g){ g=document.createElement('div'); g.className='ai-grid'; box.appendChild(g); }
-  for(var k=0;k<n;k++) g.appendChild(makeCard(list[AI.shown+k]));
+  for(var k=0;k<n;k++){ var it=fresh(list[AI.shown+k]); if(it) g.appendChild(makeCard(it)); }
   AI.shown+=n; var mb=box.querySelector('.ai-more'); if(mb) mb.remove();
   if(AI.shown<list.length){ mb=document.createElement('button'); mb.className='ai-more pk-b'; mb.textContent='Ver más ('+(list.length-AI.shown)+')'; mb.onclick=function(){ aiMore(box,list); }; box.appendChild(mb); }
 }
